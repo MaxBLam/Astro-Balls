@@ -4,10 +4,12 @@ import pygame
 from PySide6.QtGui import QAction, Qt, QFont, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar
+    QScrollArea, QScrollBar, QStackedLayout
 from PySide6.QtCore import QTimer
 import euclid
 import math
+
+from pygame.mixer_music import set_pos
 
 
 class Objets:
@@ -161,98 +163,37 @@ class StatsDock(QDockWidget):
         layout.addWidget(upper_panel)
         upper_panel.setFixedSize(200, 450)
 
-        config_label = QLabel()
-        config_label.setText("CONFIGURATION")
-        config_label_txt = QFont()
-        config_label_txt.setPointSize(10)
-        config_label_txt.setBold(True)
-        config_label_txt.setItalic(True)
-        config_label.setFont(config_label_txt)
-        upper_panel_layout.addWidget(config_label, 0, 0, 1, 3)
+        body_label = QLabel()
+        body_label.setText("[SELECTED BODY'S NAME]")
+        body_label_txt = QFont()
+        body_label_txt.setPointSize(10)
+        body_label_txt.setBold(True)
+        body_label_txt.setItalic(True)
+        body_label.setFont(body_label_txt)
+        upper_panel_layout.addWidget(body_label, 0, 0, 1, 3)
 
-        mass_label = QLabel('Mass')
-        upper_panel_layout.addWidget(mass_label, 1, 0)
-        mass_spin = QDoubleSpinBox()
-        mass_spin.setRange(0.0, 1000.0)
-        mass_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(mass_spin, 2, 0,)
-        mass_unit = QComboBox()
-        pg, ng, mcg, mg, g, kg, t, mt, gt = 'pg', 'ng', 'µg', 'mg', 'g', 'kg', 't', 'Mt', 'Gt'
-        unit_lst = [gt, mt, t, kg, g, mg, mcg, ng, pg]
-        mass_unit.addItems(unit_lst)
-        mass_unit.view().setFixedWidth(40)
-        upper_panel_layout.addWidget(mass_unit, 2, 1)
+        body_type = QLabel()
+        body_type.setText(f"Type: [body's type]")
+        upper_panel_layout.addWidget(body_type, 1, 0, 1, 2)
 
-        size_label = QLabel('Radius')
-        upper_panel_layout.addWidget(size_label, 4, 0)
-        mass_spin = QDoubleSpinBox()
-        mass_spin.setRange(0.0, 1000.0)
-        mass_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(mass_spin, 5, 0,)
-        size_unit = QComboBox()
-        km, m, cm, mm, mcm, nm = 'km', 'm', 'cm', ' mm', 'µm', 'nm'
-        size_lst = [km, m, cm, mm, mcm, nm]
-        size_unit.addItems(size_lst)
-        size_unit.view().setFixedWidth(40)
-        upper_panel_layout.addWidget(size_unit, 5, 1)
+        surface_label = QLabel()
+        surface_label.setText(f"Surface Composition")
+        surface_label.setWordWrap(True)
+        upper_panel_layout.addWidget(surface_label, 2, 0, 1, 2)
 
-        density_label = QLabel('Density')
-        upper_panel_layout.addWidget(density_label, 6, 0)
-        density_spin = QDoubleSpinBox()
-        density_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(density_spin, 7, 0)
-        density_unit = QComboBox()
-        kgm, gcm = 'kg/m³', 'g/cm³'
-        density_lst = [kgm, gcm]
-        density_unit.addItems(density_lst)
-        size_unit.view().setFixedWidth(40)
-        upper_panel_layout.addWidget(density_unit, 7, 1)
+        age_label = QLabel()
+        age_label.setText(f"Age: [body's age]")
+        upper_panel_layout.addWidget(age_label, 3, 0, 1, 2)
 
-        temp_label = QLabel('Temperature')
-        upper_panel_layout.addWidget(temp_label, 8, 0)
-        temp_spin = QDoubleSpinBox()
-        temp_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(temp_spin, 9, 0)
-        temp_unit = QComboBox()
-        k, c, f = 'K', '℃', '℉'
-        temp_lst = [k, c, f]
-        temp_unit.addItems(temp_lst)
-        temp_unit.view().setFixedWidth(40)
-        upper_panel_layout.addWidget(temp_unit, 9, 1)
+        rotation_label = QLabel()
+        rotation_label.setText(f"Length of Rotation: [body's rotation time]")
+        rotation_label.setWordWrap(True)
+        upper_panel_layout.addWidget(rotation_label, 4, 0, 1, 2)
 
-        kms, ms, cms, kmh, mh, cmh, mls, yards, fts, inchs, mlh, yardh, fth, inchh = 'km/s', 'm/s', 'cm/s', 'km/h', 'm/h', 'cm/h', 'ml/s', 'yd/s', 'ft/s', 'inch/s', 'ml/h', 'yd/h', 'ft/h', 'inch/h'
-        momentum_lst = [kms, ms, cms, kmh, mh, cmh, mls, yards, fts, inchs, mlh, yardh, fth, inchh]
-
-        rotation_label = QLabel('Rotational Momentum')
-        upper_panel_layout.addWidget(rotation_label, 10, 0, 1, 2)
-        rotation_spin = QDoubleSpinBox()
-        rotation_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(rotation_spin, 11, 0)
-        rmomentum_unit = QComboBox()
-        rmomentum_unit.addItems(momentum_lst)
-        rmomentum_unit.view().setFixedWidth(65)
-        upper_panel_layout.addWidget(rmomentum_unit, 11, 1)
-
-        orbital_label = QLabel('Orbital Momentum')
-        upper_panel_layout.addWidget(orbital_label, 12, 0, 1, 2)
-        orbital_spin = QDoubleSpinBox()
-        orbital_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(orbital_spin, 13, 0)
-        omomentum_unit = QComboBox()
-        omomentum_unit.addItems(momentum_lst)
-        omomentum_unit.view().setFixedWidth(65)
-        upper_panel_layout.addWidget(omomentum_unit, 13, 1)
-
-        gravity_label = QLabel('Surface Gravity')
-        upper_panel_layout.addWidget(gravity_label, 14, 0, 1, 2)
-        gravity_spin = QDoubleSpinBox()
-        gravity_spin.lineEdit().setMaximumWidth(50)
-        upper_panel_layout.addWidget(gravity_spin, 15, 0)
-        gravity_lst = [i+'²' for i in momentum_lst]
-        gravity_unit = QComboBox()
-        gravity_unit.addItems(gravity_lst)
-        gravity_unit.view().setFixedWidth(70)
-        upper_panel_layout.addWidget(gravity_unit, 15, 1)
+        revolution_label = QLabel()
+        revolution_label.setText(f"Length of Revolution: [body's revolution time]")
+        revolution_label.setWordWrap(True)
+        upper_panel_layout.addWidget(revolution_label, 5, 0, 1, 2)
 
         mid_panel = QFrame()
         mid_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
@@ -261,6 +202,99 @@ class StatsDock(QDockWidget):
         mid_panel_layout.setSpacing(10)
         layout.addWidget(mid_panel)
         mid_panel.setFixedSize(200, 450)
+
+        config_label = QLabel()
+        config_label.setText("CONFIGURATION")
+        config_label_txt = QFont()
+        config_label_txt.setPointSize(10)
+        config_label_txt.setBold(True)
+        config_label_txt.setItalic(True)
+        config_label.setFont(config_label_txt)
+        mid_panel_layout.addWidget(config_label, 0, 0, 1, 3)
+
+        mass_label = QLabel('Mass')
+        mid_panel_layout.addWidget(mass_label, 1, 0)
+        mass_spin = QDoubleSpinBox()
+        mass_spin.setRange(0.0, 1000.0)
+        mass_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(mass_spin, 2, 0,)
+        mass_unit = QComboBox()
+        pg, ng, mcg, mg, g, kg, t, mt, gt = 'pg', 'ng', 'µg', 'mg', 'g', 'kg', 't', 'Mt', 'Gt'
+        unit_lst = [gt, mt, t, kg, g, mg, mcg, ng, pg]
+        mass_unit.addItems(unit_lst)
+        mass_unit.view().setFixedWidth(40)
+        mid_panel_layout.addWidget(mass_unit, 2, 1)
+
+        size_label = QLabel('Radius')
+        mid_panel_layout.addWidget(size_label, 4, 0)
+        mass_spin = QDoubleSpinBox()
+        mass_spin.setRange(0.0, 1000.0)
+        mass_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(mass_spin, 5, 0,)
+        size_unit = QComboBox()
+        km, m, cm, mm, mcm, nm = 'km', 'm', 'cm', ' mm', 'µm', 'nm'
+        size_lst = [km, m, cm, mm, mcm, nm]
+        size_unit.addItems(size_lst)
+        size_unit.view().setFixedWidth(40)
+        mid_panel_layout.addWidget(size_unit, 5, 1)
+
+        density_label = QLabel('Density')
+        mid_panel_layout.addWidget(density_label, 6, 0)
+        density_spin = QDoubleSpinBox()
+        density_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(density_spin, 7, 0)
+        density_unit = QComboBox()
+        kgm, gcm = 'kg/m³', 'g/cm³'
+        density_lst = [kgm, gcm]
+        density_unit.addItems(density_lst)
+        size_unit.view().setFixedWidth(40)
+        mid_panel_layout.addWidget(density_unit, 7, 1)
+
+        temp_label = QLabel('Temperature')
+        mid_panel_layout.addWidget(temp_label, 8, 0)
+        temp_spin = QDoubleSpinBox()
+        temp_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(temp_spin, 9, 0)
+        temp_unit = QComboBox()
+        k, c, f = 'K', '℃', '℉'
+        temp_lst = [k, c, f]
+        temp_unit.addItems(temp_lst)
+        temp_unit.view().setFixedWidth(40)
+        mid_panel_layout.addWidget(temp_unit, 9, 1)
+
+        kms, ms, cms, kmh, mh, cmh, mls, yards, fts, inchs, mlh, yardh, fth, inchh = 'km/s', 'm/s', 'cm/s', 'km/h', 'm/h', 'cm/h', 'ml/s', 'yd/s', 'ft/s', 'inch/s', 'ml/h', 'yd/h', 'ft/h', 'inch/h'
+        momentum_lst = [kms, ms, cms, kmh, mh, cmh, mls, yards, fts, inchs, mlh, yardh, fth, inchh]
+
+        rotation_label = QLabel('Rotational Momentum')
+        mid_panel_layout.addWidget(rotation_label, 10, 0, 1, 2)
+        rotation_spin = QDoubleSpinBox()
+        rotation_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(rotation_spin, 11, 0)
+        rmomentum_unit = QComboBox()
+        rmomentum_unit.addItems(momentum_lst)
+        rmomentum_unit.view().setFixedWidth(65)
+        mid_panel_layout.addWidget(rmomentum_unit, 11, 1)
+
+        orbital_label = QLabel('Orbital Momentum')
+        mid_panel_layout.addWidget(orbital_label, 12, 0, 1, 2)
+        orbital_spin = QDoubleSpinBox()
+        orbital_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(orbital_spin, 13, 0)
+        omomentum_unit = QComboBox()
+        omomentum_unit.addItems(momentum_lst)
+        omomentum_unit.view().setFixedWidth(65)
+        mid_panel_layout.addWidget(omomentum_unit, 13, 1)
+
+        gravity_label = QLabel('Surface Gravity')
+        mid_panel_layout.addWidget(gravity_label, 14, 0, 1, 2)
+        gravity_spin = QDoubleSpinBox()
+        gravity_spin.lineEdit().setMaximumWidth(50)
+        mid_panel_layout.addWidget(gravity_spin, 15, 0)
+        gravity_lst = [i+'²' for i in momentum_lst]
+        gravity_unit = QComboBox()
+        gravity_unit.addItems(gravity_lst)
+        gravity_unit.view().setFixedWidth(70)
+        mid_panel_layout.addWidget(gravity_unit, 15, 1)
 
         bottom_panel = QFrame()
         bottom_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
@@ -378,7 +412,7 @@ class MainWindowFrame(QMainWindow):
 
     def settings(self):
         settings_window = QDialog(parent=self)
-        settings_window.resize(500, 400)
+        settings_window.resize(650, 500)
         settings_window.setWindowTitle('Settings')
         settings_layout = QGridLayout()
         settings_window.setLayout(settings_layout)
@@ -392,26 +426,82 @@ class MainWindowFrame(QMainWindow):
 
         graphics = QPushButton('Graphics')
         graphics.setStyleSheet('text-align: left; padding-left: 2px')
-        graphics.clicked.connect(self.graphics_setting)
+        graphics.clicked.connect(self.graphicstab)
         side_panel_layout.addWidget(graphics)
         audio = QPushButton('Audio')
         audio.setStyleSheet('text-align: left; padding-left: 2px')
-        audio.clicked.connect(self.audio_setting)
+        audio.clicked.connect(self.audiotab)
         side_panel_layout.addWidget(audio)
         aspectratio = QPushButton('Window Aspect Ratio')
         aspectratio.setStyleSheet('text-align: left; padding-left: 2px')
-        aspectratio.clicked.connect(self.aspectratio_setting)
+        aspectratio.clicked.connect(self.aspectratiotab)
         side_panel_layout.addWidget(aspectratio)
         keybinds = QPushButton('Keybinds')
         keybinds.setStyleSheet('text-align: left; padding-left: 2px')
-        keybinds.clicked.connect(self.keybinds_setting)
+        keybinds.clicked.connect(self.keybindstab)
         side_panel_layout.addWidget(keybinds)
 
         main_panel = QFrame()
         main_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        main_panel_layout = QGridLayout()
-        main_panel.setLayout(main_panel_layout)
+        self.main_panel_layout = QStackedLayout()
+        main_panel.setLayout(self.main_panel_layout)
         settings_layout.addWidget(main_panel, 0, 1, 4, 4)
+
+        graphics_settings_panel = QFrame()
+        graphics_settings_panel_layout = QGridLayout()
+        graphics_settings_panel.setLayout(graphics_settings_panel_layout)
+        self.main_panel_layout.addWidget(graphics_settings_panel)
+        graphics_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+        graphics_settings_panel_label = QLabel()
+        graphics_settings_panel_label.setText("GRAPHICS")
+        graphics_settings_panel_label_font = QFont()
+        graphics_settings_panel_label_font.setPointSize(20)
+        graphics_settings_panel_label_font.setBold(True)
+        graphics_settings_panel_label_font.setItalic(True)
+        graphics_settings_panel_label.setFont(graphics_settings_panel_label_font)
+        graphics_settings_panel_layout.addWidget(graphics_settings_panel_label, 0, 0)
+
+        audio_settings_panel = QFrame()
+        audio_settings_panel_layout = QGridLayout()
+        audio_settings_panel.setLayout(audio_settings_panel_layout)
+        self.main_panel_layout.addWidget(audio_settings_panel)
+        audio_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+        audio_settings_panel_label = QLabel()
+        audio_settings_panel_label.setText("AUDIO")
+        audio_settings_panel_label_font = QFont()
+        audio_settings_panel_label_font.setPointSize(20)
+        audio_settings_panel_label_font.setBold(True)
+        audio_settings_panel_label_font.setItalic(True)
+        audio_settings_panel_label.setFont(audio_settings_panel_label_font)
+        audio_settings_panel_layout.addWidget(audio_settings_panel_label, 0, 0)
+
+        aspectratio_settings_panel = QFrame()
+        aspectratio_settings_panel_layout = QGridLayout()
+        aspectratio_settings_panel.setLayout(aspectratio_settings_panel_layout)
+        self.main_panel_layout.addWidget(aspectratio_settings_panel)
+        aspectratio_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+        aspectratio_settings_panel_label = QLabel()
+        aspectratio_settings_panel_label.setText("ASPECT RATIO")
+        aspectratio_settings_panel_label_font = QFont()
+        aspectratio_settings_panel_label_font.setPointSize(20)
+        aspectratio_settings_panel_label_font.setBold(True)
+        aspectratio_settings_panel_label_font.setItalic(True)
+        aspectratio_settings_panel_label.setFont(aspectratio_settings_panel_label_font)
+        aspectratio_settings_panel_layout.addWidget(aspectratio_settings_panel_label, 0, 0)
+
+        keybinds_settings_panel = QFrame()
+        keybinds_settings_panel_layout = QGridLayout()
+        keybinds_settings_panel.setLayout(keybinds_settings_panel_layout)
+        self.main_panel_layout.addWidget(keybinds_settings_panel)
+        keybinds_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+        keybinds_settings_panel_label = QLabel()
+        keybinds_settings_panel_label.setText("KEYBINDS")
+        keybinds_settings_panel_label_font = QFont()
+        keybinds_settings_panel_label_font.setPointSize(20)
+        keybinds_settings_panel_label_font.setBold(True)
+        keybinds_settings_panel_label_font.setItalic(True)
+        keybinds_settings_panel_label.setFont(keybinds_settings_panel_label_font)
+        keybinds_settings_panel_layout.addWidget(keybinds_settings_panel_label, 0, 0)
 
         apply_button = QPushButton('Apply')
         apply_button.clicked.connect(self.applysetting)
@@ -422,6 +512,18 @@ class MainWindowFrame(QMainWindow):
         settings_layout.addWidget(apply_button, 4, 4)
 
         settings_window.exec()
+
+    def graphicstab(self):
+        self.main_panel_layout.setCurrentIndex(0)
+
+    def audiotab(self):
+        self.main_panel_layout.setCurrentIndex(1)
+
+    def aspectratiotab(self):
+        self.main_panel_layout.setCurrentIndex(2)
+
+    def keybindstab(self):
+        self.main_panel_layout.setCurrentIndex(3)
 
     def mimir(self):
         info_window = QDialog(parent=self)
@@ -447,7 +549,7 @@ class MainWindowFrame(QMainWindow):
         side_panel_layout.addWidget(newton2)
         newton3 = QPushButton("Newton's Third Law")
         newton3.setStyleSheet('text-align: left; padding-left: 2px')
-        newton3.clicked.connect(self.aspectratio_setting)
+        newton3.clicked.connect(self.newton3)
         side_panel_layout.addWidget(newton3)
         kflopm = QPushButton("Kepler's First Law of\nPlanetary Motion")
         kflopm.setStyleSheet('QPushButton {text-align: left; padding-left: 2px; white-space: normal}')
@@ -502,18 +604,6 @@ class MainWindowFrame(QMainWindow):
         sys.exit()
 
     def applysetting(self):
-        pass
-
-    def graphics_setting(self):
-        pass
-
-    def audio_setting(self):
-        pass
-
-    def aspectratio_setting(self):
-        pass
-
-    def keybinds_setting(self):
         pass
 
     def showorbits(self):
