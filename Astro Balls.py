@@ -1,7 +1,7 @@
 import sys
 import os
 import pygame
-from PySide6.QtGui import QAction, Qt, QFont
+from PySide6.QtGui import QAction, Qt, QFont, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
     QScrollArea, QScrollBar
@@ -291,24 +291,29 @@ class MainWindowFrame(QMainWindow):
         menu = self.menuBar()
         app_menu = QMenu('&Application')
         savenew_action = QAction('&New Save', parent=self)
+        savenew_action.setIcon(QIcon('images/menubar symbol/plus.png'))
         savenew_action.triggered.connect(self.savenewfile)
         savenew_action.setShortcut('Ctrl+N')
         app_menu.addAction(savenew_action)
         save_action = QAction('&Save', parent=self)
+        save_action.setIcon(QIcon('images/menubar symbol/diskette.png'))
         save_action.triggered.connect(self.savefile)
         save_action.setShortcut('Ctrl+S')
         app_menu.addAction(save_action)
         open_action = QAction('&Open', parent=self)
+        open_action.setIcon(QIcon('images/menubar symbol/open-folder.png'))
         open_action.triggered.connect(self.openfile)
         open_action.setShortcut('Ctrl+O')
         app_menu.addAction(open_action)
         app_menu.addSeparator()
         settings_action = QAction('&Settings', parent=self)
+        settings_action.setIcon(QIcon('images/menubar symbol/cog.png'))
         settings_action.triggered.connect(self.settings)
         settings_action.setShortcut('Alt+S')
         app_menu.addAction(settings_action)
         app_menu.addSeparator()
         quit_action = QAction('&Quit', parent=self)
+        quit_action.setIcon(QIcon('images/menubar symbol/cross.png'))
         quit_action.triggered.connect(self.closeapp)
         quit_action.setShortcut('Alt+F4')
         app_menu.addAction(quit_action)
@@ -334,22 +339,23 @@ class MainWindowFrame(QMainWindow):
 
         help_menu = QMenu('&Help')
         keybinds_action = QAction('&Keybinds', parent=self)
+        keybinds_action.setIcon(QIcon('images/menubar symbol/space.png'))
         keybinds_action.triggered.connect(self.keybinds)
         keybinds_action.setShortcut('Alt+K')
         help_menu.addAction(keybinds_action)
-
-        guider_action = QAction('&Mímisbrunnr', parent=self)
-        guider_action.triggered.connect(self.mimir)
-        guider_action.setShortcut('Alt+M')
-        help_menu.addAction(guider_action)
-
-        info_action = QAction('&Guide', parent=self)
-        info_action.triggered.connect(self.guide)
-        info_action.setShortcut('Alt+G')
+        info_action = QAction('&Mímisbrunnr', parent=self)
+        info_action.setIcon(QIcon('images/menubar symbol/book.png'))
+        info_action.triggered.connect(self.mimir)
+        info_action.setShortcut('Alt+M')
         help_menu.addAction(info_action)
-
+        guider_action = QAction('&Guide', parent=self)
+        guider_action.setIcon(QIcon('images/menubar symbol/up-arrow.png'))
+        guider_action.triggered.connect(self.guide)
+        guider_action.setShortcut('Alt+G')
+        help_menu.addAction(guider_action)
         help_menu.addSeparator()
         htui_action = QAction('&About Astro Balls', parent=self)
+        htui_action.setIcon(QIcon('images/menubar symbol/question-mark.png'))
         htui_action.triggered.connect(self.htui)
         htui_action.setShortcut('Alt+H')
         help_menu.addAction(htui_action)
