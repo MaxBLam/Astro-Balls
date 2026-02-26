@@ -774,3 +774,4 @@ app = QApplication(sys.argv)
 mw = MainWindowFrame()
 mw.show()
 app.exec()
+
