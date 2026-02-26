@@ -4,92 +4,58 @@ import pygame
 from PySide6.QtGui import QAction, Qt, QFont, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy
 from PySide6.QtCore import QTimer
 import euclid
 import math
 
-from pygame.mixer_music import set_pos
-
-
-class Objets:
-
-    @staticmethod
-    def terre():
-        terre = {
-            "masse" : 10,
-            "rayon" : 10,
-            "couleur" : (0,0,255),
-            "position" : euclid.Vector2(800, 100),
-            "vitesse" : euclid.Vector2(0,0)
-        }
-        return terre
-
-    @staticmethod
-    def lune():
-        lune = {
-            "masse" : 1,
-            "rayon" : 2,
-            "couleur" : (200,200,200),
-            "position" : euclid.Vector2(815, 85),
-            "vitesse" : euclid.Vector2(0,0)
-        }
-        return lune
-
-    @staticmethod
-    def soleil():
-        soleil = {
-            "masse" : 500,
-            "rayon" : 50,
-            "couleur" : (255,222,0),
-            "position" : euclid.Vector2(600, 300),
-            "vitesse" : euclid.Vector2(0,0)
-            }
-        return soleil
-
-
-class Display:
-    def __init__(self, position, couleur, rayon, vitesse=euclid.Vector2(0,0)):
-        self.position = position
-        self.vitesse = vitesse
-        self.couleur = couleur
-        self.rayon = rayon
-
-    def mouvement(self, acceleration, dtime):
-        self.vitesse += acceleration * dtime
-        self.position += self.vitesse * dtime
-
-    def display(self, surface):
-        rx, ry = int(self.position.x), int(self.position.y)
-        pygame.draw.circle(surface, self.couleur, (rx,ry), self.rayon)
-
-
 class PyGameWidget(QWidget):
-    def __init__(self):
+    def __init__(self, planet_id):
         super().__init__()
 
         os.environ['SDL_WINDOWID'] = str(int(self.winId()))
         os.environ['SDL_VIDEODRIVER'] = 'windows'
         pygame.init()
-        self.setMinimumSize(1200, 600)
-        self.playscreen = pygame.display.set_mode((1200, 600))
-        self.clock = pygame.time.Clock()
-
-        self.G = 1000
-        self.vitesse_simulation = 1
-        self.terre = Objets.terre()
-        self.soleil = Objets.soleil()
-        self.lune = Objets.lune()
-
-        self.terre["vitesse"] = self.vitesse_gravitationnelle(self.soleil, self.terre)
-        self.lune["vitesse"] = self.vitesse_gravitationnelle(self.terre, self.lune) + self.terre["vitesse"]
-        self.display_terre = Display(self.terre['position'], self.terre['couleur'], self.terre['rayon'], self.terre['vitesse'])
-        self.display_lune = Display(self.lune['position'], self.lune['couleur'], self.lune['rayon'], self.lune['vitesse'])
-        self.display_sun = Display(self.soleil['position'], self.soleil['couleur'], self.soleil['rayon'], self.soleil['vitesse'])
 
         self.timer = QTimer()
-        self.timer.timeout.connect(self.game_loop)
         self.timer.start(16)
+
+        self.vitesse_simulation = 2
+        self.playscreen = pygame.display.set_mode(size=(0,0))
+
+        self.x, self.y = self.playscreen.get_size()
+        self.y = 1200
+
+        self.G = 100
+        fps_limit = 60
+        self.dtime = fps_limit/1000 * self.vitesse_simulation
+
+        self.planet_id = planet_id
+        self.obj_terre = self.terre_objet()
+        self.obj_lune = self.lune_objet()
+        self.obj_soleil = self.soleil_objet()
+
+        self.timer.timeout.connect(self.update_size)
+        self.timer.timeout.connect(self.game_loop)
+
+    def update_size(self):
+        pygame.display.update()
+        self.x, self.y = pygame.display.get_window_size()
+
+    def simulation_objet_central(self, objet_central, objet_orbite1, objet_orbite2):
+        objet_central["nom objet"] = "objet_central"
+
+        objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(objet_central, objet_orbite1)
+        objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(objet_orbite1, objet_orbite2) + objet_orbite1["vitesse"]
+        acc_objet_central = euclid.Vector2(0,0)
+        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(objet_orbite2, objet_central)
+
+        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets_update = self.mouvement(list_objets)
+
+        self.display(list_objets_update)
+
 
     def force_gravitationnelle(self, obj1, obj2):
         d_vecteur = obj2["position"] - obj1["position"]
@@ -108,25 +74,85 @@ class PyGameWidget(QWidget):
         v_orbitale = v_orbitale * tangente
         return v_orbitale
 
-    def game_loop(self):
-        dtime = (1/60)*self.vitesse_simulation
-        fps_limit = 120
-        acc_terre = self.force_gravitationnelle(self.terre, self.soleil)
-        acc_lune = (self.force_gravitationnelle(self.lune, self.terre)+self.force_gravitationnelle(self.lune, self.soleil))
 
-        self.display_terre.mouvement(acc_terre, dtime)
-        self.display_lune.mouvement(acc_lune, dtime)
-        self.terre['position'] = self.display_terre.position
-        self.lune['position'] = self.display_lune.position
-        self.terre['vitesse'] = self.display_terre.vitesse
-        self.lune['vitesse'] = self.display_lune.vitesse
+    def mouvement(self, objets): # objet[0] = objet, objet[1] = acc_objet
+        list_objets_update = []
 
+        for objet in objets:
+            objet[0]["vitesse"] += objet[1] * self.dtime
+            objet[0]["position"] += objet[0]["vitesse"] * self.dtime
+            list_objets_update.append(objet)
+
+        return list_objets_update
+
+    def pos_objet_orbite(self, pos):
+        world_x = pos.x
+        world_y = pos.y
+
+        new_world_x = self.x / 2 + world_x
+        new_world_y = self.y / 2 + world_y
+
+        return new_world_x, new_world_y
+
+    def display(self, objets : list):
         self.playscreen.fill((0, 0, 0))
-        self.display_sun.display(self.playscreen)
-        self.display_lune.display(self.playscreen)
-        self.display_terre.display(self.playscreen)
+
+        for objet in objets:
+            if objet[0]["nom objet"] == "objet_central":
+                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (self.x/2, self.y/2), objet[0]["rayon"])
+            else:
+                rx, ry = self.pos_objet_orbite(objet[0]["position"])
+                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (rx, ry), objet[0]["rayon"])
+
+        border_color = (255, 0, 0)  # red border
+        border_thickness = 2  # pixels
+        pygame.draw.rect(
+            self.playscreen,
+            border_color,
+            pygame.Rect(0, 0, self.x, self.y),
+            border_thickness
+        )
+
         pygame.display.update()
-        self.clock.tick(60)
+
+    @staticmethod
+    def terre_objet():
+        terre = {
+            "nom objet": "terre",
+            "masse": 10,
+            "rayon": 10,
+            "couleur": (0, 0, 255),
+            "position": euclid.Vector2(300, 0),
+            "vitesse": euclid.Vector2(0,0)
+        }
+        return terre
+
+    @staticmethod
+    def soleil_objet():
+        soleil = {
+            "nom objet": "terre",
+            "masse": 500,
+            "rayon": 50,
+            "couleur": (255, 222, 0),
+            "position": euclid.Vector2(0,0),
+            "vitesse": euclid.Vector2(0,0)
+        }
+        return soleil
+
+    @staticmethod
+    def lune_objet():
+        lune = {
+            "nom objet": "terre",
+            "masse": 1,
+            "rayon": 2,
+            "couleur": (200, 200, 200),
+            "position": euclid.Vector2(340, 0),
+            "vitesse": euclid.Vector2(0,0)
+        }
+        return lune
+
+    def game_loop(self):
+        self.simulation_objet_central(self.obj_soleil, self.obj_terre, self.obj_lune)
 
 
 class DragNDrop(QDockWidget):
@@ -262,8 +288,7 @@ class StatsDock(QDockWidget):
         temp_unit.view().setFixedWidth(40)
         mid_panel_layout.addWidget(temp_unit, 9, 1)
 
-        kms, ms, cms, kmh, mh, cmh, mls, yards, fts, inchs, mlh, yardh, fth, inchh = 'km/s', 'm/s', 'cm/s', 'km/h', 'm/h', 'cm/h', 'ml/s', 'yd/s', 'ft/s', 'inch/s', 'ml/h', 'yd/h', 'ft/h', 'inch/h'
-        momentum_lst = [kms, ms, cms, kmh, mh, cmh, mls, yards, fts, inchs, mlh, yardh, fth, inchh]
+        momentum_lst = ['km/s', 'm/s', 'cm/s', 'km/h', 'm/h', 'cm/h', 'ml/s', 'yd/s', 'ft/s', 'inch/s', 'ml/h', 'yd/h', 'ft/h', 'inch/h']
 
         rotation_label = QLabel('Rotational Momentum')
         mid_panel_layout.addWidget(rotation_label, 10, 0, 1, 2)
@@ -318,15 +343,26 @@ class StatsDock(QDockWidget):
 class MainWindowFrame(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.resize(1200, 600)
         self.setWindowTitle('Astro Balls')
-        self.setCentralWidget(PyGameWidget())
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        # Layout inside central widget
+        layout = QVBoxLayout(central_widget)
+
+        # Add your PyGameWidget
+        game_widget = PyGameWidget([1, 2, 3])
+        game_widget.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
+        layout.addWidget(game_widget)
 
         menu = self.menuBar()
         app_menu = QMenu('&Application')
         savenew_action = QAction('&New Save', parent=self)
         savenew_action.setIcon(QIcon('images/menubar symbol/plus.png'))
-        savenew_action.triggered.connect(self.savenewfile)
+        savenew_action.triggered.connect(self.newsavefile)
         savenew_action.setShortcut('Ctrl+N')
         app_menu.addAction(savenew_action)
         save_action = QAction('&Save', parent=self)
@@ -595,7 +631,7 @@ class MainWindowFrame(QMainWindow):
     def openfile(self):
         pass
 
-    def savenewfile(self):
+    def newsavefile(self):
         pass
 
     def closeapp(self):
