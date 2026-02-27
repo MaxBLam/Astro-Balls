@@ -27,9 +27,9 @@ class PyGameWidget(QWidget):
 
         self.keys_pressed = set()
 
-        fps_simulation = 120
+        self.fps_simulation = 120
         self.timer = QTimer()
-        self.timer.start(1000 // fps_simulation)
+        self.timer.start(1000 // self.fps_simulation)
 
         self.playscreen = pygame.display.set_mode(size=(0, 0))
         self.x, self.y = self.playscreen.get_size()
@@ -40,9 +40,9 @@ class PyGameWidget(QWidget):
 
         self.G = 100
         self.simulation = 1
-        self.vitesse_simulation = 0
+        self.vitesse_simulation = 1
         facteur_ellipse = 0.5  # <1 pour une ellipse
-        self.dtime = 1 / fps_simulation * (self.vitesse_simulation+1)
+        self.dtime = 1 / self.fps_simulation
 
         if self.simulation == 1:
             self.objet_central = self.liste_objets[0]
@@ -81,10 +81,9 @@ class PyGameWidget(QWidget):
 
         self.timer.timeout.connect(self.game_loop)
 
-    def speed_interactive(self, value):
+    def speed_interactive(self, value : int):
         self.vitesse_simulation = value
-        fps_simulation = 120
-        self.dtime = fps_simulation / 1000 * (self.vitesse_simulation + 1)
+        self.dtime = 1 / self.fps_simulation * self.vitesse_simulation
 
     def initialiser_objets(self, planet_id):
 
@@ -683,9 +682,10 @@ class MainWindowFrame(QMainWindow):
         self.timer_scope.setWindowTitle('Timer')
 
         self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
-        self.time_slider.setRange(1, 100)
-        self.time_slider.setTickInterval(25)
-        self.time_slider.setSingleStep(25)
+        self.time_slider.setRange(0, 100)
+        self.time_slider.setValue(1)
+        self.time_slider.setTickInterval(5)
+        self.time_slider.setSingleStep(5)
         self.time_slider.setTickPosition(QSlider.TicksAbove)
         timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
         self.time_slider.valueChanged.connect(self.update_timerscope)
@@ -724,10 +724,10 @@ class MainWindowFrame(QMainWindow):
             self.timer_state.blockSignals(False)
 
     def backward_timescope(self):
-        self.time_slider.setValue(self.time_slider.value() - 25)
+        self.time_slider.setValue(self.time_slider.value() - 2)
 
     def forward_timescope(self):
-        self.time_slider.setValue(self.time_slider.value() + 25)
+        self.time_slider.setValue(self.time_slider.value() + 2)
 
     @staticmethod
     def customcheckbox(func_name, method):
