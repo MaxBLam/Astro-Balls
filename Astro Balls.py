@@ -185,6 +185,7 @@ class PyGameWidget(QWidget):
         self.measuringtape_state = state
         if not state:
             self.point.clear()
+            self.measuring_updater_signal.emit()
 
     def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
@@ -218,6 +219,11 @@ class PyGameWidget(QWidget):
         for objet in objets:
             rx, ry = self.pos_objet_orbite(objet[0]["position"])
             pygame.draw.circle(self.playscreen, objet[0]["couleur"], (rx, ry), objet[0]["rayon"])
+
+        for j in self.point:
+            pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
+        if len(self.point) == 2:
+            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
@@ -293,6 +299,9 @@ class PyGameWidget(QWidget):
         if self.simulation == 1:
             self.simulation_objet_central_3corps(self.objet_central, self.objet_orbite1, self.objet_orbite2)
 
+            if self.measuringtape_state:
+                self.measuringtape()
+
         elif self.simulation == 2:
             self.simulation_2corps(self.objet_orbite1, self.objet_orbite2)
 
@@ -302,8 +311,6 @@ class PyGameWidget(QWidget):
             pass
         else:
             pass
-        if self.measuringtape_state:
-            self.measuringtape()
 
 
 class DragNDrop(QDockWidget):
