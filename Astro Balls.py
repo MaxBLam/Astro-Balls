@@ -513,7 +513,6 @@ class MainWindowFrame(QMainWindow):
         self.angle = None
         self.timer_scope = None
         self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
-        self.measuring_window = None
 
         layout = QVBoxLayout(central_widget)
         self.game_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -553,34 +552,34 @@ class MainWindowFrame(QMainWindow):
 
         view_menu = QMenu('&View')
         orbits_action = QWidgetAction(view_menu)
-        orbits_view = self.customcheckbox(func_name='Orbits', method=self.showorbits)
+        orbits_view = self.customcheckbox(func_name='Orbits', method=self.showorbits)[0]
         orbits_action.setDefaultWidget(orbits_view)
         view_menu.addAction(orbits_action)
         orbitsinfo_action = QWidgetAction(view_menu)
-        orbitsinfo_view = self.customcheckbox(func_name='Orbits Info', method=self.showorbitinfo)
+        orbitsinfo_view = self.customcheckbox(func_name='Orbits Info', method=self.showorbitinfo)[0]
         orbitsinfo_action.setDefaultWidget(orbitsinfo_view)
         view_menu.addAction(orbitsinfo_action)
         scale_action = QWidgetAction(view_menu)
-        scale_view = self.customcheckbox(func_name='Scale Slider', method=self.scaleslider)
+        scale_view = self.customcheckbox(func_name='Scale Slider', method=self.scaleslider)[0]
         scale_action.setDefaultWidget(scale_view)
         view_menu.addAction(scale_action)
         menu.addMenu(view_menu)
         self.timer_action = QWidgetAction(view_menu)
-        timer_view = self.customcheckbox(func_name='Time', method=self.timerscope)
+        timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
         self.timer_action.setDefaultWidget(timer_view)
         view_menu.addAction(self.timer_action)
         menu.addMenu(view_menu)
         vector_menu = view_menu.addMenu('Vectors')
         orbits_vector = QWidgetAction(vector_menu)
-        orbits_vector_view = self.customcheckbox(func_name='Orbital Vectors', method=self.showorbitvector)
+        orbits_vector_view = self.customcheckbox(func_name='Orbital Vectors', method=self.showorbitvector)[0]
         orbits_vector.setDefaultWidget(orbits_vector_view)
         vector_menu.addAction(orbits_vector)
         force_vector = QWidgetAction(vector_menu)
-        force_vector_view = self.customcheckbox(func_name='Force Vectors', method=self.showforcevector)
+        force_vector_view = self.customcheckbox(func_name='Force Vectors', method=self.showforcevector)[0]
         force_vector.setDefaultWidget(force_vector_view)
         vector_menu.addAction(force_vector)
         rotational_vector = QWidgetAction(vector_menu)
-        rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)
+        rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)[0]
         rotational_vector.setDefaultWidget(rotational_vector_view)
         vector_menu.addAction(rotational_vector)
 
@@ -658,6 +657,7 @@ class MainWindowFrame(QMainWindow):
             measuring_window_layout.addWidget(cancelbutton, 3, 0, 1, 2)
 
             self.measuring_window.finished.connect(lambda: setattr(self, 'measuring_window', None))
+            self.measuring_window.finished.connect(lambda: self.game_widget.toggle_measuringtape(False))
             self.measuring_window.show()
 
     def update_measuringtape(self):
@@ -703,6 +703,7 @@ class MainWindowFrame(QMainWindow):
         self.timer_scope.setFixedHeight(120)
         self.splitDockWidget(self.statsdock, self.timer_scope, Qt.Vertical)
 
+        self.timer_scope.visibilityChanged.connect(self.timerscope_close)
         self.timer_scope.show()
 
     def update_timerscope(self):
@@ -714,6 +715,11 @@ class MainWindowFrame(QMainWindow):
         x_pos_parent = self.time_slider.x() + x_pos - (self.timescope_label.width() // 2)
         y_pos = self.time_slider.y() - 15
         self.timescope_label.move(int(x_pos_parent), int(y_pos))
+
+    def timerscope_close(self, active):
+        self.timer_state.blockSignals(True)
+        self.timer_state.setChecked(active)
+        self.timer_state.blockSignals(False)
 
     def backward_timescope(self):
         self.time_slider.setValue(self.time_slider.value() - 25)
@@ -729,7 +735,7 @@ class MainWindowFrame(QMainWindow):
         checkbox.toggled.connect(method)
         view_layout.addWidget(checkbox)
         view_widget.setLayout(view_layout)
-        return view_widget
+        return view_widget, checkbox
 
     def settings(self):
         settings_window = QDialog(parent=self)
