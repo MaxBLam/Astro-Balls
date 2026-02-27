@@ -1,10 +1,11 @@
+import random
 import sys
 import os
 import pygame
 from PySide6.QtGui import QAction, Qt, QFont, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider
 from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
@@ -12,49 +13,136 @@ import math
 
 class PyGameWidget(QWidget):
     measuring_updater_signal = Signal()
-
     def __init__(self, planet_id):
         super().__init__()
 
         self.point = []
         self.measuringtape_state = False
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocus()
+
         os.environ['SDL_WINDOWID'] = str(int(self.winId()))
         os.environ['SDL_VIDEODRIVER'] = 'windows'
         pygame.init()
+
+        self.keys_pressed = set()
+
+        fps_simulation = 120
         self.timer = QTimer()
-        self.timer.start(16)
-        self.vitesse_simulation = 2
-        self.playscreen = pygame.display.set_mode(size=(0,0))
+        self.timer.start(1000 // fps_simulation)
+
+        self.playscreen = pygame.display.set_mode(size=(0, 0))
         self.x, self.y = self.playscreen.get_size()
-        self.y = 1200
+
+        """ INITIALIZATION DES PARAMÈTRES DE LA SIMULATION """
+        self.planet_id = planet_id  # [1,2,3,1,2,3,1,2,1,2,3,1,2,3,1,1,2,3,1,2]
+        self.liste_objets = self.initialiser_objets(self.planet_id)
+
         self.G = 100
-        fps_limit = 120
-        self.dtime = fps_limit/1000 * self.vitesse_simulation
+        self.simulation = 1
+        self.vitesse_simulation = 0
+        facteur_ellipse = 0.5  # <1 pour une ellipse
+        self.dtime = 1 / fps_simulation * (self.vitesse_simulation+1)
 
-        self.planet_id = planet_id
-        self.obj_terre = self.terre_objet()
-        self.obj_lune = self.lune_objet()
-        self.obj_soleil = self.soleil_objet()
+        if self.simulation == 1:
+            self.objet_central = self.liste_objets[0]
+            self.objet_orbite1 = self.liste_objets[1]
+            self.objet_orbite2 = self.liste_objets[2]
 
-        self.timer.timeout.connect(self.update_size)
+            self.objet_central["position"] = euclid.Vector2(0, 0)
+            self.objet_orbite1["position"] = euclid.Vector2(500, 0)
+            self.objet_orbite2["position"] = euclid.Vector2(550, 0)
+            self.camera_target_pos = self.objet_central["position"]
+
+            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_central,
+                                                                          self.objet_orbite1) * facteur_ellipse
+            self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2) + \
+                                            self.objet_orbite1["vitesse"]
+
+        elif self.simulation == 2:
+            self.objet_orbite1 = self.liste_objets[1]
+            self.objet_orbite2 = self.liste_objets[2]
+
+            self.objet_orbite1["position"] = euclid.Vector2(random.randint(-200, 0), random.randint(-200, 0))
+            self.objet_orbite2["position"] = euclid.Vector2(random.randint(0, 200), random.randint(0, 200))
+
+            self.camera_target_pos = self.objet_orbite1["position"]
+
+            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite2,
+                                                                          self.objet_orbite1) * facteur_ellipse
+            self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2)
+
+        self.f_pressed_handled = False
+        self.camera_pos = euclid.Vector2(0, 0)
+        self.camera_milieu_pos = euclid.Vector2(0, 0)
+        self.camera_mode = "milieu"  # "free", "follow", "milieu"
+
+        """FIN INITIALIZATION DE LA SIMULATION """
+
         self.timer.timeout.connect(self.game_loop)
+
+    def speed_interactive(self, value):
+        self.vitesse_simulation = value
+        fps_simulation = 120
+        self.dtime = fps_simulation / 1000 * (self.vitesse_simulation + 1)
+
+    def initialiser_objets(self, planet_id):
+
+        dict_planete = {
+            1: self.terre_objet(),
+            2: self.soleil_objet(),
+            3: self.lune_objet()
+        }
+        compteurs = {"terre": 0, "soleil": 0, "lune": 0}
+
+        objets = []
+
+        for id in planet_id:
+            if id not in dict_planete:
+                continue
+            nom_base = dict_planete[id]["nom objet"]  # copier le nom original
+            compteurs[nom_base] += 1
+            # créer un nouvel objet avec le nom modifié
+            objet = dict_planete[id].copy()
+            objet["nom objet"] = f"{nom_base}{compteurs[nom_base]}"
+
+            objets.append(objet)
+        return objets
+
+    def keyPressEvent(self, event):
+        self.keys_pressed.add(event.key())
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() in self.keys_pressed:
+            self.keys_pressed.remove(event.key())
+        super().keyReleaseEvent(event)
 
     def update_size(self):
         pygame.display.update()
         self.x, self.y = pygame.display.get_window_size()
 
-    def simulation_objet_central(self, objet_central, objet_orbite1, objet_orbite2):
-        objet_central["nom objet"] = "objet_central"
-
-        objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(objet_central, objet_orbite1)
-        objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(objet_orbite1, objet_orbite2) + objet_orbite1["vitesse"]
-        acc_objet_central = euclid.Vector2(0,0)
+    def simulation_objet_central_3corps(self, objet_central, objet_orbite1, objet_orbite2):
+        acc_objet_central = euclid.Vector2(0, 0)
         acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central)
-        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(objet_orbite2, objet_central)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(
+            objet_orbite2, objet_central)
 
-        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1),
+                       (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
+        self.camera_milieu_pos = (self.objet_orbite1["position"] + self.objet_central["position"]) / 2
+        self.display(list_objets_update)
+
+    def simulation_2corps(self, objet_orbite1, objet_orbite2):
+        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_orbite2)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1)
+
+        list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets_update = self.mouvement(list_objets)
+
+        self.camera_milieu_pos = (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
         self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2):
@@ -76,10 +164,13 @@ class PyGameWidget(QWidget):
 
     @staticmethod
     def pythagoras(pos):
-        height = pos[1][1] - pos[0][1]
-        length = pos[1][0] - pos[0][0]
-        hypotenus = math.sqrt((height * math.exp(2)) + length * math.exp(2))
-        return str(round(hypotenus, 2))
+        max_height, min_height = max([pos[0][1], pos[1][1]]), min([pos[0][1], pos[1][1]])
+        max_length, min_length = max([pos[0][0], pos[1][0]]), min([pos[0][0], pos[1][0]])
+        height = max_height - min_height
+        length = max_length - min_length
+        hypotenus = math.sqrt((height ** 2 + length ** 2))
+        theta = math.degrees(math.atan2(height, length))
+        return round(hypotenus, 2), round(theta, 2)
 
     def measuringtape(self):
         for i in pygame.event.get():
@@ -90,17 +181,12 @@ class PyGameWidget(QWidget):
                     self.point = self.point[-2:]
                     self.measuring_updater_signal.emit()
 
-        for j in self.point:
-            pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
-        if len(self.point) == 2:
-            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
-
     def toggle_measuringtape(self, state: bool):
         self.measuringtape_state = state
         if not state:
             self.point.clear()
 
-    def mouvement(self, objets): # objet[0] = objet, objet[1] = acc_objet
+    def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
 
         for objet in objets:
@@ -111,23 +197,27 @@ class PyGameWidget(QWidget):
         return list_objets_update
 
     def pos_objet_orbite(self, pos):
-        world_x = pos.x
-        world_y = pos.y
+        relative = pos - self.camera_pos
 
-        new_world_x = self.x / 2 + world_x
-        new_world_y = self.y / 2 + world_y
+        new_world_x = self.x / 2 + relative.x
+        new_world_y = self.y / 2 + relative.y
 
         return new_world_x, new_world_y
 
-    def display(self, objets : list):
+    def changer_vue(self):
+        if self.camera_mode == "free":
+            self.camera_mode = "follow"
+        elif self.camera_mode == "follow":
+            self.camera_mode = "milieu"
+        elif self.camera_mode == "milieu":
+            self.camera_mode = "free"
+
+    def display(self, objets: list):  # objet[0] = objet, objet[1] = acc_objet
         self.playscreen.fill((0, 0, 0))
 
         for objet in objets:
-            if objet[0]["nom objet"] == "objet_central":
-                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (self.x/2, self.y/2), objet[0]["rayon"])
-            else:
-                rx, ry = self.pos_objet_orbite(objet[0]["position"])
-                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (rx, ry), objet[0]["rayon"])
+            rx, ry = self.pos_objet_orbite(objet[0]["position"])
+            pygame.draw.circle(self.playscreen, objet[0]["couleur"], (rx, ry), objet[0]["rayon"])
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
@@ -147,37 +237,71 @@ class PyGameWidget(QWidget):
             "masse": 10,
             "rayon": 10,
             "couleur": (0, 0, 255),
-            "position": euclid.Vector2(300, 0),
-            "vitesse": euclid.Vector2(0,0)
+            "vitesse": euclid.Vector2(0, 0)
         }
         return terre
 
     @staticmethod
     def soleil_objet():
         soleil = {
-            "nom objet": "terre",
+            "nom objet": "soleil",
             "masse": 500,
             "rayon": 50,
             "couleur": (255, 222, 0),
-            "position": euclid.Vector2(0,0),
-            "vitesse": euclid.Vector2(0,0)
+            "vitesse": euclid.Vector2(0, 0)
         }
         return soleil
 
     @staticmethod
     def lune_objet():
         lune = {
-            "nom objet": "terre",
+            "nom objet": "lune",
             "masse": 1,
             "rayon": 2,
             "couleur": (200, 200, 200),
-            "position": euclid.Vector2(340, 0),
-            "vitesse": euclid.Vector2(0,0)
+            "vitesse": euclid.Vector2(0, 0)
         }
         return lune
 
     def game_loop(self):
-        self.simulation_objet_central(self.obj_soleil, self.obj_terre, self.obj_lune)
+        if Qt.Key_F in self.keys_pressed:
+            if not self.f_pressed_handled:
+                self.changer_vue()
+                self.f_pressed_handled = True
+        else:
+            self.f_pressed_handled = False
+
+        speed = 3
+        if Qt.Key_Shift in self.keys_pressed:
+            speed = 10
+
+        if self.camera_mode == "free":
+            if Qt.Key_A in self.keys_pressed:
+                self.camera_pos.x -= speed
+            if Qt.Key_D in self.keys_pressed:
+                self.camera_pos.x += speed
+            if Qt.Key_W in self.keys_pressed:
+                self.camera_pos.y -= speed
+            if Qt.Key_S in self.keys_pressed:
+                self.camera_pos.y += speed
+        elif self.camera_mode == "follow":
+            self.camera_pos = self.camera_target_pos + euclid.Vector2(1, 1)
+        elif self.camera_mode == "milieu":
+            self.camera_pos = self.camera_milieu_pos
+
+        self.update_size()
+        if self.simulation == 1:
+            self.simulation_objet_central_3corps(self.objet_central, self.objet_orbite1, self.objet_orbite2)
+
+        elif self.simulation == 2:
+            self.simulation_2corps(self.objet_orbite1, self.objet_orbite2)
+
+        elif self.simulation == 3:
+            pass
+        elif self.simulation == 4:
+            pass
+        else:
+            pass
         if self.measuringtape_state:
             self.measuringtape()
 
@@ -370,6 +494,7 @@ class StatsDock(QDockWidget):
 class MainWindowFrame(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.timescope_label = None
         self.setWindowTitle('Astro Balls')
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -378,6 +503,8 @@ class MainWindowFrame(QMainWindow):
         self.seconddotcoo = None
         self.measuring_window = None
         self.distance = None
+        self.angle = None
+        self.timer_scope = None
         self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
         self.measuring_window = None
 
@@ -431,18 +558,20 @@ class MainWindowFrame(QMainWindow):
         scale_action.setDefaultWidget(scale_view)
         view_menu.addAction(scale_action)
         menu.addMenu(view_menu)
-
+        self.timer_action = QWidgetAction(view_menu)
+        timer_view = self.customcheckbox(func_name='Time', method=self.timerscope)
+        self.timer_action.setDefaultWidget(timer_view)
+        view_menu.addAction(self.timer_action)
+        menu.addMenu(view_menu)
         vector_menu = view_menu.addMenu('Vectors')
         orbits_vector = QWidgetAction(vector_menu)
         orbits_vector_view = self.customcheckbox(func_name='Orbital Vectors', method=self.showorbitvector)
         orbits_vector.setDefaultWidget(orbits_vector_view)
         vector_menu.addAction(orbits_vector)
-
         force_vector = QWidgetAction(vector_menu)
         force_vector_view = self.customcheckbox(func_name='Force Vectors', method=self.showforcevector)
         force_vector.setDefaultWidget(force_vector_view)
         vector_menu.addAction(force_vector)
-
         rotational_vector = QWidgetAction(vector_menu)
         rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)
         rotational_vector.setDefaultWidget(rotational_vector_view)
@@ -490,29 +619,36 @@ class MainWindowFrame(QMainWindow):
         if self.measuring_window is None:
             self.measuring_window = QDialog(parent=self)
             self.measuring_window.setWindowTitle('Measuring Tool')
-            self.measuring_window.resize(170, 70)
+            self.measuring_window.resize(180, 70)
             measuring_window_layout = QGridLayout(self.measuring_window)
             measuring_window_layout.setSpacing(10)
 
-            self.firstdotcoo = QLabel(f'Coordinate of dot #1: ')
-            self.seconddotcoo = QLabel(f'Coordinate of dot #2: ')
+            self.firstdotcoo = QLabel(f'Dot #1: ')
+            self.seconddotcoo = QLabel(f'Dot #2: ')
             measuring_window_layout.addWidget(self.firstdotcoo, 0, 0)
-            measuring_window_layout.addWidget(self.seconddotcoo, 1, 0)
-            self.distance = QLabel()
+            measuring_window_layout.addWidget(self.seconddotcoo, 0, 1)
             line_sep = QFrame()
             line_sep.setFrameStyle(QFrame.Shape.HLine)
             line_sep.setStyleSheet('background-color: #444444')
-            measuring_window_layout.addWidget(line_sep, 2, 0, 1, 2)
-            self.distance.setText(f' Distance Selected: U')
+            line_sep.setFixedHeight(1)
+            measuring_window_layout.addWidget(line_sep, 1, 0, 1, 2)
+            self.distance = QLabel()
+            self.distance.setText(f' Distance:\n0U')
             distance_txt_font = QFont()
             distance_txt_font.setBold(True)
             self.distance.setFont(distance_txt_font)
-            measuring_window_layout.addWidget(self.distance, 3, 0)
+            measuring_window_layout.addWidget(self.distance, 2, 0)
+            self.angle = QLabel()
+            self.angle.setText(f' Angle:\n0°')
+            angle_txt_font = QFont()
+            angle_txt_font.setBold(True)
+            self.angle.setFont(angle_txt_font)
+            measuring_window_layout.addWidget(self.angle, 2, 1)
 
             cancelbutton = QPushButton('Cancel')
             cancelbutton.clicked.connect(self.game_widget.toggle_measuringtape)
             cancelbutton.clicked.connect(self.measuring_window.close)
-            measuring_window_layout.addWidget(cancelbutton, 4, 0, 1, 2)
+            measuring_window_layout.addWidget(cancelbutton, 3, 0, 1, 2)
 
             self.measuring_window.finished.connect(lambda: setattr(self, 'measuring_window', None))
             self.measuring_window.show()
@@ -521,14 +657,62 @@ class MainWindowFrame(QMainWindow):
         if self.measuring_window is None:
             return
         if len(self.game_widget.point) >= 1:
-            self.firstdotcoo.setText(f"Coordinate of dot #1: {self.game_widget.point[0]}")
+            self.firstdotcoo.setText(f"Dot #1:\n{self.game_widget.point[0]}")
         else:
-            self.firstdotcoo.setText("Coordinate of dot #1:")
+            self.firstdotcoo.setText("Dot #1:")
         if len(self.game_widget.point) == 2:
-            self.seconddotcoo.setText(f"Coordinate of dot #2: {self.game_widget.point[1]}")
-            self.distance.setText(f"Distance Selected: {self.game_widget.pythagoras(self.game_widget.point)}U")
+            self.seconddotcoo.setText(f"Dot #2:\n{self.game_widget.point[1]}")
+            self.distance.setText(f"Distance:\n{self.game_widget.pythagoras(self.game_widget.point)[0]}U")
+            self.angle.setText(f"Angle:\n{self.game_widget.pythagoras(self.game_widget.point)[1]}°")
         else:
-            self.seconddotcoo.setText("Coordinate of dot #2:")
+            self.seconddotcoo.setText("Dot #2:")
+
+    def timerscope(self):
+        self.timer_scope = QDockWidget(parent=self)
+        timerscope_container = QWidget()
+        timerscope_widget = QGridLayout(timerscope_container)
+        self.timer_scope.setWidget(timerscope_container)
+        self.timer_scope.setWindowTitle('Timer')
+
+        self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
+        self.time_slider.setRange(1, 100)
+        self.time_slider.setTickInterval(25)
+        self.time_slider.setSingleStep(25)
+        self.time_slider.setTickPosition(QSlider.TicksAbove)
+        timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
+        self.time_slider.valueChanged.connect(self.update_timerscope)
+        self.time_slider.valueChanged.connect(self.game_widget.speed_interactive)
+        self.timescope_label = QLabel('', timerscope_container)
+
+        backward_button = QPushButton('Backward')
+        backward_button.clicked.connect(self.backward_timescope)
+        timerscope_widget.addWidget(backward_button, 1, 0)
+
+        forward_button = QPushButton('Forward')
+        forward_button.clicked.connect(self.forward_timescope)
+        timerscope_widget.addWidget(forward_button, 1, 1)
+
+        self.timer_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.timer_scope.setFixedHeight(120)
+        self.splitDockWidget(self.statsdock, self.timer_scope, Qt.Vertical)
+
+        self.timer_scope.show()
+
+    def update_timerscope(self):
+        self.timescope_label.setText(f'X{self.time_slider.value()}')
+        self.timescope_label.adjustSize()
+        ratio = (self.time_slider.value() - self.time_slider.minimum()) / (
+                    self.time_slider.maximum() - self.time_slider.minimum())
+        x_pos = 16 / 2 + ratio * (self.time_slider.width() - 16)
+        x_pos_parent = self.time_slider.x() + x_pos - (self.timescope_label.width() // 2)
+        y_pos = self.time_slider.y() - 15
+        self.timescope_label.move(int(x_pos_parent), int(y_pos))
+
+    def backward_timescope(self):
+        self.time_slider.setValue(self.time_slider.value() - 25)
+
+    def forward_timescope(self):
+        self.time_slider.setValue(self.time_slider.value() + 25)
 
     @staticmethod
     def customcheckbox(func_name, method):
@@ -774,4 +958,3 @@ app = QApplication(sys.argv)
 mw = MainWindowFrame()
 mw.show()
 app.exec()
-
