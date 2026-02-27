@@ -227,12 +227,7 @@ class PyGameWidget(QWidget):
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
-        pygame.draw.rect(
-            self.playscreen,
-            border_color,
-            pygame.Rect(0, 0, self.x, self.y),
-            border_thickness
-        )
+        #pygame.draw.rect(self.playscreen, border_color, pygame.Rect(0, 0, self.x, self.y), border_thickness)
 
         pygame.display.update()
 
@@ -501,6 +496,7 @@ class StatsDock(QDockWidget):
 class MainWindowFrame(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.timer_state = False
         self.timescope_label = None
         self.setWindowTitle('Astro Balls')
         central_widget = QWidget()
@@ -565,8 +561,10 @@ class MainWindowFrame(QMainWindow):
         view_menu.addAction(scale_action)
         menu.addMenu(view_menu)
         self.timer_action = QWidgetAction(view_menu)
-        timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
-        self.timer_action.setDefaultWidget(timer_view)
+        if self.timer_state is False:
+            print('false')
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
+            self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
         menu.addMenu(view_menu)
         vector_menu = view_menu.addMenu('Vectors')
@@ -675,6 +673,9 @@ class MainWindowFrame(QMainWindow):
             self.seconddotcoo.setText("Dot #2:")
 
     def timerscope(self):
+        if getattr(self, 'timer_scope', None) is not None:
+            self.timer_scope.setVisible(self.timer_state.isChecked())
+            return
         self.timer_scope = QDockWidget(parent=self)
         timerscope_container = QWidget()
         timerscope_widget = QGridLayout(timerscope_container)
@@ -717,9 +718,10 @@ class MainWindowFrame(QMainWindow):
         self.timescope_label.move(int(x_pos_parent), int(y_pos))
 
     def timerscope_close(self, active):
-        self.timer_state.blockSignals(True)
-        self.timer_state.setChecked(active)
-        self.timer_state.blockSignals(False)
+        if hasattr(self, 'timer_state'):
+            self.timer_state.blockSignals(True)
+            self.timer_state.setChecked(active)
+            self.timer_state.blockSignals(False)
 
     def backward_timescope(self):
         self.time_slider.setValue(self.time_slider.value() - 25)
