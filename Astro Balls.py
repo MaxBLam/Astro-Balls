@@ -5,18 +5,22 @@ from PySide6.QtGui import QAction, Qt, QFont, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
     QScrollArea, QScrollBar, QStackedLayout, QSizePolicy
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
 
 
 class PyGameWidget(QWidget):
+    measuring_updater_signal = Signal()
+
     def __init__(self, planet_id):
         super().__init__()
 
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
+        self.point = []
+        self.measuringtape_state = False
         os.environ['SDL_WINDOWID'] = str(int(self.winId()))
         os.environ['SDL_VIDEODRIVER'] = 'windows'
         pygame.init()
@@ -154,6 +158,33 @@ class PyGameWidget(QWidget):
         return v_orbitale
 
     def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
+    @staticmethod
+    def pythagoras(pos):
+        height = pos[1][1] - pos[0][1]
+        length = pos[1][0] - pos[0][0]
+        hypotenus = math.sqrt((height * math.exp(2)) + length * math.exp(2))
+        return str(round(hypotenus, 2))
+
+    def measuringtape(self):
+        for i in pygame.event.get():
+            if i.type == pygame.MOUSEBUTTONDOWN:
+                if i.button == 1:
+                    pos = pygame.mouse.get_pos()
+                    self.point.append(pos)
+                    self.point = self.point[-2:]
+                    self.measuring_updater_signal.emit()
+
+        for j in self.point:
+            pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
+        if len(self.point) == 2:
+            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
+
+    def toggle_measuringtape(self, state: bool):
+        self.measuringtape_state = state
+        if not state:
+            self.point.clear()
+
+    def mouvement(self, objets): # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
 
         for objet in objets:
@@ -462,17 +493,18 @@ class MainWindowFrame(QMainWindow):
         self.setWindowTitle('Astro Balls')
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
+        self.game_widget = PyGameWidget([1, 2, 3])
+        self.firstdotcoo = None
+        self.seconddotcoo = None
+        self.measuring_window = None
+        self.distance = None
+        self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
+        self.measuring_window = None
 
-        # Layout inside central widget
         layout = QVBoxLayout(central_widget)
-
-        # Add your PyGameWidget
-        game_widget = PyGameWidget([1, 2, 3])
-        game_widget.setSizePolicy(
-            QSizePolicy.Expanding,
-            QSizePolicy.Expanding
-        )
-        layout.addWidget(game_widget)
+        self.game_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        layout.addWidget(self.game_widget)
+        self.resize(1200, 600)
 
         menu = self.menuBar()
         app_menu = QMenu('&Application')
@@ -520,8 +552,28 @@ class MainWindowFrame(QMainWindow):
         view_menu.addAction(scale_action)
         menu.addMenu(view_menu)
 
+        vector_menu = view_menu.addMenu('Vectors')
+        orbits_vector = QWidgetAction(vector_menu)
+        orbits_vector_view = self.customcheckbox(func_name='Orbital Vectors', method=self.showorbitvector)
+        orbits_vector.setDefaultWidget(orbits_vector_view)
+        vector_menu.addAction(orbits_vector)
+
+        force_vector = QWidgetAction(vector_menu)
+        force_vector_view = self.customcheckbox(func_name='Force Vectors', method=self.showforcevector)
+        force_vector.setDefaultWidget(force_vector_view)
+        vector_menu.addAction(force_vector)
+
+        rotational_vector = QWidgetAction(vector_menu)
+        rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)
+        rotational_vector.setDefaultWidget(rotational_vector_view)
+        vector_menu.addAction(rotational_vector)
+
         tool_menu = QMenu('&Tools')
         menu.addMenu(tool_menu)
+        mt = QAction('&Mesuring Tape', parent=self)
+        mt.setIcon(QIcon('images/menubar symbol/ruler.png'))
+        mt.triggered.connect(self.measuringtape)
+        tool_menu.addAction(mt)
 
         help_menu = QMenu('&Help')
         keybinds_action = QAction('&Keybinds', parent=self)
@@ -551,6 +603,52 @@ class MainWindowFrame(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dragndrop)
         self.statsdock = StatsDock()
         self.addDockWidget(Qt.RightDockWidgetArea, self.statsdock)
+
+    def measuringtape(self):
+        self.game_widget.toggle_measuringtape(True)
+
+        if self.measuring_window is None:
+            self.measuring_window = QDialog(parent=self)
+            self.measuring_window.setWindowTitle('Measuring Tool')
+            self.measuring_window.resize(170, 70)
+            measuring_window_layout = QGridLayout(self.measuring_window)
+            measuring_window_layout.setSpacing(10)
+
+            self.firstdotcoo = QLabel(f'Coordinate of dot #1: ')
+            self.seconddotcoo = QLabel(f'Coordinate of dot #2: ')
+            measuring_window_layout.addWidget(self.firstdotcoo, 0, 0)
+            measuring_window_layout.addWidget(self.seconddotcoo, 1, 0)
+            self.distance = QLabel()
+            line_sep = QFrame()
+            line_sep.setFrameStyle(QFrame.Shape.HLine)
+            line_sep.setStyleSheet('background-color: #444444')
+            measuring_window_layout.addWidget(line_sep, 2, 0, 1, 2)
+            self.distance.setText(f' Distance Selected: U')
+            distance_txt_font = QFont()
+            distance_txt_font.setBold(True)
+            self.distance.setFont(distance_txt_font)
+            measuring_window_layout.addWidget(self.distance, 3, 0)
+
+            cancelbutton = QPushButton('Cancel')
+            cancelbutton.clicked.connect(self.game_widget.toggle_measuringtape)
+            cancelbutton.clicked.connect(self.measuring_window.close)
+            measuring_window_layout.addWidget(cancelbutton, 4, 0, 1, 2)
+
+            self.measuring_window.finished.connect(lambda: setattr(self, 'measuring_window', None))
+            self.measuring_window.show()
+
+    def update_measuringtape(self):
+        if self.measuring_window is None:
+            return
+        if len(self.game_widget.point) >= 1:
+            self.firstdotcoo.setText(f"Coordinate of dot #1: {self.game_widget.point[0]}")
+        else:
+            self.firstdotcoo.setText("Coordinate of dot #1:")
+        if len(self.game_widget.point) == 2:
+            self.seconddotcoo.setText(f"Coordinate of dot #2: {self.game_widget.point[1]}")
+            self.distance.setText(f"Distance Selected: {self.game_widget.pythagoras(self.game_widget.point)}U")
+        else:
+            self.seconddotcoo.setText("Coordinate of dot #2:")
 
     @staticmethod
     def customcheckbox(func_name, method):
@@ -782,8 +880,18 @@ class MainWindowFrame(QMainWindow):
     def kflopm(self):
         pass
 
+    def showorbitvector(self):
+        pass
+
+    def showforcevector(self):
+        pass
+
+    def showrotationalvector(self):
+        pass
+
 
 app = QApplication(sys.argv)
 mw = MainWindowFrame()
 mw.show()
 app.exec()
+
