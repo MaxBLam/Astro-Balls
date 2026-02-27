@@ -9,53 +9,132 @@ from PySide6.QtCore import QTimer
 import euclid
 import math
 
+
 class PyGameWidget(QWidget):
     def __init__(self, planet_id):
         super().__init__()
+
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocus()
 
         os.environ['SDL_WINDOWID'] = str(int(self.winId()))
         os.environ['SDL_VIDEODRIVER'] = 'windows'
         pygame.init()
 
+        self.keys_pressed = set()
+
+        fps_simulation = 120
         self.timer = QTimer()
-        self.timer.start(16)
+        self.timer.start(1000 // fps_simulation)
 
-        self.vitesse_simulation = 2
-        self.playscreen = pygame.display.set_mode(size=(0,0))
-
+        self.playscreen = pygame.display.set_mode(size=(0, 0))
         self.x, self.y = self.playscreen.get_size()
-        self.y = 1200
+
+        """ INITIALIZATION DES PARAMÈTRES DE LA SIMULATION """
+        self.planet_id = planet_id  # [1,2,3,1,2,3,1,2,1,2,3,1,2,3,1,1,2,3,1,2]
+        self.liste_objets = self.initialiser_objets(self.planet_id)
 
         self.G = 100
-        fps_limit = 60
-        self.dtime = fps_limit/1000 * self.vitesse_simulation
+        self.simulation = 1
+        self.vitesse_simulation = 20
+        facteur_ellipse = 0.5  # <1 pour une ellipse
+        self.dtime = 1 / fps_simulation * self.vitesse_simulation
 
-        self.planet_id = planet_id
-        self.obj_terre = self.terre_objet()
-        self.obj_lune = self.lune_objet()
-        self.obj_soleil = self.soleil_objet()
+        if self.simulation == 1:
+            self.objet_central = self.liste_objets[0]
+            self.objet_orbite1 = self.liste_objets[1]
+            self.objet_orbite2 = self.liste_objets[2]
 
-        self.timer.timeout.connect(self.update_size)
+            self.objet_central["position"] = euclid.Vector2(0, 0)
+            self.objet_orbite1["position"] = euclid.Vector2(500, 0)
+            self.objet_orbite2["position"] = euclid.Vector2(550, 0)
+            self.camera_target_pos = self.objet_central["position"]
+
+            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_central,
+                                                                          self.objet_orbite1) * facteur_ellipse
+            self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2) + \
+                                            self.objet_orbite1["vitesse"]
+
+        elif self.simulation == 2:
+            self.objet_orbite1 = self.liste_objets[1]
+            self.objet_orbite2 = self.liste_objets[2]
+
+            self.objet_orbite1["position"] = euclid.Vector2(random.randint(-200, 0), random.randint(-200, 0))
+            self.objet_orbite2["position"] = euclid.Vector2(random.randint(0, 200), random.randint(0, 200))
+
+            self.camera_target_pos = self.objet_orbite1["position"]
+
+            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite2,
+                                                                          self.objet_orbite1) * facteur_ellipse
+            self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2)
+
+        self.f_pressed_handled = False
+        self.camera_pos = euclid.Vector2(0, 0)
+        self.camera_milieu_pos = euclid.Vector2(0, 0)
+        self.camera_mode = "milieu"  # "free", "follow", "milieu"
+
+        """FIN INITIALIZATION DE LA SIMULATION """
+
         self.timer.timeout.connect(self.game_loop)
+
+    def initialiser_objets(self, planet_id):
+
+        dict_planete = {
+            1: self.terre_objet(),
+            2: self.soleil_objet(),
+            3: self.lune_objet()
+        }
+        compteurs = {"terre": 0, "soleil": 0, "lune": 0}
+
+        objets = []
+
+        for id in planet_id:
+            if id not in dict_planete:
+                continue
+            nom_base = dict_planete[id]["nom objet"]  # copier le nom original
+            compteurs[nom_base] += 1
+            # créer un nouvel objet avec le nom modifié
+            objet = dict_planete[id].copy()
+            objet["nom objet"] = f"{nom_base}{compteurs[nom_base]}"
+
+            objets.append(objet)
+        return objets
+
+    def keyPressEvent(self, event):
+        self.keys_pressed.add(event.key())
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() in self.keys_pressed:
+            self.keys_pressed.remove(event.key())
+        super().keyReleaseEvent(event)
 
     def update_size(self):
         pygame.display.update()
         self.x, self.y = pygame.display.get_window_size()
 
-    def simulation_objet_central(self, objet_central, objet_orbite1, objet_orbite2):
-        objet_central["nom objet"] = "objet_central"
-
-        objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(objet_central, objet_orbite1)
-        objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(objet_orbite1, objet_orbite2) + objet_orbite1["vitesse"]
-        acc_objet_central = euclid.Vector2(0,0)
+    def simulation_objet_central_3corps(self, objet_central, objet_orbite1, objet_orbite2):
+        acc_objet_central = euclid.Vector2(0, 0)
         acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central)
-        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(objet_orbite2, objet_central)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(
+            objet_orbite2, objet_central)
 
-        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1),
+                       (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
+        self.camera_milieu_pos = (self.objet_orbite1["position"] + self.objet_central["position"]) / 2
         self.display(list_objets_update)
 
+    def simulation_2corps(self, objet_orbite1, objet_orbite2):
+        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_orbite2)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1)
+
+        list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets_update = self.mouvement(list_objets)
+
+        self.camera_milieu_pos = (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
+        self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2):
         d_vecteur = obj2["position"] - obj1["position"]
@@ -74,8 +153,7 @@ class PyGameWidget(QWidget):
         v_orbitale = v_orbitale * tangente
         return v_orbitale
 
-
-    def mouvement(self, objets): # objet[0] = objet, objet[1] = acc_objet
+    def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
 
         for objet in objets:
@@ -86,23 +164,27 @@ class PyGameWidget(QWidget):
         return list_objets_update
 
     def pos_objet_orbite(self, pos):
-        world_x = pos.x
-        world_y = pos.y
+        relative = pos - self.camera_pos
 
-        new_world_x = self.x / 2 + world_x
-        new_world_y = self.y / 2 + world_y
+        new_world_x = self.x / 2 + relative.x
+        new_world_y = self.y / 2 + relative.y
 
         return new_world_x, new_world_y
 
-    def display(self, objets : list):
+    def changer_vue(self):
+        if self.camera_mode == "free":
+            self.camera_mode = "follow"
+        elif self.camera_mode == "follow":
+            self.camera_mode = "milieu"
+        elif self.camera_mode == "milieu":
+            self.camera_mode = "free"
+
+    def display(self, objets: list):  # objet[0] = objet, objet[1] = acc_objet
         self.playscreen.fill((0, 0, 0))
 
         for objet in objets:
-            if objet[0]["nom objet"] == "objet_central":
-                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (self.x/2, self.y/2), objet[0]["rayon"])
-            else:
-                rx, ry = self.pos_objet_orbite(objet[0]["position"])
-                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (rx, ry), objet[0]["rayon"])
+            rx, ry = self.pos_objet_orbite(objet[0]["position"])
+            pygame.draw.circle(self.playscreen, objet[0]["couleur"], (rx, ry), objet[0]["rayon"])
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
@@ -122,37 +204,71 @@ class PyGameWidget(QWidget):
             "masse": 10,
             "rayon": 10,
             "couleur": (0, 0, 255),
-            "position": euclid.Vector2(300, 0),
-            "vitesse": euclid.Vector2(0,0)
+            "vitesse": euclid.Vector2(0, 0)
         }
         return terre
 
     @staticmethod
     def soleil_objet():
         soleil = {
-            "nom objet": "terre",
+            "nom objet": "soleil",
             "masse": 500,
             "rayon": 50,
             "couleur": (255, 222, 0),
-            "position": euclid.Vector2(0,0),
-            "vitesse": euclid.Vector2(0,0)
+            "vitesse": euclid.Vector2(0, 0)
         }
         return soleil
 
     @staticmethod
     def lune_objet():
         lune = {
-            "nom objet": "terre",
+            "nom objet": "lune",
             "masse": 1,
             "rayon": 2,
             "couleur": (200, 200, 200),
-            "position": euclid.Vector2(340, 0),
-            "vitesse": euclid.Vector2(0,0)
+            "vitesse": euclid.Vector2(0, 0)
         }
         return lune
 
     def game_loop(self):
-        self.simulation_objet_central(self.obj_soleil, self.obj_terre, self.obj_lune)
+        if Qt.Key_F in self.keys_pressed:
+            if not self.f_pressed_handled:
+                self.changer_vue()
+                self.f_pressed_handled = True
+        else:
+            self.f_pressed_handled = False
+
+        speed = 3
+        if Qt.Key_Shift in self.keys_pressed:
+            speed = 10
+
+        if self.camera_mode == "free":
+            if Qt.Key_A in self.keys_pressed:
+                self.camera_pos.x -= speed
+            if Qt.Key_D in self.keys_pressed:
+                self.camera_pos.x += speed
+            if Qt.Key_W in self.keys_pressed:
+                self.camera_pos.y -= speed
+            if Qt.Key_S in self.keys_pressed:
+                self.camera_pos.y += speed
+        elif self.camera_mode == "follow":
+            self.camera_pos = self.camera_target_pos + euclid.Vector2(1, 1)
+        elif self.camera_mode == "milieu":
+            self.camera_pos = self.camera_milieu_pos
+
+        self.update_size()
+        if self.simulation == 1:
+            self.simulation_objet_central_3corps(self.objet_central, self.objet_orbite1, self.objet_orbite2)
+
+        elif self.simulation == 2:
+            self.simulation_2corps(self.objet_orbite1, self.objet_orbite2)
+
+        elif self.simulation == 3:
+            pass
+        elif self.simulation == 4:
+            pass
+        else:
+            pass
 
 
 class DragNDrop(QDockWidget):
