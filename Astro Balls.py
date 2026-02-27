@@ -961,7 +961,8 @@ class MainWindowFrame(QMainWindow):
         pass
 
 
-app = QApplication(sys.argv)
-mw = MainWindowFrame()
-mw.show()
-app.exec()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    mw = MainWindowFrame()
+    mw.show()
+    app.exec()
