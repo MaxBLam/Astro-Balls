@@ -35,13 +35,13 @@ class PyGameWidget(QWidget):
         self.x, self.y = self.playscreen.get_size()
 
         """ INITIALIZATION DES PARAMÈTRES DE LA SIMULATION """
-        self.planet_id = planet_id  # [1,2,3,1,2,3,1,2,1,2,3,1,2,3,1,1,2,3,1,2]
+        self.planet_id = planet_id
         self.liste_objets = self.initialiser_objets(self.planet_id)
 
-        self.G = 100
-        self.simulation = 1
-        self.vitesse_simulation = 1
-        facteur_ellipse = 0.5  # <1 pour une ellipse
+        self.G = 6.6743*10**-11
+        self.simulation = 2
+        self.scale = 10**-5.2
+        facteur_ellipse = 0.1  # <1 pour une ellipse
         self.dtime = 1 / self.fps_simulation
 
         if self.simulation == 1:
@@ -50,26 +50,23 @@ class PyGameWidget(QWidget):
             self.objet_orbite2 = self.liste_objets[2]
 
             self.objet_central["position"] = euclid.Vector2(0, 0)
-            self.objet_orbite1["position"] = euclid.Vector2(500, 0)
-            self.objet_orbite2["position"] = euclid.Vector2(550, 0)
+            self.objet_orbite1["position"] = euclid.Vector2(149597870, 0)
+            self.objet_orbite2["position"] = euclid.Vector2( 149982270, 0)
             self.camera_target_pos = self.objet_central["position"]
 
-            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_central,
-                                                                          self.objet_orbite1) * facteur_ellipse
-            self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2) + \
-                                            self.objet_orbite1["vitesse"]
+            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_central, self.objet_orbite1) * facteur_ellipse
+            self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2) + self.objet_orbite1["vitesse"]
 
         elif self.simulation == 2:
             self.objet_orbite1 = self.liste_objets[1]
             self.objet_orbite2 = self.liste_objets[2]
 
-            self.objet_orbite1["position"] = euclid.Vector2(random.randint(-200, 0), random.randint(-200, 0))
-            self.objet_orbite2["position"] = euclid.Vector2(random.randint(0, 200), random.randint(0, 200))
+            self.objet_orbite1["position"] = euclid.Vector2(random.randint(-100000000, 0), random.randint(-5000000, 0))
+            self.objet_orbite2["position"] = euclid.Vector2(random.randint(0, 100000000), random.randint(0, 5000000))
 
             self.camera_target_pos = self.objet_orbite1["position"]
 
-            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite2,
-                                                                          self.objet_orbite1) * facteur_ellipse
+            self.objet_orbite1["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite2, self.objet_orbite1) * facteur_ellipse
             self.objet_orbite2["vitesse"] = self.vitesse_gravitationnelle(self.objet_orbite1, self.objet_orbite2)
 
         self.f_pressed_handled = False
@@ -82,8 +79,7 @@ class PyGameWidget(QWidget):
         self.timer.timeout.connect(self.game_loop)
 
     def speed_interactive(self, value : int):
-        self.vitesse_simulation = value
-        self.dtime = 1 / self.fps_simulation * self.vitesse_simulation
+        self.dtime = 1 / self.fps_simulation * value
 
     def initialiser_objets(self, planet_id):
 
@@ -124,14 +120,12 @@ class PyGameWidget(QWidget):
     def simulation_objet_central_3corps(self, objet_central, objet_orbite1, objet_orbite2):
         acc_objet_central = euclid.Vector2(0, 0)
         acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central)
-        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(
-            objet_orbite2, objet_central)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(objet_orbite2, objet_central)
 
-        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1),
-                       (objet_orbite2, acc_objet_orbite2)]
+        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
-        self.camera_milieu_pos = (self.objet_orbite1["position"] + self.objet_central["position"]) / 2
+        self.camera_milieu_pos = self.scale * (self.objet_orbite1["position"] + self.objet_central["position"]) / 2
         self.display(list_objets_update)
 
     def simulation_2corps(self, objet_orbite1, objet_orbite2):
@@ -141,7 +135,7 @@ class PyGameWidget(QWidget):
         list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
-        self.camera_milieu_pos = (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
+        self.camera_milieu_pos = self.scale * (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
         self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2):
@@ -197,7 +191,8 @@ class PyGameWidget(QWidget):
         return list_objets_update
 
     def pos_objet_orbite(self, pos):
-        relative = pos - self.camera_pos
+        pos_pixel = pos * self.scale
+        relative = pos_pixel - self.camera_pos
 
         new_world_x = self.x / 2 + relative.x
         new_world_y = self.y / 2 + relative.y
@@ -226,7 +221,12 @@ class PyGameWidget(QWidget):
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
-        #pygame.draw.rect(self.playscreen, border_color, pygame.Rect(0, 0, self.x, self.y), border_thickness)
+        pygame.draw.rect(
+            self.playscreen,
+            border_color,
+            pygame.Rect(0, 0, self.x, self.y),
+            border_thickness
+        )
 
         pygame.display.update()
 
@@ -234,7 +234,7 @@ class PyGameWidget(QWidget):
     def terre_objet():
         terre = {
             "nom objet": "terre",
-            "masse": 10,
+            "masse": 5.972*10**24,
             "rayon": 10,
             "couleur": (0, 0, 255),
             "vitesse": euclid.Vector2(0, 0)
@@ -245,7 +245,7 @@ class PyGameWidget(QWidget):
     def soleil_objet():
         soleil = {
             "nom objet": "soleil",
-            "masse": 500,
+            "masse": 1.989*10**30,
             "rayon": 50,
             "couleur": (255, 222, 0),
             "vitesse": euclid.Vector2(0, 0)
@@ -256,7 +256,7 @@ class PyGameWidget(QWidget):
     def lune_objet():
         lune = {
             "nom objet": "lune",
-            "masse": 1,
+            "masse": 7.347*10**22,
             "rayon": 2,
             "couleur": (200, 200, 200),
             "vitesse": euclid.Vector2(0, 0)
@@ -284,17 +284,19 @@ class PyGameWidget(QWidget):
                 self.camera_pos.y -= speed
             if Qt.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed
+
+        # CAMÉRA ICI
         elif self.camera_mode == "follow":
-            self.camera_pos = self.camera_target_pos + euclid.Vector2(1, 1)
+            self.camera_pos = self.camera_target_pos * self.scale + euclid.Vector2(1, 1)
         elif self.camera_mode == "milieu":
             self.camera_pos = self.camera_milieu_pos
+
+        if self.measuringtape_state:
+            self.measuringtape()
 
         self.update_size()
         if self.simulation == 1:
             self.simulation_objet_central_3corps(self.objet_central, self.objet_orbite1, self.objet_orbite2)
-
-            if self.measuringtape_state:
-                self.measuringtape()
 
         elif self.simulation == 2:
             self.simulation_2corps(self.objet_orbite1, self.objet_orbite2)
@@ -498,6 +500,7 @@ class MainWindowFrame(QMainWindow):
         self.timer_state = False
         self.timescope_label = None
         self.setWindowTitle('Astro Balls')
+        self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.game_widget = PyGameWidget([1, 2, 3])
