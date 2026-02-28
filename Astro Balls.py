@@ -103,7 +103,7 @@ class PyGameWidget(QWidget):
 
             objets.append(objet)
         return objets
-
+#
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
         super().keyPressEvent(event)
