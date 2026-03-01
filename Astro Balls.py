@@ -2,10 +2,10 @@ import random
 import sys
 import os
 import pygame
-from PySide6.QtGui import QAction, Qt, QFont, QIcon
+from PySide6.QtGui import QAction, Qt, QFont, QIcon, QKeySequence, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QProgressDialog
 from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
@@ -13,13 +13,15 @@ import math
 
 class PyGameWidget(QWidget):
     measuring_updater_signal = Signal()
-    def __init__(self, planet_id):
+
+    def __init__(self, planet_id, sim):
         super().__init__()
 
         self.point = []
         self.measuringtape_state = False
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
+        self.simulation = sim
 
         os.environ['SDL_WINDOWID'] = str(int(self.winId()))
         os.environ['SDL_VIDEODRIVER'] = 'windows'
@@ -39,7 +41,7 @@ class PyGameWidget(QWidget):
         self.liste_objets = self.initialiser_objets(self.planet_id)
 
         self.G = 6.6743*10**-11
-        self.simulation = 2
+        self.wwsc_simulation = None
         self.scale = 10**-5.2
         facteur_ellipse = 0.1  # <1 pour une ellipse
         self.dtime = 1 / self.fps_simulation
@@ -78,11 +80,16 @@ class PyGameWidget(QWidget):
 
         self.timer.timeout.connect(self.game_loop)
 
-    def speed_interactive(self, value : int):
+    def remote_changesim1(self):
+        return self.simulation == 0
+
+    def remote_changesin2(self):
+        return self.simulation == 1
+
+    def speed_interactive(self, value: int):
         self.dtime = 1 / self.fps_simulation * value
 
     def initialiser_objets(self, planet_id):
-
         dict_planete = {
             1: self.terre_objet(),
             2: self.soleil_objet(),
@@ -103,7 +110,7 @@ class PyGameWidget(QWidget):
 
             objets.append(objet)
         return objets
-#
+
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
         super().keyPressEvent(event)
@@ -207,6 +214,9 @@ class PyGameWidget(QWidget):
         elif self.camera_mode == "milieu":
             self.camera_mode = "free"
 
+    def view_orbirt(self):
+        pass
+
     def display(self, objets: list):  # objet[0] = objet, objet[1] = acc_objet
         self.playscreen.fill((0, 0, 0))
 
@@ -217,7 +227,7 @@ class PyGameWidget(QWidget):
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
         if len(self.point) == 2:
-            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
+            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=2)
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
@@ -494,8 +504,50 @@ class StatsDock(QDockWidget):
         self.setWidget(scroller)
 
 
-class MainWindowFrame(QMainWindow):
+class WelcomeWindow(QMainWindow):
     def __init__(self):
+        super().__init__()
+
+        self.wwsc_simulation = None
+        self.setFixedSize(700, 500)
+        self.setWindowTitle('Astro Balls')
+        ww_widget = QWidget()
+        self.setCentralWidget(ww_widget)
+        ww_layout = QGridLayout()
+        ww_widget.setLayout(ww_layout)
+        ww_widget.setStyleSheet('background-color: black')
+        ww_layout.setContentsMargins(0, 0, 0, 0)
+        ww_layout.setSpacing(0)
+        ww_pixmap = QPixmap('images/ww_images/The_Earth_seen_from_Apollo_17.jpg').scaled(250, 500, Qt.KeepAspectRatio,
+                                                                                         Qt.SmoothTransformation)
+        ww_pixmap_label = QLabel()
+        ww_pixmap_label.setPixmap(ww_pixmap)
+        ww_layout.addWidget(ww_pixmap_label, 0, 1, Qt.AlignmentFlag.AlignRight)
+        ww_label = QLabel(self)
+        ww_label.setFixedSize(500, 60)
+        ww_label.setText('C E L E S T I A')
+        ww_label_font = QFont()
+        ww_label_font.setPointSize(40)
+        ww_label.setFont(ww_label_font)
+        ww_label.move(70, 50)
+        ww_opensim1 = QPushButton('Simulation #1', self)
+        ww_opensim1.setFixedSize(350, 150)
+        ww_opensim1.move(50, 150)
+        ww_opensim1.setStyleSheet('background-color: black')
+        ww_opensim1.clicked.connect(lambda: self.wwsc(1))
+        ww_opensim2 = QPushButton('Simulation #2', self)
+        ww_opensim2.setFixedSize(350, 150)
+        ww_opensim2.move(50, 300)
+        ww_opensim2.setStyleSheet('background-color: black')
+        ww_opensim2.clicked.connect(lambda: self.wwsc(2))
+
+    def wwsc(self, sim_id):
+        self.wwsc_simulation = sim_id
+        self.close()
+
+
+class MainWindowFrame(QMainWindow):
+    def __init__(self, sim_id):
         super().__init__()
         self.timer_state = False
         self.timescope_label = None
@@ -503,7 +555,7 @@ class MainWindowFrame(QMainWindow):
         self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        self.game_widget = PyGameWidget([1, 2, 3])
+        self.game_widget = PyGameWidget([1, 2, 3], sim=sim_id)
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.measuring_window = None
@@ -564,7 +616,6 @@ class MainWindowFrame(QMainWindow):
         menu.addMenu(view_menu)
         self.timer_action = QWidgetAction(view_menu)
         if self.timer_state is False:
-            print('false')
             self.timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
@@ -974,6 +1025,11 @@ class MainWindowFrame(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    mw = MainWindowFrame()
-    mw.show()
+    ww = WelcomeWindow()
+    ww.show()
     app.exec()
+    if ww.wwsc_simulation is not None:
+
+        mw = MainWindowFrame(sim_id=ww.wwsc_simulation)
+        mw.show()
+        app.exec()
