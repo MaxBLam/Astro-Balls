@@ -86,10 +86,11 @@ class PyGameWidget(QWidget):
     def remote_changesin2(self):
         return self.simulation == 1
 
-    def speed_interactive(self, value: int):
+    def speed_interactive(self, value : int):
         self.dtime = 1 / self.fps_simulation * value
 
     def initialiser_objets(self, planet_id):
+
         dict_planete = {
             1: self.terre_objet(),
             2: self.soleil_objet(),
@@ -214,9 +215,6 @@ class PyGameWidget(QWidget):
         elif self.camera_mode == "milieu":
             self.camera_mode = "free"
 
-    def view_orbirt(self):
-        pass
-
     def display(self, objets: list):  # objet[0] = objet, objet[1] = acc_objet
         self.playscreen.fill((0, 0, 0))
 
@@ -227,7 +225,7 @@ class PyGameWidget(QWidget):
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
         if len(self.point) == 2:
-            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=2)
+            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
 
         border_color = (255, 0, 0)  # red border
         border_thickness = 2  # pixels
@@ -736,10 +734,10 @@ class MainWindowFrame(QMainWindow):
         self.timer_scope.setWindowTitle('Timer')
 
         self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
-        self.time_slider.setRange(0, 100)
+        self.time_slider.setRange(1, 100)
         self.time_slider.setValue(1)
-        self.time_slider.setTickInterval(5)
-        self.time_slider.setSingleStep(5)
+        self.time_slider.setTickInterval(25)
+        self.time_slider.setSingleStep(25)
         self.time_slider.setTickPosition(QSlider.TicksAbove)
         timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
         self.time_slider.valueChanged.connect(self.update_timerscope)
@@ -778,10 +776,10 @@ class MainWindowFrame(QMainWindow):
             self.timer_state.blockSignals(False)
 
     def backward_timescope(self):
-        self.time_slider.setValue(self.time_slider.value() - 2)
+        self.time_slider.setValue(self.time_slider.value() - 25)
 
     def forward_timescope(self):
-        self.time_slider.setValue(self.time_slider.value() + 2)
+        self.time_slider.setValue(self.time_slider.value() + 25)
 
     @staticmethod
     def customcheckbox(func_name, method):
