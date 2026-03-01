@@ -1,11 +1,16 @@
 import random
 import sys
 import os
+from tkinter import Frame
+from turtle import Shape
+
 import pygame
-from PySide6.QtGui import QAction, Qt, QFont, QIcon
+from PySide6.QtGui import QAction, Qt, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget
+from matplotlib.patches import Shadow
+
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
@@ -373,57 +378,72 @@ class MainWindowFrame(QMainWindow):
     def keybindstab(self):
         self.main_panel_layout.setCurrentIndex(3)
 
+#DEMO
     def mimir(self):
         info_window = QDialog(parent=self)
-        info_window.resize(650, 500)
+        info_window.setFixedSize(650, 500)
         info_window.setWindowTitle('Mímisbrunnr')
-        info_layout = QGridLayout()
+        info_layout = QHBoxLayout()
+        info_tabs = QTabWidget()
+
+        newton1tab = QWidget()
+        newton1tab_layout = QGridLayout()
+        b_n1_label = QLabel(parent=newton1tab)
+        b_n1_label.setFixedSize(500, 40)
+        b_n1_label.setText("NEWTON'S FIRST LAW")
+        b_n1_label_font = QFont()
+        b_n1_label_font.setPointSize(30)
+        b_n1_label.setFont(b_n1_label_font)
+        b_n1_label.move(20, 20)
+        pixmap_newton1 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
+                                                                            Qt.KeepAspectRatio,Qt.SmoothTransformation)
+        l_pixmap_newton1 = QLabel(parent=newton1tab)
+        l_pixmap_newton1.setFrameStyle(QFrame.Shape.Panel)
+        l_pixmap_newton1.setFixedSize(200, 280)
+        l_pixmap_newton1.setPixmap(pixmap_newton1)
+        l_pixmap_newton1.move(420, 95)
+        i_n1_label = QLabel("Newton's first law states that an object in motion will remain in motion\nindefinitely as "
+                            "long as there is no opposing force. Similarly, an object at\nrest will remain at rest "
+                            "indefinitely as long as no force is applied to it.", parent=newton1tab)
+        i_n1_label.setFixedSize(390, 50)
+        i_n1_label.move(20, 100)
+
+        im_n1_label = QLabel("Sir Isaac Newton\nBy Godfrey Kneller\n1689", parent=newton1tab)
+        im_n1_label.setFixedSize(100, 100)
+        im_n1_label.move(470, 350)
+        newton1tab.setLayout(newton1tab_layout)
+        info_tabs.addTab(newton1tab, "Newton's First Law")
+
+        newton2tab = QWidget()
+        newton2tab_layout = QGridLayout()
+        newton2tab.setLayout(newton2tab_layout)
+        info_tabs.addTab(newton2tab, "Newton's Second Law")
+
+        newton3tab = QWidget()
+        newton3tab_layout = QGridLayout()
+        newton3tab.setLayout(newton3tab_layout)
+        info_tabs.addTab(newton3tab, "Newton's Third Law")
+
+        kflopmtab = QWidget()
+        kflopmtab_layout = QGridLayout()
+        kflopmtab.setLayout(kflopmtab_layout)
+        info_tabs.addTab(kflopmtab, "Kepler's First Law of Planetary Motion")
+
+        metrictab = QWidget()
+        metrictab_layout = QGridLayout()
+        metrictab.setLayout(metrictab_layout)
+        info_tabs.addTab(metrictab, "Metric System")
+
+        imperialtab = QWidget()
+        imperialtab_layout = QGridLayout()
+        imperialtab.setLayout(imperialtab_layout)
+        info_tabs.addTab(imperialtab, "Imperial System")
+
+        info_layout.addWidget(info_tabs)
         info_window.setLayout(info_layout)
 
-        side_panel = QFrame()
-        side_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        side_panel_layout = QVBoxLayout()
-        side_panel.setLayout(side_panel_layout)
-        side_panel_layout.setSpacing(20)
-        info_layout.addWidget(side_panel, 0, 0, 1, 1)
-
-        newton1 = QPushButton("Newton's First Law")
-        newton1.setStyleSheet('text-align: left; padding-left: 2px')
-        newton1.clicked.connect(self.newton1)
-        side_panel_layout.addWidget(newton1)
-        newton2 = QPushButton("Newton's Second Law")
-        newton2.setStyleSheet('text-align: left; padding-left: 2px')
-        newton2.clicked.connect(self.newton2)
-        side_panel_layout.addWidget(newton2)
-        newton3 = QPushButton("Newton's Third Law")
-        newton3.setStyleSheet('text-align: left; padding-left: 2px')
-        newton3.clicked.connect(self.newton3)
-        side_panel_layout.addWidget(newton3)
-        kflopm = QPushButton("Kepler's First Law of\nPlanetary Motion")
-        kflopm.setStyleSheet('QPushButton {text-align: left; padding-left: 2px; white-space: normal}')
-        kflopm.clicked.connect(self.kflopm)
-        side_panel_layout.addWidget(kflopm)
-        metric = QPushButton("Metric System")
-        metric.setStyleSheet('QPushButton {text-align: left; padding-left: 2px; white-space: normal}')
-        metric.clicked.connect(self.metric)
-        side_panel_layout.addWidget(metric)
-
-        imperial = QPushButton("Imperial System\n(US and UK)")
-        imperial.setStyleSheet('QPushButton {text-align: left; padding-left: 2px; white-space: normal}')
-        imperial.clicked.connect(self.metric)
-        side_panel_layout.addWidget(imperial)
-
-        main_panel = QFrame()
-        main_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        main_panel_layout = QGridLayout()
-        main_panel.setLayout(main_panel_layout)
-        info_layout.addWidget(main_panel, 0, 1, 4, 4)
-
-        apply_button = QPushButton('Close')
-        apply_button.clicked.connect(info_window.close)
-        info_layout.addWidget(apply_button, 4, 4)
-
         info_window.exec()
+
 
     def htui(self):
         about_window = QDialog(parent=self)

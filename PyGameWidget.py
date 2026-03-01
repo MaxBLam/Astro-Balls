@@ -238,6 +238,7 @@ class PyGameWidget(QWidget):
 
         pygame.display.update()
 
+
     @staticmethod
     def terre_objet():
         terre = {
