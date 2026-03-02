@@ -15,23 +15,24 @@ class MainWindowFrame(QMainWindow):
         super().__init__()
         self.timer_state = False
         self.timescope_label = None
-        self.setWindowTitle('Astro Balls')
-        self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        self.game_widget = PyGameWidget()
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.measuring_window = None
         self.distance = None
         self.angle = None
         self.timer_scope = None
-        self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
 
+        self.setWindowTitle('Astro Balls')
+        self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        self.game_widget = PyGameWidget()
         layout = QVBoxLayout(central_widget)
         self.game_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.game_widget)
         self.resize(1200, 600)
+
+        self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
 
         menu = self.menuBar()
         app_menu = QMenu('&Application')

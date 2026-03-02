@@ -28,14 +28,14 @@ class DragNDrop(QToolBar):
 
         planet_tab = QWidget()
         planet_layout = QHBoxLayout()
-        for i in ['Earth', 'Mars', 'Jupiter']:
+        for i in ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']:
             planet_layout.addWidget(QtPlanetLabel(i))
         planet_tab.setLayout(planet_layout)
         tabs.addTab(planet_tab, 'Planets')
 
         ns_tabs = QWidget()
         ns_layout = QHBoxLayout()
-        for j in ['Moon']:
+        for j in ['Moon', 'Europa', 'Io']:
             ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
         tabs.addTab(ns_tabs, 'Natural Satellites')

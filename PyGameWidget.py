@@ -14,14 +14,16 @@ class PyGameWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.y = None
+        self.x = None
         self.j = None
         self.setAcceptDrops(True)
         self.planets = []
         self.active_planet = None
-        self.keys_pressed = set()
-
+        self.playscreen = None
         self.point = []
         self.measuringtape_state = False
+        self.keys_pressed = set()
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
@@ -63,10 +65,6 @@ class PyGameWidget(QWidget):
             self.keys_pressed.remove(event.key())
         super().keyReleaseEvent(event)
 
-    def update_size(self):
-        pygame.display.update()
-        self.x, self.y = pygame.display.get_window_size()
-
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
             event.acceptProposedAction()
@@ -79,6 +77,10 @@ class PyGameWidget(QWidget):
         world_y = (pos.y() - self.y / 2 + self.camera_pos.y) / self.scale
 
         self.spawn_planets(name, world_x, world_y, 0, 0)
+
+    def update_size(self):
+        pygame.display.update()
+        self.x, self.y = pygame.display.get_window_size()
 
     @staticmethod
     def pythagoras(pos):
@@ -98,6 +100,7 @@ class PyGameWidget(QWidget):
             if i.type == pygame.MOUSEBUTTONDOWN:
                 if i.button == 1:
                     pos = pygame.mouse.get_pos()
+                    pos = pygame.mouse.get_pos()
                     self.point.append(pos)
                     self.point = self.point[-2:]
                     self.measuring_updater_signal.emit()
@@ -116,11 +119,18 @@ class PyGameWidget(QWidget):
 
     def spawn_planets(self, name, x, y, velx, vely):
         presets = {
+            "Mercury": {"mass": (3.285*10**23)/(1*10**21), "radius": 9, "color": (245, 245, 220)},
+            "Venus": {"mass": (4.867*10**24)/(1*10**21), "radius": 11, "color": (255, 215, 0)},
             "Earth": {"mass": (5.972*10**24)/(1*10**21), "radius": 12, "color": (0, 100, 255)},
             "Mars": {"mass": (6.416993*10**23)/(1*10**21), "radius": 10, "color": (255, 100, 100)},
-            "Jupiter": {"mass": (1.899*10**27)/(1*10**21), "radius": 20, "color": (200, 150, 50)},
+            "Jupiter": {"mass": (1.899*10**27)/(1*10**21), "radius": 50, "color": (200, 150, 50)},
+            "Saturn": {"mass": (5.683*10**26)/(1*10**21), "radius": 45, "color": (195, 146, 79)},
+            "Uranus": {"mass": (6.681*10**25)/(1*10**21), "radius": 20, "color": (172, 229, 238)},
+            "Neptune": {"mass": (1.024*10**26)/(1*10**21), "radius": 21, "color": (124, 183, 187)},
             "Sun": {"mass": (1.989*10**30)/(1*10**21), "radius": 200, "color": (255, 0, 0)},
-            "Moon": {"mass": (7.347*10**22)/(1*10**21), "radius": 2, "color": (200, 200, 200)}
+            "Moon": {"mass": (7.347*10**22)/(1*10**21), "radius": 4, "color": (200, 200, 200)},
+            "Europa": {"mass": (4.799*10**22)/(1*10**21), "radius": 2, "color": (191, 207, 217)},
+            "Io": {"mass": (8.931*10**22)/(1*10**21), "radius": 3, "color": (200, 180, 100)}
         }
 
         data = presets.get(name, presets["Earth"])
@@ -164,6 +174,14 @@ class PyGameWidget(QWidget):
     def game_loop(self):
         self.gravity()
         self.update_positions()
+        self.playscreen.fill((0, 0, 0))
+        if self.measuringtape_state:
+            self.measuringtape()
+            for i in self.point:
+                pygame.draw.circle(self.playscreen, (255, 255, 255), i, 3)
+
+            if len(self.point) == 2:
+                pygame.draw.line(self.playscreen, (255, 255, 255), self.point[0], self.point[1], 3)
 
         if Qt.Key_F in self.keys_pressed:
             if not self.f_pressed_handled:
@@ -191,11 +209,9 @@ class PyGameWidget(QWidget):
         elif self.camera_mode == "milieu":
             self.camera_pos = self.camera_milieu_pos
 
-        self.playscreen.fill((0, 0, 0))
-
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
+                if event.button == 3:
                     m_pos = pygame.Vector2(event.pos)
                     for n, p in enumerate(self.planets):
                         sx, sy = self.pos_objet_orbite(p['pos'])
@@ -211,12 +227,5 @@ class PyGameWidget(QWidget):
         for p in self.planets:
             screen_x, screen_y = self.pos_objet_orbite(p['pos'])
             pygame.draw.circle(self.playscreen, p["color"], (int(screen_x), int(screen_y)), p["radius"])
-
-        if self.measuringtape_state:
-            for j in self.point:
-                pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
-            if len(self.point) == 2:
-                pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1],
-                                 width=3)
 
         pygame.display.flip()
