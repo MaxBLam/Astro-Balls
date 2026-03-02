@@ -1,15 +1,9 @@
-import random
 import sys
-import os
-from tkinter import Frame
-from turtle import Shape
-
 import pygame
 from PySide6.QtGui import QAction, Qt, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
     QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget
-from matplotlib.patches import Shadow
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
@@ -17,7 +11,7 @@ from WidgetInteractive import DragNDrop, StatsDock
 
 
 class MainWindowFrame(QMainWindow):
-    def __init__(self, sim_id):
+    def __init__(self):
         super().__init__()
         self.timer_state = False
         self.timescope_label = None
@@ -25,7 +19,7 @@ class MainWindowFrame(QMainWindow):
         self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        self.game_widget = PyGameWidget([1, 2, 3], sim=sim_id)
+        self.game_widget = PyGameWidget()
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.measuring_window = None
@@ -207,7 +201,7 @@ class MainWindowFrame(QMainWindow):
 
         self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
         self.time_slider.setRange(1, 100)
-        self.time_slider.setValue(1)
+        self.time_slider.setValue(25)
         self.time_slider.setTickInterval(25)
         self.time_slider.setSingleStep(25)
         self.time_slider.setTickPosition(QSlider.TicksAbove)
@@ -515,6 +509,6 @@ if __name__ == '__main__':
     app.exec()
 
     if ww.wwsc_simulation is not None:
-        mw = MainWindowFrame(sim_id=ww.wwsc_simulation)
+        mw = MainWindowFrame()
         mw.show()
         sys.exit(app.exec())

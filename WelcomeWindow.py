@@ -36,7 +36,7 @@ class WelcomeWindow(QMainWindow):
         ww_opensim2.setFixedSize(350, 150)
         ww_opensim2.move(50, 300)
         ww_opensim2.setStyleSheet('background-color: black')
-        ww_opensim2.clicked.connect(lambda: self.wwsc(2))
+        ww_opensim2.clicked.connect(lambda: self.wwsc(1))
 
     def wwsc(self, sim_id):
         self.wwsc_simulation = sim_id

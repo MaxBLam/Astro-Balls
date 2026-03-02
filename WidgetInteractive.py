@@ -1,6 +1,22 @@
-from PySide6.QtGui import Qt, QFont
+from PySide6.QtCore import QMimeData
+from PySide6.QtGui import Qt, QFont, QDrag
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QDockWidget,QHBoxLayout, QLabel, QGridLayout, QFrame,
                                QComboBox, QDoubleSpinBox, QScrollArea, QToolBar, QTabWidget)
+
+
+class QtPlanetLabel(QLabel):
+    def __init__(self, name):
+        super().__init__(name)
+        self.planet_name = name
+        self.setStyleSheet('padding: 6px; background-color: gray;')
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            dragging = QDrag(self)
+            mime = QMimeData()
+            mime.setText(self.planet_name)
+            dragging.setMimeData(mime)
+            dragging.exec(Qt.CopyAction)
 
 
 class DragNDrop(QToolBar):
@@ -12,30 +28,26 @@ class DragNDrop(QToolBar):
 
         planet_tab = QWidget()
         planet_layout = QHBoxLayout()
-        earth_button = QPushButton('Earth')
-        earth_button.setFixedSize(60, 60)
-        planet_layout.addWidget(earth_button)
+        for i in ['Earth', 'Mars', 'Jupiter']:
+            planet_layout.addWidget(QtPlanetLabel(i))
         planet_tab.setLayout(planet_layout)
         tabs.addTab(planet_tab, 'Planets')
 
         ns_tabs = QWidget()
         ns_layout = QHBoxLayout()
-        moon_button = QPushButton('Moon')
-        moon_button.setFixedSize(60, 60)
-        ns_layout.addWidget(moon_button)
+        for j in ['Moon']:
+            ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
         tabs.addTab(ns_tabs, 'Natural Satellites')
 
         star_tabs = QWidget()
         star_layout = QHBoxLayout()
-        moon_button = QPushButton('Sun')
-        moon_button.setFixedSize(60, 60)
-        star_layout.addWidget(moon_button)
+        for k in ['Sun']:
+            star_layout.addWidget(QtPlanetLabel(k))
         star_tabs.setLayout(star_layout)
         tabs.addTab(star_tabs, 'Stars')
 
         self.addWidget(tabs)
-
         self.setFixedHeight(100)
 
 
