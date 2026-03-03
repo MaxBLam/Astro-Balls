@@ -12,7 +12,7 @@ class WelcomeWindow(QMainWindow):
         self.setCentralWidget(ww_widget)
         ww_layout = QGridLayout()
         ww_widget.setLayout(ww_layout)
-        ww_widget.setStyleSheet('background-color: black')
+        ww_widget.setStyleSheet('background-color: #010101;')
         ww_layout.setContentsMargins(0, 0, 0, 0)
         ww_layout.setSpacing(0)
         ww_pixmap = QPixmap('images/ww_images/The_Earth_seen_from_Apollo_17.jpg').scaled(250, 500, Qt.KeepAspectRatio,
@@ -27,16 +27,31 @@ class WelcomeWindow(QMainWindow):
         ww_label_font.setPointSize(40)
         ww_label.setFont(ww_label_font)
         ww_label.move(70, 50)
+
         ww_opensim1 = QPushButton('Simulation #1', self)
-        ww_opensim1.setFixedSize(350, 150)
+        ww_opensim1.setFixedSize(175, 100)
         ww_opensim1.move(50, 150)
-        ww_opensim1.setStyleSheet('background-color: black')
+        ww_opensim1.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+        QPushButton:hover {background-color: #090C29;}""")
         ww_opensim1.clicked.connect(lambda: self.wwsc(1))
         ww_opensim2 = QPushButton('Simulation #2', self)
-        ww_opensim2.setFixedSize(350, 150)
-        ww_opensim2.move(50, 300)
-        ww_opensim2.setStyleSheet('background-color: black')
+        ww_opensim2.setFixedSize(175, 100)
+        ww_opensim2.move(50, 250)
+        ww_opensim2.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+        QPushButton:hover {background-color: #1D0721;}""")
         ww_opensim2.clicked.connect(lambda: self.wwsc(1))
+        ww_opensim3 = QPushButton('Simulation #3', self)
+        ww_opensim3.setFixedSize(175, 200)
+        ww_opensim3.move(225, 150)
+        ww_opensim3.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+        QPushButton:hover {background-color: #0E1F13;}""")
+        ww_opensim3.clicked.connect(lambda: self.wwsc(1))
+        ww_sandbox = QPushButton('SandBox', self)
+        ww_sandbox.setFixedSize(350, 100)
+        ww_sandbox.move(50, 350)
+        ww_sandbox.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+        QPushButton:hover {background-color: #072021;}""")
+        ww_sandbox.clicked.connect(lambda: self.wwsc(1))
 
     def wwsc(self, sim_id):
         self.wwsc_simulation = sim_id

@@ -21,12 +21,13 @@ class MainWindowFrame(QMainWindow):
         self.distance = None
         self.angle = None
         self.timer_scope = None
+        self.main_statsdock_link = StatsDock()
 
         self.setWindowTitle('Astro Balls')
         self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        self.game_widget = PyGameWidget()
+        self.game_widget = PyGameWidget(self.main_statsdock_link)
         layout = QVBoxLayout(central_widget)
         self.game_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.game_widget)
@@ -132,8 +133,7 @@ class MainWindowFrame(QMainWindow):
 
         self.dragndrop = DragNDrop()
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
-        self.statsdock = StatsDock()
-        self.addDockWidget(Qt.RightDockWidgetArea, self.statsdock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.main_statsdock_link)
 
     def measuringtape(self):
         self.game_widget.toggle_measuringtape(True)
@@ -221,7 +221,7 @@ class MainWindowFrame(QMainWindow):
 
         self.timer_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.timer_scope.setFixedHeight(120)
-        self.splitDockWidget(self.statsdock, self.timer_scope, Qt.Vertical)
+        self.splitDockWidget(self.main_statsdock_link, self.timer_scope, Qt.Vertical)
 
         self.timer_scope.visibilityChanged.connect(self.timerscope_close)
         self.timer_scope.show()

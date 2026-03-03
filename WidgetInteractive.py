@@ -54,6 +54,7 @@ class DragNDrop(QToolBar):
 class StatsDock(QDockWidget):
     def __init__(self):
         super().__init__("Statistics")
+        self.body_label = None
 
         widget = QWidget()
         layout = QVBoxLayout()
@@ -66,37 +67,38 @@ class StatsDock(QDockWidget):
         layout.addWidget(upper_panel)
         upper_panel.setFixedSize(200, 450)
 
-        body_label = QLabel()
-        body_label.setText("[SELECTED BODY'S NAME]")
+        self.body_label = QLabel()
+        self.body_label.setText("")
         body_label_txt = QFont()
-        body_label_txt.setPointSize(10)
+        body_label_txt.setPointSize(20)
         body_label_txt.setBold(True)
         body_label_txt.setItalic(True)
-        body_label.setFont(body_label_txt)
-        upper_panel_layout.addWidget(body_label, 0, 0, 1, 3)
+        self.body_label.setFont(body_label_txt)
+        upper_panel_layout.addWidget(self.body_label, 0, 0, 1, 3)
 
-        body_type = QLabel()
-        body_type.setText(f"Type: [body's type]")
-        upper_panel_layout.addWidget(body_type, 1, 0, 1, 2)
+        self.body_type = QLabel()
+        self.body_type.setText(f"Type: ")
+        upper_panel_layout.addWidget(self.body_type, 1, 0, 1, 2)
 
-        surface_label = QLabel()
-        surface_label.setText(f"Surface Composition")
-        surface_label.setWordWrap(True)
-        upper_panel_layout.addWidget(surface_label, 2, 0, 1, 2)
+        self.surface_label = QLabel()
+        self.surface_label.setText(f"Surface Composition: ")
+        self.surface_label.setWordWrap(True)
+        upper_panel_layout.addWidget(self.surface_label, 2, 0, 1, 2)
 
-        age_label = QLabel()
-        age_label.setText(f"Age: [body's age]")
-        upper_panel_layout.addWidget(age_label, 3, 0, 1, 2)
+        self.age_label = QLabel()
+        self.age_label.setText(f"Age: ")
+        self.age_label.setWordWrap(True)
+        upper_panel_layout.addWidget(self.age_label, 3, 0, 1, 2)
 
-        rotation_label = QLabel()
-        rotation_label.setText(f"Length of Rotation: [body's rotation time]")
-        rotation_label.setWordWrap(True)
-        upper_panel_layout.addWidget(rotation_label, 4, 0, 1, 2)
+        self.rotation_label = QLabel()
+        self.rotation_label.setText(f"Length of Rotation: ")
+        self.rotation_label.setWordWrap(True)
+        upper_panel_layout.addWidget(self.rotation_label, 4, 0, 1, 2)
 
-        revolution_label = QLabel()
-        revolution_label.setText(f"Length of Revolution: [body's revolution time]")
-        revolution_label.setWordWrap(True)
-        upper_panel_layout.addWidget(revolution_label, 5, 0, 1, 2)
+        self.revolution_label = QLabel()
+        self.revolution_label.setText(f"Length of Revolution: [body's revolution time]")
+        self.revolution_label.setWordWrap(True)
+        upper_panel_layout.addWidget(self.revolution_label, 5, 0, 1, 2)
 
         mid_panel = QFrame()
         mid_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
@@ -215,3 +217,4 @@ class StatsDock(QDockWidget):
         scroller.setWidget(widget)
         scroller.setFixedWidth(217)
         self.setWidget(scroller)
+
