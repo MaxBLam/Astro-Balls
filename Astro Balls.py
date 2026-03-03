@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushBu
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
-
+#
 
 class MainWindowFrame(QMainWindow):
     def __init__(self):
