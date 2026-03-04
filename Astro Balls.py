@@ -15,6 +15,9 @@ class MainWindowFrame(QMainWindow):
         super().__init__()
         self.timer_state = False
         self.timescope_label = None
+        self.scale_state = False
+        self.scale_scope = None
+        self.scale_slider = None
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.measuring_window = None
@@ -75,17 +78,16 @@ class MainWindowFrame(QMainWindow):
         orbitsinfo_view = self.customcheckbox(func_name='Orbits Info', method=self.showorbitinfo)[0]
         orbitsinfo_action.setDefaultWidget(orbitsinfo_view)
         view_menu.addAction(orbitsinfo_action)
-        scale_action = QWidgetAction(view_menu)
-        scale_view = self.customcheckbox(func_name='Scale Slider', method=self.scaleslider)[0]
-        scale_action.setDefaultWidget(scale_view)
-        view_menu.addAction(scale_action)
-        menu.addMenu(view_menu)
+        self.scale_action = QWidgetAction(view_menu)
+        if self.scale_state is False:
+            self.scale_view, self.scale_state = self.customcheckbox(func_name='Scale', method=self.scaleslider)
+            self.scale_action.setDefaultWidget(self.scale_view)
+        view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
         if self.timer_state is False:
             self.timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
-        menu.addMenu(view_menu)
         vector_menu = view_menu.addMenu('Vectors')
         orbits_vector = QWidgetAction(vector_menu)
         orbits_vector_view = self.customcheckbox(func_name='Orbital Vectors', method=self.showorbitvector)[0]
@@ -99,6 +101,7 @@ class MainWindowFrame(QMainWindow):
         rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)[0]
         rotational_vector.setDefaultWidget(rotational_vector_view)
         vector_menu.addAction(rotational_vector)
+        menu.addMenu(view_menu)
 
         tool_menu = QMenu('&Tools')
         menu.addMenu(tool_menu)
@@ -201,10 +204,10 @@ class MainWindowFrame(QMainWindow):
         self.timer_scope.setWindowTitle('Timer')
 
         self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
-        self.time_slider.setRange(1, 100)
-        self.time_slider.setValue(25)
-        self.time_slider.setTickInterval(25)
-        self.time_slider.setSingleStep(25)
+        self.time_slider.setRange(0, 100)
+        self.time_slider.setValue(1)
+        self.time_slider.setTickInterval(5)
+        self.time_slider.setSingleStep(5)
         self.time_slider.setTickPosition(QSlider.TicksAbove)
         timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
         self.time_slider.valueChanged.connect(self.update_timerscope)
@@ -243,10 +246,68 @@ class MainWindowFrame(QMainWindow):
             self.timer_state.blockSignals(False)
 
     def backward_timescope(self):
-        self.time_slider.setValue(self.time_slider.value() - 25)
+        self.time_slider.setValue(self.time_slider.value() - 1)
 
     def forward_timescope(self):
-        self.time_slider.setValue(self.time_slider.value() + 25)
+        self.time_slider.setValue(self.time_slider.value() + 1)
+
+    def scaleslider(self):
+        if getattr(self, 'scale_slider', None) is not None:
+            self.scale_scope.setVisible(self.scale_state.isChecked())
+            return
+        self.scale_scope = QDockWidget(parent=self)
+        scale_scope_container = QWidget()
+        scale_scope_widget = QGridLayout(scale_scope_container)
+        self.scale_scope.setWidget(scale_scope_container)
+        self.scale_scope.setWindowTitle('Scale Slider')
+
+        self.scale_slider = QSlider(Qt.Orientation.Horizontal, parent=scale_scope_container)
+        self.scale_slider.setRange(1, 100)
+        self.scale_slider.setValue(5)
+        self.scale_slider.setTickInterval(1)
+        self.scale_slider.setSingleStep(1)
+        self.scale_slider.setTickPosition(QSlider.TicksAbove)
+        scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
+        self.scale_slider.valueChanged.connect(self.update_scale_slider)
+        self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
+        self.scale_slider_label = QLabel('', scale_scope_container)
+
+        backward_button = QPushButton('Backward')
+        backward_button.clicked.connect(self.backward_scale_slider)
+        scale_scope_widget.addWidget(backward_button, 1, 0)
+
+        forward_button = QPushButton('Forward')
+        forward_button.clicked.connect(self.forward_scale_slider)
+        scale_scope_widget.addWidget(forward_button, 1, 1)
+
+        self.scale_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.scale_scope.setFixedHeight(120)
+        self.splitDockWidget(self.statsdock, self.scale_scope, Qt.Vertical)
+
+        self.scale_scope.visibilityChanged.connect(self.scale_scope_close)
+        self.scale_scope.show()
+
+    def scale_scope_close(self, active):
+        if hasattr(self, 'timer_state'):
+            self.scale_state.blockSignals(True)
+            self.scale_state.setChecked(active)
+            self.scale_state.blockSignals(False)
+
+    def update_scale_slider(self):
+        self.scale_slider_label.setText(f'X{self.scale_slider.value()}')
+        self.scale_slider_label.adjustSize()
+        ratio = (self.scale_slider.value() - self.scale_slider.minimum()) / (
+                self.scale_slider.maximum() - self.scale_slider.minimum())
+        x_pos = 16 / 2 + ratio * (self.scale_slider.width() - 16)
+        x_pos_parent = self.scale_slider.x() + x_pos - (self.scale_slider.width() // 2)
+        y_pos = self.scale_slider.y() - 15
+        self.scale_slider.move(int(x_pos_parent), int(y_pos))
+
+    def backward_scale_slider(self):
+        self.scale_slider.setValue(self.scale_slider.value() - 1)
+
+    def forward_scale_slider(self):
+        self.scale_slider.setValue(self.scale_slider.value() + 1)
 
     @staticmethod
     def customcheckbox(func_name, method):
