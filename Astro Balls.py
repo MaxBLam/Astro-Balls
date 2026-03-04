@@ -282,7 +282,7 @@ class MainWindowFrame(QMainWindow):
 
         self.scale_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.scale_scope.setFixedHeight(120)
-        self.splitDockWidget(self.statsdock, self.scale_scope, Qt.Vertical)
+        self.splitDockWidget(self.main_statsdock_link, self.scale_scope, Qt.Vertical)
 
         self.scale_scope.visibilityChanged.connect(self.scale_scope_close)
         self.scale_scope.show()
@@ -538,9 +538,6 @@ class MainWindowFrame(QMainWindow):
 
     def keybinds(self):
         self.settings()
-
-    def scaleslider(self):
-        pass
 
     def newton1(self):
         pass
