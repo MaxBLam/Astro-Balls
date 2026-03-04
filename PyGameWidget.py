@@ -7,7 +7,6 @@ from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
 
-from pygame_menu.examples.other.ui_solar_system import Planet
 
 from WidgetInteractive import StatsDock
 
@@ -17,14 +16,15 @@ class PyGameWidget(QWidget):
 
     def __init__(self, statsdock):
         super().__init__()
-        self.statsdock = statsdock
 
+        self.statsdock = statsdock
         self.y = None
         self.x = None
-        self.j = None
         self.setAcceptDrops(True)
-        self.planets = []
+        self.planetes = []
+        self.planetes_pos = []
         self.active_planet = None
+        self.vitesse_state = False
         self.playscreen = None
         self.point = []
         self.measuringtape_state = False
@@ -32,34 +32,38 @@ class PyGameWidget(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
-        self.fps_simulation = 120
-        self.G = 1000
-        self.scale = 0.1
-        facteur_ellipse = 0.1  # <1 pour une ellipse
-        self.dtime = 0.1 / self.fps_simulation
-
-        self.camera_mode = 'milieu'
-        self.camera_milieu_pos = euclid.Vector2(0, 0)
-        self.camera_pos = euclid.Vector2(0, 0)
-        self.camera_target_pos = euclid.Vector2(0, 0)
-        self.f_pressed_handled = None
-
         self.pygame_windowhandler()
 
-        self.clock = QTimer()
-        self.clock.timeout.connect(self.game_loop)
-        self.clock.start(16)
+        self.fps_simulation = 120
+        self.timer = QTimer()
+        self.timer.start(8)
+
+        self.font = pygame.font.SysFont(None, 20)
+
+        self.simulation = 1
+        self.G = 6.6743*10**-15
+        self.scale = 2**4 / 100**4
+        self.facteur_ellipse = 0.5 # <1 pour une ellipse
+        self.dtime = 1 / self.fps_simulation
+
+        self.f_pressed_handled = False
+        self.camera_pos = euclid.Vector2(0, 0)
+        self.camera_milieu_pos = euclid.Vector2(0, 0)
+        self.camera_mode = "free"  # "free", "follow", "milieu"
+
+        self.timer.timeout.connect(self.game_loop)
 
     def pygame_windowhandler(self):
         os.environ["SDL_WINDOWID"] = str(int(self.winId()))
         os.environ["SDL_VIDEODRIVER"] = "windows"
         pygame.init()
+        pygame.font.init()
         self.playscreen = pygame.display.set_mode(size=(0, 0))
         self.x, self.y = self.playscreen.get_size()
-        self.timer = pygame.time.Clock()
 
-    def speed_interactive(self, value: int):
-        self.dtime = 0.1 / self.fps_simulation * value
+    def update_size(self):
+        pygame.display.update()
+        self.x, self.y = pygame.display.get_window_size()
 
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
@@ -70,6 +74,12 @@ class PyGameWidget(QWidget):
             self.keys_pressed.remove(event.key())
         super().keyReleaseEvent(event)
 
+    def speed_interactive(self, value : int):
+        self.dtime = 1 / self.fps_simulation * (0.3*value)**3
+
+    def scale_interactive(self, value : int):
+        self.scale = float(value**4 / 100**4)
+#
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
             event.acceptProposedAction()
@@ -77,15 +87,57 @@ class PyGameWidget(QWidget):
     def dropEvent(self, event):
         name = event.mimeData().text()
         pos = event.pos()
+        print(pos)
+        world_x = (pos.x() + self.x / 2 - self.camera_pos.x) / self.scale
+        world_y = (pos.y() + self.y / 2 - self.camera_pos.y) / self.scale
+        self.corps(name, world_x, world_y)
 
-        world_x = (pos.x() - self.x / 2 + self.camera_pos.x) / self.scale
-        world_y = (pos.y() - self.y / 2 + self.camera_pos.y) / self.scale
+        if self.simulation == 1 and len(self.planetes) == 3 and not self.vitesse_state:
+            self.vitesse_simulation1()
 
-        self.spawn_planets(name, world_x, world_y, 0, 0)
+    def vitesse_simulation1(self):
+        self.planetes[0]["vitesse"] = euclid.Vector2(0, 0)
+        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) * self.facteur_ellipse
+        self.planetes[2]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[2]) + self.planetes[1]["vitesse"]
+        self.vitesse_state = True
 
-    def update_size(self):
-        pygame.display.update()
-        self.x, self.y = pygame.display.get_window_size()
+    def simulation_objet_central_3corps(self, objet_central, objet_orbite1, objet_orbite2):
+        acc_objet_central = euclid.Vector2(0, 0)
+        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(objet_orbite2, objet_central)
+
+        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets_update = self.mouvement(list_objets)
+
+        self.camera_milieu_pos = self.scale * (self.planetes[1]["position"] + self.planetes[0]["position"]) / 2
+        self.display(list_objets_update)
+
+    def simulation_2corps(self, objet_orbite1, objet_orbite2):
+        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_orbite2)
+        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1)
+
+        list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets_update = self.mouvement(list_objets)
+
+        self.camera_milieu_pos = self.scale * (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
+        self.display(list_objets_update)
+
+    def force_gravitationnelle(self, obj1, obj2):
+        d_vecteur = obj2["position"] - obj1["position"]
+        distance = d_vecteur.magnitude()
+        distance = max(distance, 1)
+        d_vecteur.normalize()
+        acceleration = d_vecteur * (self.G * obj2["masse"] / distance ** 2)
+        return acceleration
+
+    def vitesse_gravitationnelle(self, obj1, obj2):
+        d_vecteur = obj2["position"] - obj1["position"]
+        distance = d_vecteur.magnitude()
+        d_vecteur.normalize()
+        tangente = euclid.Vector2(-d_vecteur.y, d_vecteur.x)
+        v_orbitale = math.sqrt(self.G * obj1["masse"] / distance)
+        v_orbitale = v_orbitale * tangente
+        return v_orbitale
 
     @staticmethod
     def pythagoras(pos):
@@ -97,14 +149,10 @@ class PyGameWidget(QWidget):
         theta = math.degrees(math.atan2(height, length))
         return round(hypotenus, 2), round(theta, 2)
 
-    def kepler(self):
-        pass
-
     def measuringtape(self):
         for i in pygame.event.get():
             if i.type == pygame.MOUSEBUTTONDOWN:
                 if i.button == 1:
-                    pos = pygame.mouse.get_pos()
                     pos = pygame.mouse.get_pos()
                     self.point.append(pos)
                     self.point = self.point[-2:]
@@ -116,57 +164,17 @@ class PyGameWidget(QWidget):
             self.point.clear()
             self.measuring_updater_signal.emit()
 
-    def changer_vue(self):
-        modes = ["free", "follow", "milieu"]
-        current_idx = modes.index(self.camera_mode)
-        self.camera_mode = modes[(current_idx + 1) % len(modes)]
-        print(f"Camera Mode: {self.camera_mode}")
+    def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
+        list_objets_update = []
+        for objet in objets:
+            objet[0]["vitesse"] += objet[1] * self.dtime
+            objet[0]["position"] += objet[0]["vitesse"] * self.dtime
+            list_objets_update.append(objet)
 
-    def spawn_planets(self, name, x, y, velx, vely):
-        presets = {
-            "Mercury": {'name': 'Mercury', 'type': 'Planet', 'sufcomp': 'Metallic (70%)', 'age': '4.503 billion Earth-Years', 'rotation': '1,408h', 'revolution': '88 days', "mass": (3.285*10**23)/(1*10**21), "radius": 9, "color": (245, 245, 220)},
-            "Venus": {'name': 'Venus', 'type': 'Planet', 'sufcomp': 'Basalt', 'age': '4.503 billion Earth-Years', 'rotation': '5,832h', 'revolution': '225 days', "mass": (4.867*10**24)/(1*10**21), "radius": 11, "color": (255, 215, 0)},
-            "Earth": {'name': 'Earth', 'type': 'Planet', 'sufcomp': 'Granite', 'age': '4.543 billion Earth-Years', 'rotation': '24h', 'revolution': '365 days', "mass": (5.972*10**24)/(1*10**21), "radius": 12, "color": (0, 100, 255)},
-            "Mars": {'name': 'Mars', 'type': 'Planet', 'sufcomp': 'Oxidized Iron', 'age': '4.603 billion Earth-Years', 'rotation': '25h', 'revolution': '687 days', "mass": (6.416993*10**23)/(1*10**21), "radius": 10, "color": (255, 100, 100)},
-            "Jupiter": {'name': 'Jupiter', 'type': 'Gas Giant', 'sufcomp': 'Hydrogen (90%)', 'age': '4.603 billion Earth-Years', 'rotation': '10h', 'revolution': '4,333 days', "mass": (1.899*10**27)/(1*10**21), "radius": 50, "color": (200, 150, 50)},
-            "Saturn": {'name': 'Saturn', 'type': 'Gas Giant', 'sufcomp': 'Hydrogen (94%)', 'age': '4.503 billion Earth-Years', 'rotation': '11h', 'revolution': '10,757 days', "mass": (5.683*10**26)/(1*10**21), "radius": 45, "color": (195, 146, 79)},
-            "Uranus": {'name': 'Uranus', 'type': 'Gas Giant', 'sufcomp': 'Hydrogen (90%)', 'age': '4.503 billion Earth-Years', 'rotation': '17h', 'revolution': '30,687 days', "mass": (6.681*10**25)/(1*10**21), "radius": 20, "color": (172, 229, 238)},
-            "Neptune": {'name': 'Neptune', 'type': 'Gas Giant', 'sufcomp': 'Hydrogen (90%)', 'age': '4.503 billion Earth-Years', 'rotation': '16h', 'revolution': '60,197 days', "mass": (1.024*10**26)/(1*10**21), "radius": 21, "color": (124, 183, 187)},
-            "Sun": {'name': 'Sun', 'type': 'Star', 'sufcomp': 'Hydrogen (74%)', 'age': '4.603 billion Earth-Years', 'rotation': '600h', 'revolution': 'None', "mass": (1.989*10**30)/(1*10**21), "radius": 200, "color": (255, 0, 0)},
-            "Moon": {'name': 'Moon', 'type': 'Natural Satellite', 'sufcomp': 'Lunar Regolith', 'age': '4.46 billion Earth-Years', 'rotation': '655h', 'revolution': '27 days', "mass": (7.347*10**22)/(1*10**21), "radius": 4, "color": (200, 200, 200)},
-            "Europa": {'name': 'Europa', 'type': 'Natural Satellite', 'sufcomp': 'Ice', 'age': '4.5 billion Earth-Years', 'rotation': '85.2h', 'revolution': '3.55 days', "mass": (4.799*10**22)/(1*10**21), "radius": 2, "color": (191, 207, 217)},
-            "Io": {'name': 'Io', 'type': 'Natural Satellite', 'sufcomp': 'Sulfur Dioxide', 'age': '4.57 billion Earth-Years', 'rotation': '42.5h', 'revolution': '42h', "mass": (8.931*10**22)/(1*10**21), "radius": 3, "color": (200, 180, 100)}
-        }
-
-        data = presets.get(name, presets["Mercury"])
-
-        planet = {"Name": name, "pos": pygame.Vector2(x, y), "vel": pygame.Vector2(velx, vely), "mass": data["mass"],
-                  "radius": data["radius"], "color": data["color"], 'type': data['type'], 'sufcomp': data['sufcomp'],
-                  'age': data['age'], 'rotation': data['rotation'], 'revolution': data['revolution']}
-
-        self.planets.append(planet)
-
-    def gravity(self):
-        for i, self.j in enumerate(self.planets):
-            if self.j['mass'] > 28000:
-                total_dmomentum = pygame.Vector2(0, 0)
-            else:
-                total_dmomentum = pygame.Vector2(0, 0)  # do not change, will implement acceleration later
-            for k, l in enumerate(self.planets):
-                if i == k:
-                    continue
-                direction = l['pos'] - self.j['pos']
-                length = direction.length()
-                if length < 10:
-                    continue
-                direction = direction.normalize() # check here
-                dmomentum = self.G * l['mass'] / (length**2)
-                total_dmomentum += direction * dmomentum
-            self.j['vel'] += total_dmomentum * self.dtime
-
-    def update_positions(self):
-        for planet in self.planets:
-            planet["pos"] += planet["vel"] * self.dtime
+            #if self.camera_mode == "follow" and objet[0]["nom"] == self.camera_target["nom"]:
+                #self.camera_pos = objet[0]["position"] * self.scale
+        #print (list_objets_update)
+        return list_objets_update
 
     def pos_objet_orbite(self, pos):
         pos_pixel = pos * self.scale
@@ -177,17 +185,82 @@ class PyGameWidget(QWidget):
 
         return new_world_x, new_world_y
 
-    def game_loop(self):
-        self.gravity()
-        self.update_positions()
+    def changer_vue(self):
+        if self.camera_mode == "free":
+            self.camera_mode = "follow"
+        elif self.camera_mode == "follow":
+            self.camera_mode = "milieu"
+        elif self.camera_mode == "milieu":
+            self.camera_mode = "free"
+
+    def display(self, objets: list):  # objet[0] = objet, objet[1] = acc_objet
         self.playscreen.fill((0, 0, 0))
+
+        for objet in objets:
+            rx, ry = self.pos_objet_orbite(objet[0]["position"])
+            rayon = objet[0]["rayon"] * self.scale
+
+            if rayon < 1:
+                text = self.font.render(f"{objet[0]['nom']}", True, (255, 255, 255))
+                self.playscreen.blit(text, (int(rx), int(ry)))
+            else:
+                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (int(rx), int(ry)), rayon)
+
+        for j in self.point:
+            pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
+        if len(self.point) == 2:
+            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
+
+        pygame.display.flip()
+
+    def corps(self, nom, x, y):
+        corps = {
+    "Mercure": {'nom': 'Mercure', 'type': 'Planète', 'composition_surface': 'Métallique (70%)', 'âge': '4,503 milliards d’années', 'rotation': '1 408 h', 'révolution': '88 jours', "masse": (3.285*10**23), "rayon": 2439.7, "couleur": (245, 245, 220)},
+    "Venus": {'nom': 'Vénus', 'type': 'Planète', 'composition_surface': 'Basalte', 'âge': '4,503 milliards d’années', 'rotation': '5 832 h', 'révolution': '225 jours', "masse": (4.867*10**24), "rayon": 6051.8, "couleur": (255, 215, 0)},
+    "Terre": {'nom': 'Terre', 'type': 'Planète', 'composition_surface': 'Granite', 'âge': '4,543 milliards d’années', 'rotation': '24 h', 'révolution': '365 jours', "masse": (5.972*10**24), "rayon": 6371.0, "couleur": (0, 100, 255)},
+    "Mars": {'nom': 'Mars', 'type': 'Planète', 'composition_surface': 'Fer oxydé', 'âge': '4,603 milliards d’années', 'rotation': '25 h', 'révolution': '687 jours', "masse": (6.416993*10**23), "rayon": 3389.5, "couleur": (255, 100, 100)},
+    "Jupiter": {'nom': 'Jupiter', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)', 'âge': '4,603 milliards d’années', 'rotation': '10 h', 'révolution': '4 333 jours', "masse": (1.899*10**27), "rayon": 69911, "couleur": (200, 150, 50)},
+    "Saturn": {'nom': 'Saturne', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (94%)', 'âge': '4,503 milliards d’années', 'rotation': '11 h', 'révolution': '10 757 jours', "masse": (5.683*10**26), "rayon": 58232, "couleur": (195, 146, 79)},
+    "Uranus": {'nom': 'Uranus', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)', 'âge': '4,503 milliards d’années', 'rotation': '17 h', 'révolution': '30 687 jours', "masse": (6.681*10**25), "rayon": 25362, "couleur": (172, 229, 238)},
+    "Neptune": {'nom': 'Neptune', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)', 'âge': '4,503 milliards d’années', 'rotation': '16 h', 'révolution': '60 197 jours', "masse": (1.024*10**26), "rayon": 24622, "couleur": (124, 183, 187)},
+    "Soleil": {'nom': 'Soleil', 'type': 'Étoile', 'composition_surface': 'Hydrogène (74%)', 'âge': '4,603 milliards d’années', 'rotation': '600 h', 'révolution': 'Aucune', "masse": (1.989*10**30), "rayon": 696340, "couleur": (255, 0, 0)},
+    "Lune": {'nom': 'Lune', 'type': 'Satellite naturel', 'composition_surface': 'Régolithe lunaire', 'âge': '4,46 milliards d’années', 'rotation': '655 h', 'révolution': '27 jours', "masse": (7.347*10**22), "rayon": 1737.4, "couleur": (200, 200, 200)},
+    "Europe": {'nom': 'Europe', 'type': 'Satellite naturel', 'composition_surface': 'Glace', 'âge': '4,5 milliards d’années', 'rotation': '85,2 h', 'révolution': '3,55 jours', "masse": (4.799*10**22), "rayon": 1560.8, "couleur": (191, 207, 217)},
+    "Io": {'nom': 'Io', 'type': 'Satellite naturel', 'composition_surface': 'Dioxyde de soufre', 'âge': '4,57 milliards d’années', 'rotation': '42,5 h', 'révolution': '42 h', "masse": (8.931*10**22), "rayon": 1821.6, "couleur": (200, 180, 100)}
+        }
+
+        data = corps.get(nom, corps["Mercure"])
+
+        planete = {"nom": data["nom"], "position": pygame.Vector2(x, y), "vitesse": pygame.Vector2(0,0), "masse": data["masse"],
+              "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'], 'composition_surface': data['composition_surface'],
+              'âge': data['âge'], 'rotation': data['rotation'], 'révolution': data['révolution']}
+
+        self.planetes.append(planete)
+
+    def game_loop(self):
         if self.measuringtape_state:
             self.measuringtape()
-            for i in self.point:
-                pygame.draw.circle(self.playscreen, (255, 255, 255), i, 3)
 
-            if len(self.point) == 2:
-                pygame.draw.line(self.playscreen, (255, 255, 255), self.point[0], self.point[1], 3)
+        self.update_size()
+
+        if self.simulation == 1:
+            if len(self.planetes) > 2:
+                objet_central, objet_orbite1, objet_orbite2 = self.planetes[0], self.planetes[1], self.planetes[2]
+                self.simulation_objet_central_3corps(objet_central, objet_orbite1, objet_orbite2)
+            else:
+                for planete in self.planetes:
+                    rx, ry = self.pos_objet_orbite(planete['position'])
+                    pygame.draw.circle(self.playscreen, planete["couleur"], (int(rx), int(ry)), planete["rayon"] * self.scale)
+
+        elif self.simulation == 2:
+            pass
+
+        elif self.simulation == 3:
+            pass
+        elif self.simulation == 4:
+            pass
+        else:
+            pass
 
         if Qt.Key_F in self.keys_pressed:
             if not self.f_pressed_handled:
@@ -199,7 +272,6 @@ class PyGameWidget(QWidget):
         speed = 3
         if Qt.Key_Shift in self.keys_pressed:
             speed = 10
-
         if self.camera_mode == "free":
             if Qt.Key_A in self.keys_pressed:
                 self.camera_pos.x -= speed
@@ -209,38 +281,35 @@ class PyGameWidget(QWidget):
                 self.camera_pos.y -= speed
             if Qt.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed
-
-        elif self.camera_mode == "follow" and self.planets:
-            self.camera_pos = self.planets[0]['pos'] * self.scale
         elif self.camera_mode == "milieu":
             self.camera_pos = self.camera_milieu_pos
 
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
-                    m_pos = pygame.Vector2(event.pos)
-                    for n, p in enumerate(self.planets):
-                        sx, sy = self.pos_objet_orbite(p['pos'])
-                        if m_pos.distance_to((sx, sy)) <= p['radius']:
+                    souris_pos = pygame.Vector2(event.pos)
+                    for n, p in enumerate(self.planetes):
+                        sx, sy = self.pos_objet_orbite(p['position'])
+                        if souris_pos.distance_to((sx, sy)) <= p['rayon']:
                             self.active_planet = n
                             break
                 if event.button == 1:
                     m_pos = pygame.Vector2(event.pos)
-                    for n, p in enumerate(self.planets):
-                        sx, sy = self.pos_objet_orbite(p['pos'])
-                        if m_pos.distance_to((sx, sy)) <= p['radius']:
+                    for n, p in enumerate(self.planetes):
+                        sx, sy = self.pos_objet_orbite(p['position'])
+                        if m_pos.distance_to((sx, sy)) <= p['rayon']:
                             self.active_planet = n
-                            self.statsdock.body_label.setText(f'{p['Name']}')
+                            self.statsdock.body_label.setText(f'{p['nom']}')
                             self.statsdock.body_label.repaint()
                             self.statsdock.body_type.setText(f'Type: {p['type']}')
                             self.statsdock.body_type.repaint()
-                            self.statsdock.surface_label.setText(f'Surface Composition: {p['sufcomp']}')
+                            self.statsdock.surface_label.setText(f'Surface Composition: {p['composition_surface']}')
                             self.statsdock.body_type.repaint()
-                            self.statsdock.age_label.setText(f'Age: {p['age']}')
+                            self.statsdock.age_label.setText(f'Age: {p['âge']}')
                             self.statsdock.age_label.repaint()
                             self.statsdock.rotation_label.setText(f'Length of Rotation: {p['rotation']}')
                             self.statsdock.rotation_label.repaint()
-                            self.statsdock.revolution_label.setText(f'Length of Revolution: {p['revolution']}')
+                            self.statsdock.revolution_label.setText(f'Length of Revolution: {p['révolution']}')
                             self.statsdock.revolution_label.repaint()
                             break
 
@@ -248,10 +317,4 @@ class PyGameWidget(QWidget):
                 self.active_planet = None
             elif event.type == pygame.MOUSEMOTION:
                 if self.active_planet is not None:
-                    self.planets[self.active_planet]['pos'] += pygame.Vector2(event.rel) / self.scale
-
-        for p in self.planets:
-            screen_x, screen_y = self.pos_objet_orbite(p['pos'])
-            pygame.draw.circle(self.playscreen, p["color"], (int(screen_x), int(screen_y)), p["radius"])
-
-        pygame.display.flip()
+                    self.planetes[self.active_planet]['position'] += pygame.Vector2(event.rel) / self.scale
