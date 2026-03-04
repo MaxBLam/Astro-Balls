@@ -138,6 +138,10 @@ class MainWindowFrame(QMainWindow):
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
         self.addDockWidget(Qt.RightDockWidgetArea, self.main_statsdock_link)
 
+    def resizeEvent(self, event):
+        self.game_widget.window_resize_event(self.width(), self.height())
+        super().resizeEvent(event)
+
     def measuringtape(self):
         self.game_widget.toggle_measuringtape(True)
 

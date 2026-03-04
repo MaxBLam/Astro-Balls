@@ -23,33 +23,33 @@ class DragNDrop(QToolBar):
     def __init__(self):
         super().__init__("Drag-and-Drop Menu")
 
+
         tabs = QTabWidget()
         tabs.setMovable(False)
 
         planet_tab = QWidget()
         planet_layout = QHBoxLayout()
-        for i in ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']:
+        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']:
             planet_layout.addWidget(QtPlanetLabel(i))
         planet_tab.setLayout(planet_layout)
         tabs.addTab(planet_tab, 'Planets')
 
         ns_tabs = QWidget()
         ns_layout = QHBoxLayout()
-        for j in ['Moon', 'Europa', 'Io']:
+        for j in ['Lune', 'Europe', 'Io']:
             ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
         tabs.addTab(ns_tabs, 'Natural Satellites')
 
         star_tabs = QWidget()
         star_layout = QHBoxLayout()
-        for k in ['Sun']:
+        for k in ['Soleil']:
             star_layout.addWidget(QtPlanetLabel(k))
         star_tabs.setLayout(star_layout)
         tabs.addTab(star_tabs, 'Stars')
 
         self.addWidget(tabs)
         self.setFixedHeight(100)
-
 
 class StatsDock(QDockWidget):
     def __init__(self):

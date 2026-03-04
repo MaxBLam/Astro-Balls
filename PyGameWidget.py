@@ -1,14 +1,11 @@
 import random
 import os
 import pygame
-from PySide6.QtGui import Qt
+from PySide6.QtGui import Qt,QPainter, QImage
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
-
-
-from WidgetInteractive import StatsDock
 
 
 class PyGameWidget(QWidget):
@@ -18,26 +15,30 @@ class PyGameWidget(QWidget):
         super().__init__()
 
         self.statsdock = statsdock
-        self.y = None
-        self.x = None
+        self.window_x = None
+        self.window_y = None
+        self.drag_and_drop_x = None
+        self.drag_and_drop_y = None
+        self.statsdock_x = None
+        self.statsdock_y = None
         self.setAcceptDrops(True)
         self.planetes = []
         self.planetes_pos = []
         self.active_planet = None
         self.vitesse_state = False
-        self.playscreen = None
+        self.playscreen = pygame.Surface((self.width(), self.height()))
         self.point = []
         self.measuringtape_state = False
         self.keys_pressed = set()
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
-        self.pygame_windowhandler()
-
         self.fps_simulation = 120
         self.timer = QTimer()
         self.timer.start(8)
 
+        pygame.init()
+        pygame.font.init()
         self.font = pygame.font.SysFont(None, 20)
 
         self.simulation = 1
@@ -53,17 +54,10 @@ class PyGameWidget(QWidget):
 
         self.timer.timeout.connect(self.game_loop)
 
-    def pygame_windowhandler(self):
-        os.environ["SDL_WINDOWID"] = str(int(self.winId()))
-        os.environ["SDL_VIDEODRIVER"] = "windows"
-        pygame.init()
-        pygame.font.init()
-        self.playscreen = pygame.display.set_mode(size=(0, 0))
-        self.x, self.y = self.playscreen.get_size()
-
-    def update_size(self):
-        pygame.display.update()
-        self.x, self.y = pygame.display.get_window_size()
+    def window_resize_event(self, width, height):
+        self.window_x = width
+        self.window_y = height
+        self.playscreen = pygame.Surface((self.width(), self.height()))
 
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
@@ -85,12 +79,10 @@ class PyGameWidget(QWidget):
             event.acceptProposedAction()
 
     def dropEvent(self, event):
-        name = event.mimeData().text()
+        self.playscreen = pygame.Surface((self.width(), self.height()))
+        nom = event.mimeData().text()
         pos = event.pos()
-        print(pos)
-        world_x = (pos.x() + self.x / 2 - self.camera_pos.x) / self.scale
-        world_y = (pos.y() + self.y / 2 - self.camera_pos.y) / self.scale
-        self.corps(name, world_x, world_y)
+        self.corps(nom, pos.x() / self.scale, pos.y() / self.scale)
 
         if self.simulation == 1 and len(self.planetes) == 3 and not self.vitesse_state:
             self.vitesse_simulation1()
@@ -119,7 +111,7 @@ class PyGameWidget(QWidget):
         list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
-        self.camera_milieu_pos = self.scale * (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
+        self.camera_milieu_pos = self.scale * (objet_orbite1["position"] + objet_orbite2["position"]) / 2
         self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2):
@@ -180,8 +172,8 @@ class PyGameWidget(QWidget):
         pos_pixel = pos * self.scale
         relative = pos_pixel - self.camera_pos
 
-        new_world_x = self.x / 2 + relative.x
-        new_world_y = self.y / 2 + relative.y
+        new_world_x = self.width() / 2 + relative.x
+        new_world_y = self.height() / 2 + relative.y
 
         return new_world_x, new_world_y
 
@@ -193,8 +185,8 @@ class PyGameWidget(QWidget):
         elif self.camera_mode == "milieu":
             self.camera_mode = "free"
 
-    def display(self, objets: list):  # objet[0] = objet, objet[1] = acc_objet
-        self.playscreen.fill((0, 0, 0))
+    def display(self, objets: list):
+        self.playscreen.fill((0,0,0))# objet[0] = objet, objet[1] = acc_objet
 
         for objet in objets:
             rx, ry = self.pos_objet_orbite(objet[0]["position"])
@@ -204,14 +196,12 @@ class PyGameWidget(QWidget):
                 text = self.font.render(f"{objet[0]['nom']}", True, (255, 255, 255))
                 self.playscreen.blit(text, (int(rx), int(ry)))
             else:
-                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (int(rx), int(ry)), rayon)
+                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (int(rx), int(ry)), int(rayon))
 
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
         if len(self.point) == 2:
             pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
-
-        pygame.display.flip()
 
     def corps(self, nom, x, y):
         corps = {
@@ -231,26 +221,69 @@ class PyGameWidget(QWidget):
 
         data = corps.get(nom, corps["Mercure"])
 
-        planete = {"nom": data["nom"], "position": pygame.Vector2(x, y), "vitesse": pygame.Vector2(0,0), "masse": data["masse"],
+        planete = {"nom": data["nom"], "position": euclid.Vector2(x, y), "vitesse": euclid.Vector2(0,0), "masse": data["masse"],
               "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'], 'composition_surface': data['composition_surface'],
               'âge': data['âge'], 'rotation': data['rotation'], 'révolution': data['révolution']}
 
         self.planetes.append(planete)
 
+    def mousePressEvent(self, event):
+        souris_pos = euclid.Vector2(event.position().x(), event.position().y())
+
+        if event.button() == Qt.RightButton:
+            # clic droit : sélectionner la planète active
+            for n, p in enumerate(self.planetes):
+                sx, sy = self.pos_objet_orbite(p['position'])
+                if souris_pos.distance_to((sx, sy)) <= p['rayon']:
+                    self.active_planet = n
+                    break
+
+        elif event.button() == Qt.LeftButton:
+            # clic gauche : sélectionner et mettre à jour statsdock
+            for n, p in enumerate(self.planetes):
+                sx, sy = self.pos_objet_orbite(p['position'])
+                if souris_pos.distance_to((sx, sy)) <= p['rayon']:
+                    self.active_planet = n
+                    # Mettre à jour les infos dans statsdock
+                    self.statsdock.body_label.setText(f'{p["nom"]}')
+                    self.statsdock.body_label.repaint()
+                    self.statsdock.body_type.setText(f'Type: {p["type"]}')
+                    self.statsdock.body_type.repaint()
+                    self.statsdock.surface_label.setText(f'Surface Composition: {p["composition_surface"]}')
+                    self.statsdock.surface_label.repaint()
+                    self.statsdock.age_label.setText(f'Age: {p["âge"]}')
+                    self.statsdock.age_label.repaint()
+                    self.statsdock.rotation_label.setText(f'Length of Rotation: {p["rotation"]}')
+                    self.statsdock.rotation_label.repaint()
+                    self.statsdock.revolution_label.setText(f'Length of Revolution: {p["révolution"]}')
+                    self.statsdock.revolution_label.repaint()
+                    break
+
+    def mouseReleaseEvent(self, event):
+        self.active_planet = None
+
+    def mouseMoveEvent(self, event):
+        if self.active_planet is not None:
+            # Déplacer la planète active
+            dx = event.position().x() - event.lastPosition().x()
+            dy = event.position().y() - event.lastPosition().y()
+            self.planetes[self.active_planet["position"]] += euclid.Vector2(dx, dy) / self.scale
+
     def game_loop(self):
         if self.measuringtape_state:
             self.measuringtape()
-
-        self.update_size()
 
         if self.simulation == 1:
             if len(self.planetes) > 2:
                 objet_central, objet_orbite1, objet_orbite2 = self.planetes[0], self.planetes[1], self.planetes[2]
                 self.simulation_objet_central_3corps(objet_central, objet_orbite1, objet_orbite2)
+                self.update()
             else:
                 for planete in self.planetes:
-                    rx, ry = self.pos_objet_orbite(planete['position'])
-                    pygame.draw.circle(self.playscreen, planete["couleur"], (int(rx), int(ry)), planete["rayon"] * self.scale)
+                    #rx, ry = self.pos_objet_orbite(planete['position'])
+                    rx, ry = planete["position"].x, planete["position"].y
+                    pygame.draw.circle(self.playscreen, planete["couleur"], (int(rx), int(ry)), int(planete["rayon"]))
+                    self.update()
 
         elif self.simulation == 2:
             pass
@@ -284,37 +317,9 @@ class PyGameWidget(QWidget):
         elif self.camera_mode == "milieu":
             self.camera_pos = self.camera_milieu_pos
 
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 3:
-                    souris_pos = pygame.Vector2(event.pos)
-                    for n, p in enumerate(self.planetes):
-                        sx, sy = self.pos_objet_orbite(p['position'])
-                        if souris_pos.distance_to((sx, sy)) <= p['rayon']:
-                            self.active_planet = n
-                            break
-                if event.button == 1:
-                    m_pos = pygame.Vector2(event.pos)
-                    for n, p in enumerate(self.planetes):
-                        sx, sy = self.pos_objet_orbite(p['position'])
-                        if m_pos.distance_to((sx, sy)) <= p['rayon']:
-                            self.active_planet = n
-                            self.statsdock.body_label.setText(f'{p['nom']}')
-                            self.statsdock.body_label.repaint()
-                            self.statsdock.body_type.setText(f'Type: {p['type']}')
-                            self.statsdock.body_type.repaint()
-                            self.statsdock.surface_label.setText(f'Surface Composition: {p['composition_surface']}')
-                            self.statsdock.body_type.repaint()
-                            self.statsdock.age_label.setText(f'Age: {p['âge']}')
-                            self.statsdock.age_label.repaint()
-                            self.statsdock.rotation_label.setText(f'Length of Rotation: {p['rotation']}')
-                            self.statsdock.rotation_label.repaint()
-                            self.statsdock.revolution_label.setText(f'Length of Revolution: {p['révolution']}')
-                            self.statsdock.revolution_label.repaint()
-                            break
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                self.active_planet = None
-            elif event.type == pygame.MOUSEMOTION:
-                if self.active_planet is not None:
-                    self.planetes[self.active_planet]['position'] += pygame.Vector2(event.rel) / self.scale
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        # Transforme la surface Pygame en QImage
+        raw_data = pygame.image.tostring(self.playscreen, "RGB")
+        image = QImage(raw_data, self.playscreen.get_width(), self.playscreen.get_height(), 3 * self.playscreen.get_width(), QImage.Format_RGB888)
+        painter.drawImage(self.rect(), image)
