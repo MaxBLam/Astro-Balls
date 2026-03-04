@@ -1,14 +1,14 @@
 import sys
 import pygame
-from PySide6.QtGui import QAction, Qt, QFont, QIcon, QPixmap
+from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
-    QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget
+    QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QStackedLayout, QSlider, QTabWidget
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
-#
+
 
 class MainWindowFrame(QMainWindow):
     def __init__(self):
@@ -18,6 +18,10 @@ class MainWindowFrame(QMainWindow):
         self.scale_state = False
         self.scale_scope = None
         self.scale_slider = None
+        self.time_slider = None
+        self.scale_slider_label = None
+        self.timescope_label = None
+        self.main_panel_layout = None
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.measuring_window = None
@@ -32,7 +36,7 @@ class MainWindowFrame(QMainWindow):
         self.setCentralWidget(central_widget)
         self.game_widget = PyGameWidget(self.main_statsdock_link)
         layout = QVBoxLayout(central_widget)
-        self.game_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         layout.addWidget(self.game_widget)
         self.resize(1200, 600)
 
@@ -136,7 +140,7 @@ class MainWindowFrame(QMainWindow):
 
         self.dragndrop = DragNDrop()
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.main_statsdock_link)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
 
     def resizeEvent(self, event):
         self.game_widget.window_resize_event(self.width(), self.height())
@@ -212,7 +216,7 @@ class MainWindowFrame(QMainWindow):
         self.time_slider.setValue(1)
         self.time_slider.setTickInterval(5)
         self.time_slider.setSingleStep(5)
-        self.time_slider.setTickPosition(QSlider.TicksAbove)
+        self.time_slider.setTickPosition(QSlider.TickPosition.TicksAbove)
         timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
         self.time_slider.valueChanged.connect(self.update_timerscope)
         self.time_slider.valueChanged.connect(self.game_widget.speed_interactive)
@@ -226,9 +230,9 @@ class MainWindowFrame(QMainWindow):
         forward_button.clicked.connect(self.forward_timescope)
         timerscope_widget.addWidget(forward_button, 1, 1)
 
-        self.timer_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.timer_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
         self.timer_scope.setFixedHeight(120)
-        self.splitDockWidget(self.main_statsdock_link, self.timer_scope, Qt.Vertical)
+        self.splitDockWidget(self.main_statsdock_link, self.timer_scope, Qt.Orientation.Vertical)
 
         self.timer_scope.visibilityChanged.connect(self.timerscope_close)
         self.timer_scope.show()
@@ -270,7 +274,7 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider.setValue(5)
         self.scale_slider.setTickInterval(1)
         self.scale_slider.setSingleStep(1)
-        self.scale_slider.setTickPosition(QSlider.TicksAbove)
+        self.scale_slider.setTickPosition(QSlider.TickPosition.TicksAbove)
         scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
@@ -284,9 +288,9 @@ class MainWindowFrame(QMainWindow):
         forward_button.clicked.connect(self.forward_scale_slider)
         scale_scope_widget.addWidget(forward_button, 1, 1)
 
-        self.scale_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.scale_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
         self.scale_scope.setFixedHeight(120)
-        self.splitDockWidget(self.statsdock, self.scale_scope, Qt.Vertical)
+        self.splitDockWidget(self.main_statsdock_link, self.scale_scope, Qt.Orientation.Vertical)
 
         self.scale_scope.visibilityChanged.connect(self.scale_scope_close)
         self.scale_scope.show()
@@ -456,7 +460,7 @@ class MainWindowFrame(QMainWindow):
         b_n1_label.setFont(b_n1_label_font)
         b_n1_label.move(20, 20)
         pixmap_newton1 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
-                                                                            Qt.KeepAspectRatio,Qt.SmoothTransformation)
+                                                                            Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
         l_pixmap_newton1 = QLabel(parent=newton1tab)
         l_pixmap_newton1.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_newton1.setFixedSize(200, 280)
@@ -542,9 +546,6 @@ class MainWindowFrame(QMainWindow):
 
     def keybinds(self):
         self.settings()
-
-    def scaleslider(self):
-        pass
 
     def newton1(self):
         pass
