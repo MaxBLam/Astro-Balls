@@ -1,6 +1,6 @@
-from PySide6.QtCore import QMimeData
-from PySide6.QtGui import Qt, QFont, QDrag
-from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QDockWidget,QHBoxLayout, QLabel, QGridLayout, QFrame,
+from PySide6.QtCore import QMimeData, Qt
+from PySide6.QtGui import QFont, QDrag
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget,QHBoxLayout, QLabel, QGridLayout, QFrame,
                                QComboBox, QDoubleSpinBox, QScrollArea, QToolBar, QTabWidget)
 
 
@@ -11,12 +11,12 @@ class QtPlanetLabel(QLabel):
         self.setStyleSheet('padding: 6px; background-color: gray;')
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             dragging = QDrag(self)
             mime = QMimeData()
             mime.setText(self.planet_name)
             dragging.setMimeData(mime)
-            dragging.exec(Qt.CopyAction)
+            dragging.exec(Qt.DropAction.CopyAction)
 
 
 class DragNDrop(QToolBar):
@@ -210,11 +210,10 @@ class StatsDock(QDockWidget):
 
         widget.setLayout(layout)
         scroller = QScrollArea()
-        scroller.setFrameShape(QFrame.NoFrame)
-        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroller.setFrameShape(QFrame.Shape.NoFrame)
+        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroller.setWidgetResizable(True)
         scroller.setWidget(widget)
         scroller.setFixedWidth(217)
         self.setWidget(scroller)
-

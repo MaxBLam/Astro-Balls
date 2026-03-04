@@ -1,14 +1,9 @@
-import random
 import os
 import pygame
-from PySide6.QtGui import Qt
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
-
-
-from WidgetInteractive import StatsDock
 
 
 class PyGameWidget(QWidget):
@@ -29,7 +24,7 @@ class PyGameWidget(QWidget):
         self.point = []
         self.measuringtape_state = False
         self.keys_pressed = set()
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFocus()
 
         self.pygame_windowhandler()
@@ -79,7 +74,7 @@ class PyGameWidget(QWidget):
 
     def scale_interactive(self, value : int):
         self.scale = float(value**4 / 100**4)
-#
+
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
             event.acceptProposedAction()
@@ -119,7 +114,8 @@ class PyGameWidget(QWidget):
         list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
-        self.camera_milieu_pos = self.scale * (self.objet_orbite1["position"] + self.objet_orbite2["position"]) / 2
+        # utiliser les variables locales passées en paramètre (évite référence à des attributs inexistants)
+        self.camera_milieu_pos = self.scale * (objet_orbite1["position"] + objet_orbite2["position"]) / 2
         self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2):
@@ -262,7 +258,7 @@ class PyGameWidget(QWidget):
         else:
             pass
 
-        if Qt.Key_F in self.keys_pressed:
+        if Qt.Key.Key_F in self.keys_pressed:
             if not self.f_pressed_handled:
                 self.changer_vue()
                 self.f_pressed_handled = True
@@ -270,16 +266,17 @@ class PyGameWidget(QWidget):
             self.f_pressed_handled = False
 
         speed = 3
-        if Qt.Key_Shift in self.keys_pressed:
+
+        if Qt.Key.Key_Shift in self.keys_pressed:
             speed = 10
         if self.camera_mode == "free":
-            if Qt.Key_A in self.keys_pressed:
+            if Qt.Key.Key_A in self.keys_pressed:
                 self.camera_pos.x -= speed
-            if Qt.Key_D in self.keys_pressed:
+            if Qt.Key.Key_D in self.keys_pressed:
                 self.camera_pos.x += speed
-            if Qt.Key_W in self.keys_pressed:
+            if Qt.Key.Key_W in self.keys_pressed:
                 self.camera_pos.y -= speed
-            if Qt.Key_S in self.keys_pressed:
+            if Qt.Key.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed
         elif self.camera_mode == "milieu":
             self.camera_pos = self.camera_milieu_pos
