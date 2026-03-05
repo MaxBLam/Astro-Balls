@@ -15,6 +15,7 @@ class PyGameWidget(QWidget):
         self.statsdock = statsdock
         self.y = None
         self.x = None
+        self.is_showingorbits = False
         self.setAcceptDrops(True)
         self.planetes = []
         self.planetes_pos = []
@@ -160,6 +161,48 @@ class PyGameWidget(QWidget):
             self.point.clear()
             self.measuring_updater_signal.emit()
 
+    def kepler(self):
+        centrum = None
+        gravitational_parameter = None
+        color_dimmer = None
+        # max_force = 0 (for later)
+        # dominant = self.dmomentum (for later)
+        path = []
+        for i in self.planetes:
+            if i['type'] == 'Étoile' or i['masse'] >= 9999:
+                centrum = i
+                gravitational_parameter = self.G * centrum['masse']
+                break
+        if not centrum:
+            return []
+        for i in self.planetes:
+            if i == centrum:
+                continue
+            current_velocity = i['vitesse']
+            current_position_vector = i['position'] - centrum['position']
+            current_position = current_position_vector.magnitude()
+            vectorial_epsilon = (1 / gravitational_parameter *
+                                 ((current_velocity.magnitude_squared() -
+                                   (gravitational_parameter / current_position)) * current_position_vector -
+                                  (current_position_vector.dot(current_velocity)) * current_velocity))
+            epsilon = vectorial_epsilon.magnitude() + (1 * 10 ** -10)
+            omega = math.atan2(vectorial_epsilon.y, vectorial_epsilon.x)
+            paracond = (2 / current_position) - (current_velocity.magnitude_squared() / gravitational_parameter)
+            if paracond <= 0:
+                continue
+            semimajor_axis = 1 / paracond
+            orb_dots = []
+            for k in range(301):
+                theta = (2 * math.pi * k) / 300
+                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta)) + (1 * 10 ** -10)
+                x = (centrum['position'].x + r * math.cos(theta + omega))
+                y = (centrum['position'].y + r * math.sin(theta + omega))
+                orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
+                orb_dots.append((orbit_x, orbit_y))
+                color_dimmer = pygame.Color(i['couleur']).lerp((0, 0, 0), 0.7)
+            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': i})
+        return path
+
     def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
         for objet in objets:
@@ -244,6 +287,11 @@ class PyGameWidget(QWidget):
                 objet_central, objet_orbite1, objet_orbite2 = self.planetes[0], self.planetes[1], self.planetes[2]
                 self.simulation_objet_central_3corps(objet_central, objet_orbite1, objet_orbite2)
             else:
+                if self.is_showingorbits:
+                    for w in self.kepler():
+                        if len(w['dots']):
+                            pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
+
                 for planete in self.planetes:
                     rx, ry = self.pos_objet_orbite(planete['position'])
                     pygame.draw.circle(self.playscreen, planete["couleur"], (int(rx), int(ry)), planete["rayon"] * self.scale)
