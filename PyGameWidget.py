@@ -12,18 +12,26 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock):
         super().__init__()
 
+        self.centrum = None
+        self.p_index = None
         self.statsdock = statsdock
         self.y = None
         self.x = None
-        self.is_showingorbits = False
+        self.active_planet = None
+        self.playscreen = None
+        self.p_index = None
+        
         self.setAcceptDrops(True)
+        self.measuringtape_state = False
+        self.is_editingorbits = False
+        self.is_showingorbits = False
+        self.is_helpingorbits = False
+        self.vitesse_state = False
+        
+        self.point = []
         self.planetes = []
         self.planetes_pos = []
-        self.active_planet = None
-        self.vitesse_state = False
-        self.playscreen = None
-        self.point = []
-        self.measuringtape_state = False
+        
         self.keys_pressed = set()
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFocus()
@@ -161,25 +169,27 @@ class PyGameWidget(QWidget):
             self.point.clear()
             self.measuring_updater_signal.emit()
 
+    def kepler_orbit_helper(self, checked):
+        self.is_helpingorbits = checked
+
     def kepler(self):
-        centrum = None
-        gravitational_parameter = None
         color_dimmer = None
-        # max_force = 0 (for later)
-        # dominant = self.dmomentum (for later)
         path = []
         for i in self.planetes:
-            if i['type'] == 'Étoile' or i['masse'] >= 9999:
-                centrum = i
-                gravitational_parameter = self.G * centrum['masse']
-                break
-        if not centrum:
-            return []
-        for i in self.planetes:
-            if i == centrum:
+            max_centrum = -1
+            for j in self.planetes:
+                if j == i:
+                    continue
+                gravitational_force = j['masse'] / (i['position'] - j['position']).magnitude_squared() + (1*10 **-10)
+                if gravitational_force > max_centrum:
+                    max_centrum = gravitational_force
+                    self.centrum = j
+                    self.centrum['isCentrum']: True
+            if self.centrum is None:
                 continue
-            current_velocity = i['vitesse']
-            current_position_vector = i['position'] - centrum['position']
+            gravitational_parameter = self.G * self.centrum['masse']
+            current_velocity = i['vitesse'] - self.centrum['vitesse']
+            current_position_vector = i['position'] - self.centrum['position']
             current_position = current_position_vector.magnitude()
             vectorial_epsilon = (1 / gravitational_parameter *
                                  ((current_velocity.magnitude_squared() -
@@ -194,14 +204,73 @@ class PyGameWidget(QWidget):
             orb_dots = []
             for k in range(301):
                 theta = (2 * math.pi * k) / 300
-                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta)) + (1 * 10 ** -10)
-                x = (centrum['position'].x + r * math.cos(theta + omega))
-                y = (centrum['position'].y + r * math.sin(theta + omega))
+                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta)) + (1*10**-10)
+                x = (self.centrum['position'].x + r * math.cos(theta + omega))
+                y = (self.centrum['position'].y + r * math.sin(theta + omega))
                 orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
                 orb_dots.append((orbit_x, orbit_y))
                 color_dimmer = pygame.Color(i['couleur']).lerp((0, 0, 0), 0.7)
-            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': i})
+            orbital_momentum = math.sqrt((self.G * self.centrum['masse']) / current_position)
+            tan_current_position = pygame.Vector2(
+                (current_position_vector.y * -1), current_position_vector.x).normalize()
+            if self.is_helpingorbits is True:
+                i['vel'] = self.centrum['vel'] + (orbital_momentum * tan_current_position)
+            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': i,
+                         'vel': i['vel'], 'omega': omega})
         return path
+
+    def orbit_editor(self):
+        self.is_editingorbits = True
+        receiver_config_button = self.sender()
+        self.p_index = receiver_config_button.property('index') + 1
+        return self.is_editingorbits
+
+    # TODO: needs improvement
+    def orbital_position_editor(self, angle_degrees):
+        orbital_data = None
+        if self.is_editingorbits and self.p_index is not None:
+            theta = math.radians(angle_degrees)
+            planet = self.planetes[self.p_index]
+            if planet:
+                for i in self.kepler():
+                    if i['planet'] == planet:
+                        orbital_data = i
+                        break
+                if orbital_data:
+                    semimajor = orbital_data['a']
+                    ecc = orbital_data['epsilon']
+                    omega = orbital_data['omega']
+                    r = (semimajor * (1 - ecc ** 2)) / (1 + ecc * math.cos(theta))
+                    planet['position'].x = self.centrum['position'].x + r * math.cos(theta + omega)
+                    planet['position'].y = self.centrum['position'].y + r * math.sin(theta + omega)
+
+                    inner_sqrt = math.sqrt(
+                        (self.G * self.centrum['masse']) / ((semimajor * (1-ecc**2)) + 1*10**-10))
+                    urvx = -inner_sqrt * math.sin(theta)
+                    urvy = inner_sqrt * (ecc + math.cos(theta))
+                    rvx = urvx * math.cos(omega) - urvy * math.sin(omega)
+                    rvy = urvx * math.sin(omega) + urvy * math.cos(omega)
+                    planet['vitesse'].x = rvx + self.centrum['vitesse'].x
+                    planet['vitesse'].y = rvy + self.centrum['vitesse'].y
+
+        # TODO: may delete this later
+    def uopt_editor(self):
+        orbital_data = None
+        if self.p_index is None:
+            return 0.0
+        planet = self.planetes[self.p_index]
+        rpx = planet['position'].x - self.centrum['position'].x
+        rpy = planet['position'].y - self.centrum['position'].y
+        angle = math.atan2(rpy, rpx)
+        for i in self.kepler():
+            if i['planet'] == planet:
+                orbital_data = i
+                break
+        if orbital_data is not None:
+            theta = angle - orbital_data['omega']
+            theta = theta % (2 * math.pi)
+            return math.degrees(theta)
+        return 0.0
 
     def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
