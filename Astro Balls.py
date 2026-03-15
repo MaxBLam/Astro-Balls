@@ -1,15 +1,16 @@
 import sys
 import pygame
+from PyQt6.QtWidgets import QColorDialog
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction, Qt, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
-#
+
 
 class MainWindowFrame(QMainWindow):
     def __init__(self):
@@ -544,26 +545,95 @@ class MainWindowFrame(QMainWindow):
         if self.orbitinfo_window is None:
             self.orbitinfo_window = QDialog(parent=self)
             self.orbitinfo_window.setWindowTitle('Orbits')
-            self.orbitinfo_window.setFixedSize(200, 280)
+            self.orbitinfo_window.setFixedSize(380, 280)
             self.orbitinfo_window_layout1 = QGridLayout(self.orbitinfo_window)
-            self.orbitinfo_window_layout1.setContentsMargins(0, 0, 0, 0)
+            self.orbitinfo_window_layout1.setContentsMargins(2, 2, 2, 2)
 
             scroller = QScrollArea()
             scroller.setFrameShape(QFrame.NoFrame)
             scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             scroller.setWidgetResizable(True)
-            self.orbitinfo_window_layout1.addWidget(scroller, 0, 0)
+            self.orbitinfo_window_layout1.addWidget(scroller, 0, 1)
 
             scroller_widget = QWidget()
             self.scroller_widget_layout = QVBoxLayout(scroller_widget)
             self.scroller_widget_layout.setSpacing(4)
             scroller.setWidget(scroller_widget)
 
+            orbit_helper = QPushButton('Help')
+            orbit_helper.setCheckable(True)
+            orbit_helper.setToolTip('Pre-configures the sufficient velocity to maintain circular orbit')
+            orbit_helper.clicked.connect(self.game_widget.kepler_orbit_helper)
+            self.orbitinfo_window_layout1.addWidget(orbit_helper, 1, 0)
+
             close_button = QPushButton('Close')
             close_button.clicked.connect(self.orbitinfo_window.close)
             close_button.clicked.connect(self.when_showorbit_closed)
-            self.orbitinfo_window_layout1.addWidget(close_button, 1, 0)
+            self.orbitinfo_window_layout1.addWidget(close_button, 1, 1)
+
+            panel = QFrame()
+            panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+            panel_layout = QGridLayout()
+            panel.setLayout(panel_layout)
+            panel_layout.setSpacing(3)
+            self.orbitinfo_window_layout1.addWidget(panel, 0, 0)
+
+            l_eccentricity_toggler = QLabel('Eccentricity: ')
+            panel_layout.addWidget(l_eccentricity_toggler, 0, 0)
+            self.s_eccentricity_toggler = QSlider(Qt.Orientation.Horizontal, parent=self)
+            self.s_eccentricity_toggler.setMinimum(0)
+            self.s_eccentricity_toggler.setMaximum(100)
+            self.s_eccentricity_toggler.setSingleStep(1)
+            self.s_eccentricity_toggler.setTickPosition(QSlider.TicksAbove)
+            panel_layout.addWidget(self.s_eccentricity_toggler, 2, 0, 1, 2)
+            self.b_eccentricity_toggler = QDoubleSpinBox()
+            self.b_eccentricity_toggler.lineEdit().setMaximumWidth(50)
+            self.b_eccentricity_toggler.setMaximumWidth(90)
+            panel_layout.addWidget(self.b_eccentricity_toggler, 0, 1)
+
+            l_semimajor_toggler = QLabel('Velocity: ')
+            panel_layout.addWidget(l_semimajor_toggler, 3, 0)
+            self.s_semimajor_toggler = QSlider(Qt.Orientation.Horizontal, parent=self)
+            self.s_semimajor_toggler.setMinimum(0)
+            self.s_semimajor_toggler.setMaximum(100)
+            self.s_semimajor_toggler.setSingleStep(1)
+            self.s_semimajor_toggler.setTickPosition(QSlider.TicksAbove)
+            panel_layout.addWidget(self.s_semimajor_toggler, 4, 0, 1, 2)
+            self.b_semimajor_toggler = QDoubleSpinBox()
+            self.b_semimajor_toggler.lineEdit().setMaximumWidth(50)
+            self.b_semimajor_toggler.setMaximumWidth(90)
+            panel_layout.addWidget(self.b_semimajor_toggler, 3, 1)
+
+            l_posorbit_toggler = QLabel('Orbital Position: ', parent=panel)
+            l_posorbit_toggler.move(10, 107)
+            self.s_posorbit_toggler = QDial(parent=panel)
+            self.s_posorbit_toggler.setMinimum(0)
+            self.s_posorbit_toggler.setMaximum(360)
+            self.s_semimajor_toggler.setValue(0)
+            self.s_posorbit_toggler.setMaximumWidth(90)
+            self.s_posorbit_toggler.setSingleStep(1)
+            self.s_posorbit_toggler.setWrapping(True)
+            self.s_posorbit_toggler.valueChanged.connect(self.game_widget.orbital_position_editor)
+            self.s_posorbit_toggler.setInvertedAppearance(True)
+            panel_layout.addWidget(self.s_posorbit_toggler, 5, 1)
+            self.b_posorbit_toggler = QDoubleSpinBox(parent=panel)
+            self.b_posorbit_toggler.lineEdit().setMaximumWidth(50)
+            self.b_posorbit_toggler.setMaximumWidth(60)
+            self.b_posorbit_toggler.setRange(0, 360)
+            self.b_posorbit_toggler.setStyleSheet("""QDoubleSpinBox {padding-right:1px} 
+            QDoubleSpinBox::up-button{subcontrol-position: top right; width: 16px} 
+            QDoubleSpinBox::down-button{subcontrol-position: bottom right; width: 16px}""")
+            self.b_posorbit_toggler.move(8, 146)
+
+            l_orbitcolor_toggler = QLabel('Orbit Color: ')
+            panel_layout.addWidget(l_orbitcolor_toggler, 6, 0)
+            self.color_button = QPushButton('Color Palette')
+            self.color_button.setStyleSheet("""QPushButton 
+            {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
+            QPushButton::hover { background-color: #4d4d4d}""")
+            self.color_button.clicked.connect(self.orbiteditor_color)
+            panel_layout.addWidget(self.color_button, 6, 1)
 
             self.get_orbitinfo_ondisplay = []
             self.orbit_timer = QTimer(self)
@@ -573,7 +643,14 @@ class MainWindowFrame(QMainWindow):
             self.orbitinfo_window.finished.connect(lambda: setattr(self, 'orbitinfo_window', None))
             self.orbitinfo_window.show()
 
+        # TODO: try update QDial along planet orbit (for later)
+
     def update_showorbitinfo(self):
+        self.b_eccentricity_toggler.setValue(self.s_eccentricity_toggler.value() / 100)
+        self.b_semimajor_toggler.setValue(self.s_semimajor_toggler.value())
+        self.b_posorbit_toggler.setValue(self.s_posorbit_toggler.value())
+        # self.b_posorbit_toggler.setValue(self.game_widget.uopt_editor())
+        # (i need to enable both way value editing without fucking up the orbits... but not rn twin it 1:43am)
         if self.orbitinfo_window and hasattr(self, 'scroller_widget_layout'):
             if len(self.game_widget.kepler()) is not len(self.get_orbitinfo_ondisplay):
                 for i in range(self.scroller_widget_layout.count()):
@@ -581,7 +658,7 @@ class MainWindowFrame(QMainWindow):
                     if panel:
                         panel.deleteLater()
                 self.get_orbitinfo_ondisplay = []
-                for j in self.game_widget.kepler():
+                for k, j in enumerate(self.game_widget.kepler()):
                     panel = QFrame()
                     panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
                     panel_layout = QVBoxLayout()
@@ -597,10 +674,29 @@ class MainWindowFrame(QMainWindow):
                     panel_layout.addWidget(epstein_label)
                     semimajoraxis_label = QLabel()
                     panel_layout.addWidget(semimajoraxis_label)
+                    velocity_label = QLabel()
+                    panel_layout.addWidget(velocity_label)
+                    separator = QFrame()
+                    separator.setFrameStyle(QFrame.Shape.HLine)
+                    panel_layout.addWidget(separator)
+                    configure_orbit_button = QPushButton('Configure Orbit')
+                    configure_orbit_button.setStyleSheet("""QPushButton 
+                     {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
+                     QPushButton::hover { background-color: #4d4d4d}""")
+                    configure_orbit_button.setProperty('index', k)
+                    configure_orbit_button.clicked.connect(self.game_widget.orbit_editor)
+                    panel_layout.addWidget(configure_orbit_button)
                     ondisplay_structure = {'Name': planet_label, 'epstein': epstein_label,
-                                           'semimajor': semimajoraxis_label}
+                                           'semimajor': semimajoraxis_label, 'velocity': velocity_label}
                     self.scroller_widget_layout.addWidget(panel)
                     self.get_orbitinfo_ondisplay.append(ondisplay_structure)
+
+            for k, l in enumerate(self.game_widget.kepler()):
+                ondisplay = self.get_orbitinfo_ondisplay[k]
+                ondisplay['Name'].setText(l['planet']['Name'])
+                ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
+                ondisplay['semimajor'].setText(f'Semi-major(a): {round(l['a'], 3)}')
+                ondisplay['velocity'].setText(f'Velocity: {round(l['vel'].magnitude(), 1)}')
 
             for k, l in enumerate(self.game_widget.kepler()):
                 ondisplay = self.get_orbitinfo_ondisplay[k]
@@ -611,6 +707,13 @@ class MainWindowFrame(QMainWindow):
     def when_showorbit_closed(self):
         self.orbit_timer.stop()
         self.orbitinfo_window = None
+
+    def orbiteditor_color(self):
+        color_window = QColorDialog.getColor()
+        if color_window.isValid():
+            color = color_window.name()
+            self.color_button.setStyleSheet(
+                f"""QPushButton {{border: 1px solid #8a8a8a; padding: 2px; background-color: {color};}}""")
 
     def keybinds(self):
         self.settings()
