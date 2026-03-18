@@ -14,6 +14,8 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock):
         super().__init__()
 
+        self.centrum = None
+        self.p_index = None
         self.statsdock = statsdock
         self.window_x = None
         self.window_y = None
@@ -29,6 +31,15 @@ class PyGameWidget(QWidget):
         self.playscreen = pygame.Surface((self.width(), self.height()))
         self.point = []
         self.measuringtape_state = False
+        self.is_editingorbits = False
+        self.is_showingorbits = False
+        self.is_helpingorbits = False
+        self.vitesse_state = False
+
+        self.point = []
+        self.planetes = []
+        self.planetes_pos = []
+
         self.keys_pressed = set()
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
@@ -156,6 +167,109 @@ class PyGameWidget(QWidget):
             self.point.clear()
             self.measuring_updater_signal.emit()
 
+    def kepler_orbit_helper(self, checked):
+        self.is_helpingorbits = checked
+
+    def kepler(self):
+        color_dimmer = None
+        path = []
+        for i in self.planetes:
+            max_centrum = -1
+            for j in self.planetes:
+                if j == i:
+                    continue
+                gravitational_force = j['masse'] / (i['position'] - j['position']).magnitude_squared() + (1*10 **-10)
+                if gravitational_force > max_centrum:
+                    max_centrum = gravitational_force
+                    self.centrum = j
+                    self.centrum['isCentrum']: True
+            if self.centrum is None:
+                continue
+            gravitational_parameter = self.G * self.centrum['masse']
+            current_velocity = i['vitesse'] - self.centrum['vitesse']
+            current_position_vector = i['position'] - self.centrum['position']
+            current_position = current_position_vector.magnitude()
+            vectorial_epsilon = (1 / gravitational_parameter *
+                                 ((current_velocity.magnitude_squared() -
+                                   (gravitational_parameter / current_position)) * current_position_vector -
+                                  (current_position_vector.dot(current_velocity)) * current_velocity))
+            epsilon = vectorial_epsilon.magnitude() + (1 * 10 ** -10)
+            omega = math.atan2(vectorial_epsilon.y, vectorial_epsilon.x)
+            paracond = (2 / current_position) - (current_velocity.magnitude_squared() / gravitational_parameter)
+            if paracond <= 0:
+                continue
+            semimajor_axis = 1 / paracond
+            orb_dots = []
+            for k in range(301):
+                theta = (2 * math.pi * k) / 300
+                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta)) + (1*10**-10)
+                x = (self.centrum['position'].x + r * math.cos(theta + omega))
+                y = (self.centrum['position'].y + r * math.sin(theta + omega))
+                orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
+                orb_dots.append((orbit_x, orbit_y))
+                color_dimmer = pygame.Color(i['couleur']).lerp((0, 0, 0), 0.7)
+            orbital_momentum = math.sqrt((self.G * self.centrum['masse']) / current_position)
+            tan_current_position = pygame.Vector2(
+                (current_position_vector.y * -1), current_position_vector.x).normalize()
+            if self.is_helpingorbits is True:
+                i['vel'] = self.centrum['vel'] + (orbital_momentum * tan_current_position)
+            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': i,
+                         'vel': i['vel'], 'omega': omega})
+        return path
+
+    def orbit_editor(self):
+        self.is_editingorbits = True
+        receiver_config_button = self.sender()
+        self.p_index = receiver_config_button.property('index') + 1
+        return self.is_editingorbits
+
+    # TODO: needs improvement
+    def orbital_position_editor(self, angle_degrees):
+        orbital_data = None
+        if self.is_editingorbits and self.p_index is not None:
+            theta = math.radians(angle_degrees)
+            planet = self.planetes[self.p_index]
+            if planet:
+                for i in self.kepler():
+                    if i['planet'] == planet:
+                        orbital_data = i
+                        break
+                if orbital_data:
+                    semimajor = orbital_data['a']
+                    ecc = orbital_data['epsilon']
+                    omega = orbital_data['omega']
+                    r = (semimajor * (1 - ecc ** 2)) / (1 + ecc * math.cos(theta))
+                    planet['position'].x = self.centrum['position'].x + r * math.cos(theta + omega)
+                    planet['position'].y = self.centrum['position'].y + r * math.sin(theta + omega)
+
+                    inner_sqrt = math.sqrt(
+                        (self.G * self.centrum['masse']) / ((semimajor * (1-ecc**2)) + 1*10**-10))
+                    urvx = -inner_sqrt * math.sin(theta)
+                    urvy = inner_sqrt * (ecc + math.cos(theta))
+                    rvx = urvx * math.cos(omega) - urvy * math.sin(omega)
+                    rvy = urvx * math.sin(omega) + urvy * math.cos(omega)
+                    planet['vitesse'].x = rvx + self.centrum['vitesse'].x
+                    planet['vitesse'].y = rvy + self.centrum['vitesse'].y
+
+        # TODO: may delete this later
+    def uopt_editor(self):
+        orbital_data = None
+        if self.p_index is None:
+            return 0.0
+        planet = self.planetes[self.p_index]
+        rpx = planet['position'].x - self.centrum['position'].x
+        rpy = planet['position'].y - self.centrum['position'].y
+        angle = math.atan2(rpy, rpx)
+        for i in self.kepler():
+            if i['planet'] == planet:
+                orbital_data = i
+                break
+        if orbital_data is not None:
+            theta = angle - orbital_data['omega']
+            theta = theta % (2 * math.pi)
+            return math.degrees(theta)
+        return 0.0
+
     def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
         for objet in objets:
@@ -279,6 +393,11 @@ class PyGameWidget(QWidget):
                 self.simulation_objet_central_3corps(objet_central, objet_orbite1, objet_orbite2)
                 self.update()
             else:
+                if self.is_showingorbits:
+                    for w in self.kepler():
+                        if len(w['dots']):
+                            pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
+
                 for planete in self.planetes:
                     #rx, ry = self.pos_objet_orbite(planete['position'])
                     rx, ry = planete["position"].x, planete["position"].y
@@ -295,7 +414,7 @@ class PyGameWidget(QWidget):
         else:
             pass
 
-        if Qt.Key_F in self.keys_pressed:
+        if Qt.Key.Key_F in self.keys_pressed:
             if not self.f_pressed_handled:
                 self.changer_vue()
                 self.f_pressed_handled = True
@@ -303,16 +422,17 @@ class PyGameWidget(QWidget):
             self.f_pressed_handled = False
 
         speed = 3
-        if Qt.Key_Shift in self.keys_pressed:
+
+        if Qt.Key.Key_Shift in self.keys_pressed:
             speed = 10
         if self.camera_mode == "free":
-            if Qt.Key_A in self.keys_pressed:
+            if Qt.Key.Key_A in self.keys_pressed:
                 self.camera_pos.x -= speed
-            if Qt.Key_D in self.keys_pressed:
+            if Qt.Key.Key_D in self.keys_pressed:
                 self.camera_pos.x += speed
-            if Qt.Key_W in self.keys_pressed:
+            if Qt.Key.Key_W in self.keys_pressed:
                 self.camera_pos.y -= speed
-            if Qt.Key_S in self.keys_pressed:
+            if Qt.Key.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed
         elif self.camera_mode == "milieu":
             self.camera_pos = self.camera_milieu_pos

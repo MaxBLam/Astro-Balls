@@ -1,9 +1,11 @@
 import sys
 import pygame
-from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
-from PySide6.QtCore import Qt
+from PyQt6.QtWidgets import QColorDialog
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QAction, Qt, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
-    QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QStackedLayout, QSlider, QTabWidget
+    QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
@@ -13,15 +15,16 @@ from WidgetInteractive import DragNDrop, StatsDock
 class MainWindowFrame(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.orbit_timer = None
+        self.get_orbitinfo_ondisplay = None
+        self.scroller_widget_layout = None
+        self.orbitinfo_window_layout1 = None
+        self.orbitinfo_window = None
         self.timer_state = False
         self.timescope_label = None
         self.scale_state = False
         self.scale_scope = None
         self.scale_slider = None
-        self.time_slider = None
-        self.scale_slider_label = None
-        self.timescope_label = None
-        self.main_panel_layout = None
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.measuring_window = None
@@ -36,7 +39,7 @@ class MainWindowFrame(QMainWindow):
         self.setCentralWidget(central_widget)
         self.game_widget = PyGameWidget(self.main_statsdock_link)
         layout = QVBoxLayout(central_widget)
-
+        self.game_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.game_widget)
         self.resize(1200, 600)
 
@@ -74,14 +77,12 @@ class MainWindowFrame(QMainWindow):
         menu.addMenu(app_menu)
 
         view_menu = QMenu('&View')
-        orbits_action = QWidgetAction(view_menu)
-        orbits_view = self.customcheckbox(func_name='Orbits', method=self.showorbits)[0]
-        orbits_action.setDefaultWidget(orbits_view)
-        view_menu.addAction(orbits_action)
-        orbitsinfo_action = QWidgetAction(view_menu)
-        orbitsinfo_view = self.customcheckbox(func_name='Orbits Info', method=self.showorbitinfo)[0]
-        orbitsinfo_action.setDefaultWidget(orbitsinfo_view)
-        view_menu.addAction(orbitsinfo_action)
+        self.orbits_action = QWidgetAction(view_menu)
+        self.orbits_action = QWidgetAction(view_menu)
+        if self.game_widget.is_showingorbits is False:
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbits', method=self.showorbits)
+            self.orbits_action.setDefaultWidget(self.orbits_view)
+        view_menu.addAction(self.orbits_action)
         self.scale_action = QWidgetAction(view_menu)
         if self.scale_state is False:
             self.scale_view, self.scale_state = self.customcheckbox(func_name='Scale', method=self.scaleslider)
@@ -107,15 +108,18 @@ class MainWindowFrame(QMainWindow):
         vector_menu.addAction(rotational_vector)
         menu.addMenu(view_menu)
 
-        tool_menu = QMenu('&Tools')
+        tool_menu = QMenu('&Outils')
         menu.addMenu(tool_menu)
         mt = QAction('&Mesuring Tape', parent=self)
         mt.setIcon(QIcon('images/menubar symbol/ruler.png'))
         mt.triggered.connect(self.measuringtape)
         tool_menu.addAction(mt)
+        of = QAction('&Orbit Info', parent=self)
+        of.triggered.connect(self.showorbitinfo)
+        tool_menu.addAction(of)
 
-        help_menu = QMenu('&Help')
-        keybinds_action = QAction('&Keybinds', parent=self)
+        help_menu = QMenu('&Aide')
+        keybinds_action = QAction('&Raccourcis clavier', parent=self)
         keybinds_action.setIcon(QIcon('images/menubar symbol/space.png'))
         keybinds_action.triggered.connect(self.keybinds)
         keybinds_action.setShortcut('Alt+K')
@@ -131,16 +135,16 @@ class MainWindowFrame(QMainWindow):
         guider_action.setShortcut('Alt+G')
         help_menu.addAction(guider_action)
         help_menu.addSeparator()
-        htui_action = QAction('&About Astro Balls', parent=self)
-        htui_action.setIcon(QIcon('images/menubar symbol/question-mark.png'))
-        htui_action.triggered.connect(self.htui)
-        htui_action.setShortcut('Alt+H')
-        help_menu.addAction(htui_action)
+        apropos_action = QAction('À propos', parent=self)
+        apropos_action.setIcon(QIcon('images/menubar symbol/question-mark.png'))
+        apropos_action.triggered.connect(self.apropos)
+        apropos_action.setShortcut('Alt+H')
+        help_menu.addAction(apropos_action)
         menu.addMenu(help_menu)
 
         self.dragndrop = DragNDrop()
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.main_statsdock_link)
 
     def resizeEvent(self, event):
         self.game_widget.window_resize_event(self.width(), self.height())
@@ -216,7 +220,7 @@ class MainWindowFrame(QMainWindow):
         self.time_slider.setValue(1)
         self.time_slider.setTickInterval(5)
         self.time_slider.setSingleStep(5)
-        self.time_slider.setTickPosition(QSlider.TickPosition.TicksAbove)
+        self.time_slider.setTickPosition(QSlider.TicksAbove)
         timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
         self.time_slider.valueChanged.connect(self.update_timerscope)
         self.time_slider.valueChanged.connect(self.game_widget.speed_interactive)
@@ -230,9 +234,9 @@ class MainWindowFrame(QMainWindow):
         forward_button.clicked.connect(self.forward_timescope)
         timerscope_widget.addWidget(forward_button, 1, 1)
 
-        self.timer_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
+        self.timer_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.timer_scope.setFixedHeight(120)
-        self.splitDockWidget(self.main_statsdock_link, self.timer_scope, Qt.Orientation.Vertical)
+        self.splitDockWidget(self.main_statsdock_link, self.timer_scope, Qt.Vertical)
 
         self.timer_scope.visibilityChanged.connect(self.timerscope_close)
         self.timer_scope.show()
@@ -274,7 +278,7 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider.setValue(5)
         self.scale_slider.setTickInterval(1)
         self.scale_slider.setSingleStep(1)
-        self.scale_slider.setTickPosition(QSlider.TickPosition.TicksAbove)
+        self.scale_slider.setTickPosition(QSlider.TicksAbove)
         scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
@@ -288,9 +292,9 @@ class MainWindowFrame(QMainWindow):
         forward_button.clicked.connect(self.forward_scale_slider)
         scale_scope_widget.addWidget(forward_button, 1, 1)
 
-        self.scale_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
+        self.scale_scope.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.scale_scope.setFixedHeight(120)
-        self.splitDockWidget(self.main_statsdock_link, self.scale_scope, Qt.Orientation.Vertical)
+        self.splitDockWidget(self.main_statsdock_link, self.scale_scope, Qt.Vertical)
 
         self.scale_scope.visibilityChanged.connect(self.scale_scope_close)
         self.scale_scope.show()
@@ -460,7 +464,7 @@ class MainWindowFrame(QMainWindow):
         b_n1_label.setFont(b_n1_label_font)
         b_n1_label.move(20, 20)
         pixmap_newton1 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
-                                                                            Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
+                                                                            Qt.KeepAspectRatio,Qt.SmoothTransformation)
         l_pixmap_newton1 = QLabel(parent=newton1tab)
         l_pixmap_newton1.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_newton1.setFixedSize(200, 280)
@@ -509,14 +513,49 @@ class MainWindowFrame(QMainWindow):
         info_window.exec()
 
 
-    def htui(self):
-        about_window = QDialog(parent=self)
-        about_window.resize(500, 400)
-        about_window.setWindowTitle('About Astro Balls')
-        about_layout = QGridLayout()
-        about_window.setLayout(about_layout)
+    def apropos(self):
+        apropos_window = QDialog(parent=self)
+        apropos_window.resize(560, 360)
+        apropos_window.setWindowTitle('À propos de nous')
+        apropos_layout = QGridLayout()
+        apropos_layout.setContentsMargins(12, 12, 12, 12)
+        apropos_layout.setHorizontalSpacing(10)
+        apropos_layout.setVerticalSpacing(10)
+        apropos_window.setLayout(apropos_layout)
 
-        about_window.exec()
+        about_icon = QPixmap('./images/Astro Balls Icon.png').scaled(170, 170, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        icon_label = QLabel()
+        icon_label.setPixmap(about_icon)
+        apropos_layout.addWidget(icon_label, 0, 0, 2, 1, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        info_label = QLabel(parent=apropos_window)
+        info_label.setText(
+            "<b>Astro Balls</b><br>Version: v0.1.11<br><br>Astro Balls est une simulation de mouvements planétaires et "
+            "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
+            "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse "
+            "et l'échelle de la simulation."
+        )
+        info_label.setWordWrap(True)
+        info_font = QFont()
+        info_font.setPointSize(10)
+        info_label.setFont(info_font)
+        apropos_layout.addWidget(info_label, 0, 1, 1, 2)
+
+        credits_label = QLabel(parent=apropos_window)
+        credits_label.setText(
+            "Développé par: \n"
+            "Maxime Bélanger-Lamarche\n"
+            "Samuel Gagné\n"
+            "Antoine St-Gelais\n"
+        )
+        credits_label.setWordWrap(True)
+        apropos_layout.addWidget(credits_label, 1, 1, 1, 2)
+
+        bouton_fermer = QPushButton('Fermer')
+        bouton_fermer.clicked.connect(apropos_window.close)
+        apropos_layout.addWidget(bouton_fermer, 2, 2, Qt.AlignmentFlag.AlignRight)
+
+        apropos_window.exec()
 
     def guide(self):
         pass
@@ -538,11 +577,182 @@ class MainWindowFrame(QMainWindow):
     def applysetting(self):
         pass
 
-    def showorbits(self):
-        pass
+    def showorbits(self, checked):
+        self.game_widget.is_showingorbits = checked
 
     def showorbitinfo(self):
-        pass
+        if self.orbitinfo_window is None:
+            self.orbitinfo_window = QDialog(parent=self)
+            self.orbitinfo_window.setWindowTitle('Orbits')
+            self.orbitinfo_window.setFixedSize(380, 280)
+            self.orbitinfo_window_layout1 = QGridLayout(self.orbitinfo_window)
+            self.orbitinfo_window_layout1.setContentsMargins(2, 2, 2, 2)
+
+            scroller = QScrollArea()
+            scroller.setFrameShape(QFrame.NoFrame)
+            scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            scroller.setWidgetResizable(True)
+            self.orbitinfo_window_layout1.addWidget(scroller, 0, 1)
+
+            scroller_widget = QWidget()
+            self.scroller_widget_layout = QVBoxLayout(scroller_widget)
+            self.scroller_widget_layout.setSpacing(4)
+            scroller.setWidget(scroller_widget)
+
+            orbit_helper = QPushButton('Help')
+            orbit_helper.setCheckable(True)
+            orbit_helper.setToolTip('Pre-configures the sufficient velocity to maintain circular orbit')
+            orbit_helper.clicked.connect(self.game_widget.kepler_orbit_helper)
+            self.orbitinfo_window_layout1.addWidget(orbit_helper, 1, 0)
+
+            close_button = QPushButton('Close')
+            close_button.clicked.connect(self.orbitinfo_window.close)
+            close_button.clicked.connect(self.when_showorbit_closed)
+            self.orbitinfo_window_layout1.addWidget(close_button, 1, 1)
+
+            panel = QFrame()
+            panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+            panel_layout = QGridLayout()
+            panel.setLayout(panel_layout)
+            panel_layout.setSpacing(3)
+            self.orbitinfo_window_layout1.addWidget(panel, 0, 0)
+
+            l_eccentricity_toggler = QLabel('Eccentricity: ')
+            panel_layout.addWidget(l_eccentricity_toggler, 0, 0)
+            self.s_eccentricity_toggler = QSlider(Qt.Orientation.Horizontal, parent=self)
+            self.s_eccentricity_toggler.setMinimum(0)
+            self.s_eccentricity_toggler.setMaximum(100)
+            self.s_eccentricity_toggler.setSingleStep(1)
+            self.s_eccentricity_toggler.setTickPosition(QSlider.TicksAbove)
+            panel_layout.addWidget(self.s_eccentricity_toggler, 2, 0, 1, 2)
+            self.b_eccentricity_toggler = QDoubleSpinBox()
+            self.b_eccentricity_toggler.lineEdit().setMaximumWidth(50)
+            self.b_eccentricity_toggler.setMaximumWidth(90)
+            panel_layout.addWidget(self.b_eccentricity_toggler, 0, 1)
+
+            l_semimajor_toggler = QLabel('Velocity: ')
+            panel_layout.addWidget(l_semimajor_toggler, 3, 0)
+            self.s_semimajor_toggler = QSlider(Qt.Orientation.Horizontal, parent=self)
+            self.s_semimajor_toggler.setMinimum(0)
+            self.s_semimajor_toggler.setMaximum(100)
+            self.s_semimajor_toggler.setSingleStep(1)
+            self.s_semimajor_toggler.setTickPosition(QSlider.TicksAbove)
+            panel_layout.addWidget(self.s_semimajor_toggler, 4, 0, 1, 2)
+            self.b_semimajor_toggler = QDoubleSpinBox()
+            self.b_semimajor_toggler.lineEdit().setMaximumWidth(50)
+            self.b_semimajor_toggler.setMaximumWidth(90)
+            panel_layout.addWidget(self.b_semimajor_toggler, 3, 1)
+
+            l_posorbit_toggler = QLabel('Orbital Position: ', parent=panel)
+            l_posorbit_toggler.move(10, 107)
+            self.s_posorbit_toggler = QDial(parent=panel)
+            self.s_posorbit_toggler.setMinimum(0)
+            self.s_posorbit_toggler.setMaximum(360)
+            self.s_semimajor_toggler.setValue(0)
+            self.s_posorbit_toggler.setMaximumWidth(90)
+            self.s_posorbit_toggler.setSingleStep(1)
+            self.s_posorbit_toggler.setWrapping(True)
+            self.s_posorbit_toggler.valueChanged.connect(self.game_widget.orbital_position_editor)
+            self.s_posorbit_toggler.setInvertedAppearance(True)
+            panel_layout.addWidget(self.s_posorbit_toggler, 5, 1)
+            self.b_posorbit_toggler = QDoubleSpinBox(parent=panel)
+            self.b_posorbit_toggler.lineEdit().setMaximumWidth(50)
+            self.b_posorbit_toggler.setMaximumWidth(60)
+            self.b_posorbit_toggler.setRange(0, 360)
+            self.b_posorbit_toggler.setStyleSheet("""QDoubleSpinBox {padding-right:1px} 
+            QDoubleSpinBox::up-button{subcontrol-position: top right; width: 16px} 
+            QDoubleSpinBox::down-button{subcontrol-position: bottom right; width: 16px}""")
+            self.b_posorbit_toggler.move(8, 146)
+
+            l_orbitcolor_toggler = QLabel('Orbit Color: ')
+            panel_layout.addWidget(l_orbitcolor_toggler, 6, 0)
+            self.color_button = QPushButton('Color Palette')
+            self.color_button.setStyleSheet("""QPushButton 
+            {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
+            QPushButton::hover { background-color: #4d4d4d}""")
+            self.color_button.clicked.connect(self.orbiteditor_color)
+            panel_layout.addWidget(self.color_button, 6, 1)
+
+            self.get_orbitinfo_ondisplay = []
+            self.orbit_timer = QTimer(self)
+            self.orbit_timer.timeout.connect(self.update_showorbitinfo)
+            self.orbit_timer.start(50)
+
+            self.orbitinfo_window.finished.connect(lambda: setattr(self, 'orbitinfo_window', None))
+            self.orbitinfo_window.show()
+
+        # TODO: try update QDial along planet orbit (for later)
+
+    def update_showorbitinfo(self):
+        self.b_eccentricity_toggler.setValue(self.s_eccentricity_toggler.value() / 100)
+        self.b_semimajor_toggler.setValue(self.s_semimajor_toggler.value())
+        self.b_posorbit_toggler.setValue(self.s_posorbit_toggler.value())
+        # self.b_posorbit_toggler.setValue(self.game_widget.uopt_editor())
+        # (i need to enable both way value editing without fucking up the orbits... but not rn twin it 1:43am)
+        if self.orbitinfo_window and hasattr(self, 'scroller_widget_layout'):
+            if len(self.game_widget.kepler()) is not len(self.get_orbitinfo_ondisplay):
+                for i in range(self.scroller_widget_layout.count()):
+                    panel = self.scroller_widget_layout.itemAt(i).widget()
+                    if panel:
+                        panel.deleteLater()
+                self.get_orbitinfo_ondisplay = []
+                for k, j in enumerate(self.game_widget.kepler()):
+                    panel = QFrame()
+                    panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+                    panel_layout = QVBoxLayout()
+                    panel.setLayout(panel_layout)
+                    panel_layout.setSpacing(1)
+
+                    planet_label = QLabel()
+                    planet_label_font = QFont()
+                    planet_label_font.setBold(True)
+                    planet_label.setFont(planet_label_font)
+                    panel_layout.addWidget(planet_label)
+                    epstein_label = QLabel()
+                    panel_layout.addWidget(epstein_label)
+                    semimajoraxis_label = QLabel()
+                    panel_layout.addWidget(semimajoraxis_label)
+                    velocity_label = QLabel()
+                    panel_layout.addWidget(velocity_label)
+                    separator = QFrame()
+                    separator.setFrameStyle(QFrame.Shape.HLine)
+                    panel_layout.addWidget(separator)
+                    configure_orbit_button = QPushButton('Configure Orbit')
+                    configure_orbit_button.setStyleSheet("""QPushButton 
+                     {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
+                     QPushButton::hover { background-color: #4d4d4d}""")
+                    configure_orbit_button.setProperty('index', k)
+                    configure_orbit_button.clicked.connect(self.game_widget.orbit_editor)
+                    panel_layout.addWidget(configure_orbit_button)
+                    ondisplay_structure = {'Name': planet_label, 'epstein': epstein_label,
+                                           'semimajor': semimajoraxis_label, 'velocity': velocity_label}
+                    self.scroller_widget_layout.addWidget(panel)
+                    self.get_orbitinfo_ondisplay.append(ondisplay_structure)
+
+            for k, l in enumerate(self.game_widget.kepler()):
+                ondisplay = self.get_orbitinfo_ondisplay[k]
+                ondisplay['Name'].setText(l['planet']['Name'])
+                ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
+                ondisplay['semimajor'].setText(f'Semi-major(a): {round(l['a'], 3)}')
+                ondisplay['velocity'].setText(f'Velocity: {round(l['vel'].magnitude(), 1)}')
+
+            for k, l in enumerate(self.game_widget.kepler()):
+                ondisplay = self.get_orbitinfo_ondisplay[k]
+                self.get_orbitinfo_ondisplay[k]['Name'].setText(l['planet']['nom'])
+                ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
+                ondisplay['semimajor'].setText(f'Semi-major(a): {round(l['a'], 3)}')
+
+    def when_showorbit_closed(self):
+        self.orbit_timer.stop()
+        self.orbitinfo_window = None
+
+    def orbiteditor_color(self):
+        color_window = QColorDialog.getColor()
+        if color_window.isValid():
+            color = color_window.name()
+            self.color_button.setStyleSheet(
+                f"""QPushButton {{border: 1px solid #8a8a8a; padding: 2px; background-color: {color};}}""")
 
     def keybinds(self):
         self.settings()
