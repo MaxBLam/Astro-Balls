@@ -1,11 +1,11 @@
 import sys
 import pygame
-from PyQt6.QtWidgets import QColorDialog
+
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction, Qt, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QComboBox, QSpinBox, QDoubleSpinBox, \
-    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial
+    QScrollArea, QScrollBar, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
@@ -275,9 +275,9 @@ class MainWindowFrame(QMainWindow):
 
         self.scale_slider = QSlider(Qt.Orientation.Horizontal, parent=scale_scope_container)
         self.scale_slider.setRange(1, 100)
-        self.scale_slider.setValue(5)
-        self.scale_slider.setTickInterval(1)
-        self.scale_slider.setSingleStep(1)
+        self.scale_slider.setValue(20)
+        self.scale_slider.setTickInterval(5)
+        self.scale_slider.setSingleStep(5)
         self.scale_slider.setTickPosition(QSlider.TicksAbove)
         scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)

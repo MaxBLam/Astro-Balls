@@ -29,7 +29,7 @@ class DragNDrop(QToolBar):
 
         planet_tab = QWidget()
         planet_layout = QHBoxLayout()
-        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']:
+        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Comète 10km', 'Comète 50km', 'Comète 200km']:
             planet_layout.addWidget(QtPlanetLabel(i))
         planet_tab.setLayout(planet_layout)
         tabs.addTab(planet_tab, 'Planets')
@@ -39,14 +39,21 @@ class DragNDrop(QToolBar):
         for j in ['Lune', 'Europe', 'Io']:
             ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
-        tabs.addTab(ns_tabs, 'Natural Satellites')
+        tabs.addTab(ns_tabs, 'Satellites Naturels')
 
         star_tabs = QWidget()
         star_layout = QHBoxLayout()
-        for k in ['Soleil']:
+        for k in ['Soleil', 'Arcturus', 'Bételgeuse', 'Sirius B', 'Rigel']:
             star_layout.addWidget(QtPlanetLabel(k))
         star_tabs.setLayout(star_layout)
-        tabs.addTab(star_tabs, 'Stars')
+        tabs.addTab(star_tabs, 'Étoiles')
+
+        autres_tabs = QWidget()
+        autres_layout = QHBoxLayout()
+        for l in ['TON 618', 'Phoenix A', 'Hubble', 'Your Mom']:
+            autres_layout.addWidget(QtPlanetLabel(l))
+        autres_tabs.setLayout(autres_layout)
+        tabs.addTab(autres_tabs, 'Autres')
 
         self.addWidget(tabs)
         self.setFixedHeight(100)
