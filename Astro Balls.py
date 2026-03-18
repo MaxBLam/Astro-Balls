@@ -108,7 +108,7 @@ class MainWindowFrame(QMainWindow):
         vector_menu.addAction(rotational_vector)
         menu.addMenu(view_menu)
 
-        tool_menu = QMenu('&Tools')
+        tool_menu = QMenu('&Outils')
         menu.addMenu(tool_menu)
         mt = QAction('&Mesuring Tape', parent=self)
         mt.setIcon(QIcon('images/menubar symbol/ruler.png'))
@@ -118,8 +118,8 @@ class MainWindowFrame(QMainWindow):
         of.triggered.connect(self.showorbitinfo)
         tool_menu.addAction(of)
 
-        help_menu = QMenu('&Help')
-        keybinds_action = QAction('&Keybinds', parent=self)
+        help_menu = QMenu('&Aide')
+        keybinds_action = QAction('&Raccourcis clavier', parent=self)
         keybinds_action.setIcon(QIcon('images/menubar symbol/space.png'))
         keybinds_action.triggered.connect(self.keybinds)
         keybinds_action.setShortcut('Alt+K')
@@ -135,11 +135,11 @@ class MainWindowFrame(QMainWindow):
         guider_action.setShortcut('Alt+G')
         help_menu.addAction(guider_action)
         help_menu.addSeparator()
-        htui_action = QAction('&About Astro Balls', parent=self)
-        htui_action.setIcon(QIcon('images/menubar symbol/question-mark.png'))
-        htui_action.triggered.connect(self.htui)
-        htui_action.setShortcut('Alt+H')
-        help_menu.addAction(htui_action)
+        apropos_action = QAction('À propos', parent=self)
+        apropos_action.setIcon(QIcon('images/menubar symbol/question-mark.png'))
+        apropos_action.triggered.connect(self.apropos)
+        apropos_action.setShortcut('Alt+H')
+        help_menu.addAction(apropos_action)
         menu.addMenu(help_menu)
 
         self.dragndrop = DragNDrop()
@@ -509,14 +509,49 @@ class MainWindowFrame(QMainWindow):
         info_window.exec()
 
 
-    def htui(self):
-        about_window = QDialog(parent=self)
-        about_window.resize(500, 400)
-        about_window.setWindowTitle('About Astro Balls')
-        about_layout = QGridLayout()
-        about_window.setLayout(about_layout)
+    def apropos(self):
+        apropos_window = QDialog(parent=self)
+        apropos_window.resize(560, 360)
+        apropos_window.setWindowTitle('À propos de nous')
+        apropos_layout = QGridLayout()
+        apropos_layout.setContentsMargins(12, 12, 12, 12)
+        apropos_layout.setHorizontalSpacing(10)
+        apropos_layout.setVerticalSpacing(10)
+        apropos_window.setLayout(apropos_layout)
 
-        about_window.exec()
+        about_icon = QPixmap('./images/Astro Balls Icon.png').scaled(170, 170, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        icon_label = QLabel()
+        icon_label.setPixmap(about_icon)
+        apropos_layout.addWidget(icon_label, 0, 0, 2, 1, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        info_label = QLabel(parent=apropos_window)
+        info_label.setText(
+            "<b>Astro Balls</b><br>Version: v0.1.11<br><br>Astro Balls est une simulation de mouvements planétaires et "
+            "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
+            "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse "
+            "et l'échelle de la simulation."
+        )
+        info_label.setWordWrap(True)
+        info_font = QFont()
+        info_font.setPointSize(10)
+        info_label.setFont(info_font)
+        apropos_layout.addWidget(info_label, 0, 1, 1, 2)
+
+        credits_label = QLabel(parent=apropos_window)
+        credits_label.setText(
+            "Développé par: \n"
+            "Maxime Bélanger-Lamarche\n"
+            "Samuel Gagné\n"
+            "Antoine St-Gelais\n"
+        )
+        credits_label.setWordWrap(True)
+        apropos_layout.addWidget(credits_label, 1, 1, 1, 2)
+
+        bouton_fermer = QPushButton('Fermer')
+        bouton_fermer.clicked.connect(apropos_window.close)
+        apropos_layout.addWidget(bouton_fermer, 2, 2, Qt.AlignmentFlag.AlignRight)
+
+        apropos_window.exec()
 
     def guide(self):
         pass
