@@ -1,9 +1,7 @@
-import random
-import os
 import pygame
-from PySide6.QtGui import Qt,QPainter, QImage
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QTimer, Signal
 import euclid
 import math
 
@@ -37,12 +35,11 @@ class PyGameWidget(QWidget):
         self.is_helpingorbits = False
         self.vitesse_state = False
 
-        self.point = []
         self.planetes = []
         self.planetes_pos = []
 
         self.keys_pressed = set()
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFocus()
 
         self.fps_simulation = 120
@@ -255,26 +252,28 @@ class PyGameWidget(QWidget):
                     ecc = orbital_data['epsilon']
                     omega = orbital_data['omega']
                     r = (semimajor * (1 - ecc ** 2)) / (1 + ecc * math.cos(theta))
-                    planet['position'].x = self.centrum['position'].x + r * math.cos(theta + omega)
-                    planet['position'].y = self.centrum['position'].y + r * math.sin(theta + omega)
+                    centrum = self.centrum
+                    planet['position'].x = centrum['position'].x + r * math.cos(theta + omega)  # type: ignore
+                    planet['position'].y = centrum['position'].y + r * math.sin(theta + omega)  # type: ignore
 
                     inner_sqrt = math.sqrt(
-                        (self.G * self.centrum['masse']) / ((semimajor * (1-ecc**2)) + 1*10**-10))
+                        (self.G * centrum['masse']) / ((semimajor * (1-ecc**2)) + 1*10**-10))
                     urvx = -inner_sqrt * math.sin(theta)
                     urvy = inner_sqrt * (ecc + math.cos(theta))
                     rvx = urvx * math.cos(omega) - urvy * math.sin(omega)
                     rvy = urvx * math.sin(omega) + urvy * math.cos(omega)
-                    planet['vitesse'].x = rvx + self.centrum['vitesse'].x
-                    planet['vitesse'].y = rvy + self.centrum['vitesse'].y
+                    planet['vitesse'].x = rvx + centrum['vitesse'].x  # type: ignore
+                    planet['vitesse'].y = rvy + centrum['vitesse'].y  # type: ignore
 
-        # TODO: may delete this later
+    # TODO: may delete this later
     def uopt_editor(self):
         orbital_data = None
         if self.p_index is None:
             return 0.0
         planet = self.planetes[self.p_index]
-        rpx = planet['position'].x - self.centrum['position'].x
-        rpy = planet['position'].y - self.centrum['position'].y
+        centrum = self.centrum
+        rpx = planet['position'].x - centrum['position'].x  # type: ignore
+        rpy = planet['position'].y - centrum['position'].y  # type: ignore
         angle = math.atan2(rpy, rpx)
         for i in self.kepler():
             if i['planet'] == planet:
@@ -424,7 +423,7 @@ class PyGameWidget(QWidget):
     def mousePressEvent(self, event):
         souris_pos = euclid.Vector2(event.pos().x(), event.pos().y())
 
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.MouseButton.RightButton:
             # clic droit : sélectionner la planète active
             for n, p in enumerate(self.planetes):
                 sx, sy = p['position'].x, p['position'].y
@@ -432,7 +431,7 @@ class PyGameWidget(QWidget):
                     self.active_planet = n
                     break
 
-        elif event.button() == Qt.LeftButton:
+        elif event.button() == Qt.MouseButton.LeftButton:
             # clic gauche : sélectionner et mettre à jour statsdock
             for index, planete in enumerate(self.planetes):
                 x, y = self.pos_objet_orbite(planete["position"])
@@ -517,26 +516,20 @@ class PyGameWidget(QWidget):
         if Qt.Key.Key_Shift in self.keys_pressed:
             speed = 10
         if self.camera_mode == "free":
-            if Qt.Key_A in self.keys_pressed:
+            if Qt.Key.Key_A in self.keys_pressed:
                 self.camera_pos.x -= speed / self.scale
-            if Qt.Key_D in self.keys_pressed:
+            if Qt.Key.Key_D in self.keys_pressed:
                 self.camera_pos.x += speed / self.scale
-            if Qt.Key_W in self.keys_pressed:
+            if Qt.Key.Key_W in self.keys_pressed:
                 self.camera_pos.y -= speed / self.scale
-            if Qt.Key_S in self.keys_pressed:
+            if Qt.Key.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed / self.scale
 
-        if Qt.Key_F in self.keys_pressed:
-            if not self.f_pressed_handled:
-                self.changer_vue()
-                self.f_pressed_handled = True
-        else:
-            self.f_pressed_handled = False
 
 
     def paintEvent(self, event):
         painter = QPainter(self)
         # Transforme la surface Pygame en QImage
         raw_data = pygame.image.tostring(self.playscreen, "RGB")
-        image = QImage(raw_data, self.playscreen.get_width(), self.playscreen.get_height(), 3 * self.playscreen.get_width(), QImage.Format_RGB888)
+        image = QImage(raw_data, self.playscreen.get_width(), self.playscreen.get_height(), 3 * self.playscreen.get_width(), QImage.Format.Format_RGB888)
         painter.drawImage(self.rect(), image)
