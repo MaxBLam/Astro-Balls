@@ -4,6 +4,7 @@ from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
 import euclid
 import math
+import random
 
 
 class PyGameWidget(QWidget):
@@ -22,7 +23,7 @@ class PyGameWidget(QWidget):
         self.statsdock_x = None
         self.statsdock_y = None
         self.setAcceptDrops(True)
-        self.planetes = []
+        self.planetes = list[dict[str, float]]
         self.planetes_pos = []
         self.active_planet = None
         self.vitesse_state = False
@@ -50,10 +51,10 @@ class PyGameWidget(QWidget):
         pygame.font.init()
         self.font = pygame.font.SysFont(None, 20)
 
-        self.simulation = 1
+        self.simulation = 2
         self.G = 6.6743*10**-15
         self.scale = 20**6 / 100**6
-        self.facteur_ellipse = 1 # <1 pour une ellipse
+        self.facteur_ellipse = 0.5 # <1 pour une ellipse
         self.dtime = 1 / self.fps_simulation
 
         self.f_pressed_handled = False
@@ -104,30 +105,38 @@ class PyGameWidget(QWidget):
         print(self.target)
 
     def vitesse_simulation1(self):
-        self.planetes[0]["vitesse"] = euclid.Vector2(0, 0)
-        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) * self.facteur_ellipse
-        self.planetes[2]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[2]) + self.planetes[1]["vitesse"]
+        masse_max_id = 0
+        id_list = []
+        masse_max = max(self.planetes[0]["masse"], self.planetes[1]["masse"], self.planetes[2]["masse"])
+        for planete_id in range (len(self.planetes)):
+            if masse_max == self.planetes[planete_id]["masse"]:
+                masse_max_id = planete_id
+            else:
+                id_list.append(planete_id)
+        self.planetes[masse_max_id]["vitesse"] = euclid.Vector2(0, 0)
+        self.planetes[id_list[0]]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[masse_max_id], self.planetes[id_list[0]]) * self.facteur_ellipse
+        self.planetes[id_list[1]]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[id_list[0]], self.planetes[id_list[1]]) + self.planetes[id_list[0]]["vitesse"]
         self.vitesse_state = True
 
     def simulation_objet_central_3corps(self, objet_central, objet_orbite1, objet_orbite2):
-        acc_objet_central = euclid.Vector2(0, 0)
-        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central)
+        acc_objet_central = self.force_gravitationnelle(objet_central, objet_orbite1) + self.force_gravitationnelle(objet_central, objet_orbite2)
+        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central) + self.force_gravitationnelle(objet_orbite1, objet_orbite2)
         acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1) + self.force_gravitationnelle(objet_orbite2, objet_central)
 
         list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
-        if self.camera_mode == "follow":
-            pos_x = objet_orbite1["position"].x - (self.width() / self.scale / 2)
-            pos_y = objet_orbite1["position"].y - (self.height() / self.scale / 2)
-            self.camera_pos = euclid.Vector2(pos_x, pos_y)
-        elif self.camera_mode == "milieu":
+        if self.camera_mode == "milieu":
             pos_x = ((objet_central["position"].x + objet_orbite1["position"].x) / 2) - (self.width() / self.scale / 2)
             pos_y = ((objet_central["position"].y + objet_orbite1["position"].y) / 2) - (self.height() / self.scale / 2)
             self.camera_pos = euclid.Vector2(pos_x, pos_y)
-            #self.camera_pos = (objet_central["position"] + objet_orbite1["position"]) / 2
 
         self.display(list_objets_update)
+
+    def vitesse_simulation2(self):
+        self.planetes[0]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[0]) * random.uniform(0.4,1.0)
+        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) * random.uniform(0.8,1.2)
+        self.vitesse_state = True
 
     def simulation_2corps(self, objet_orbite1, objet_orbite2):
         acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_orbite2)
@@ -135,6 +144,11 @@ class PyGameWidget(QWidget):
 
         list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
+
+        if self.camera_mode == "milieu":
+            pos_x = ((objet_orbite1["position"].x + objet_orbite2["position"].x) / 2) - (self.width() / self.scale / 2)
+            pos_y = ((objet_orbite1["position"].y + objet_orbite2["position"].y) / 2) - (self.height() / self.scale / 2)
+            self.camera_pos = euclid.Vector2(pos_x, pos_y)
 
         self.display(list_objets_update)
 
@@ -290,7 +304,7 @@ class PyGameWidget(QWidget):
         for objet in objets:
             objet[0]["vitesse"] += objet[1] * self.dtime
             objet[0]["position"] += objet[0]["vitesse"] * self.dtime
-            list_objets_update.append(objet)
+            list_objets_update.append(objet[0])
 
         return list_objets_update
 
@@ -314,19 +328,21 @@ class PyGameWidget(QWidget):
 
         return new_world_x * self.scale, new_world_y * self.scale
 
-    def display(self, objets: list):# objet[0] = objet, objet[1] = acc_objet
+    def display(self, planetes: list):
         self.playscreen.fill((0,0,0))
 
-        for objet in objets:
-            rx, ry = self.pos_objet_orbite(objet[0]["position"])
-            rayon = objet[0]["rayon"] * self.scale
+        for planete in planetes:
+            rx, ry = self.pos_objet_orbite(planete["position"])
+            rayon = planete["rayon"] * self.scale
 
             if rayon < 1:
-                text = self.font.render(f"{objet[0]['nom']}", True, (255, 255, 255))
+                text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                 self.playscreen.blit(text, (int(rx) - 20, int(ry) - 7))
             else:
-                pygame.draw.circle(self.playscreen, objet[0]["couleur"], (int(rx), int(ry)), int(rayon))
-
+                if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
+                    pygame.draw.circle(self.playscreen, (255,255,255), (rx, ry), rayon, int(0.05 * rayon))
+                else:
+                    pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
         self.update()
 
         for j in self.point:
@@ -375,7 +391,7 @@ class PyGameWidget(QWidget):
 
             "TON 618": {'nom': 'TON 618', 'type': 'Trou noir supermassif', 'composition_surface': 'Singularité',
                         'âge': '≈ 10 milliards d’années', 'rotation': 'Inconnue', 'révolution': 'Aucune',
-                        "masse": 1.3e41, "rayon": 390000000000, "couleur": (50, 50, 50)},
+                        "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15)},
             "Phoenix A": {'nom': 'Phoenix A', 'type': 'Trou noir supermassif', 'composition_surface': 'Singularité',
                           'âge': '≈ 8 milliards d’années', 'rotation': 'Inconnue', 'révolution': 'Aucune',
                           "masse": 2.0e41, "rayon": 590000000000, "couleur": (15, 15, 15)},
@@ -483,8 +499,17 @@ class PyGameWidget(QWidget):
                     self.playscreen.blit(text, (rx - 20, ry - 7))
                     self.update()
                 else:
-                    pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
-                    self.update()
+                    if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
+                        pygame.draw.circle(self.playscreen, (255,255,255), (rx, ry), rayon, int(0.05 * rayon))
+                    else:
+                        pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
+                self.update()
+
+        if self.camera_mode == "follow" and self.target is not None:
+            pos_x = self.target.x - (self.width() / self.scale / 2)
+            pos_y = self.target.y - (self.height() / self.scale / 2)
+            self.camera_pos = euclid.Vector2(pos_x, pos_y)
+
         if self.simulation == 1 and len(self.planetes) > 2:
             self.active = True
             if not self.vitesse_state:
@@ -492,8 +517,12 @@ class PyGameWidget(QWidget):
             objet_central, objet_orbite1, objet_orbite2 = self.planetes[0], self.planetes[1], self.planetes[2]
             self.simulation_objet_central_3corps(objet_central, objet_orbite1, objet_orbite2)
 
-        elif self.simulation == 2:
-            pass
+        elif self.simulation == 2 and len(self.planetes) > 1:
+            self.active = True
+            if not self.vitesse_state:
+                self.vitesse_simulation2()
+            objet_orbite1, objet_orbite2 = self.planetes[0], self.planetes[1]
+            self.simulation_2corps(objet_orbite1, objet_orbite2)
 
         elif self.simulation == 3:
             pass
