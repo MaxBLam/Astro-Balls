@@ -104,14 +104,21 @@ class MainWindowFrame(QMainWindow):
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
         vector_menu = view_menu.addMenu('Vectors')
-        orbits_vector = QWidgetAction(vector_menu)
-        orbits_vector_view = self.customcheckbox(func_name='Orbital Vectors', method=self.showorbitvector)[0]
-        orbits_vector.setDefaultWidget(orbits_vector_view)
-        vector_menu.addAction(orbits_vector)
-        force_vector = QWidgetAction(vector_menu)
-        force_vector_view = self.customcheckbox(func_name='Force Vectors', method=self.showforcevector)[0]
-        force_vector.setDefaultWidget(force_vector_view)
-        vector_menu.addAction(force_vector)
+        self.orbitalvector_action = QWidgetAction(vector_menu)
+
+        if self.game_widget.is_showingorbitalvector is False:
+            self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name='Orbital Vectors',
+                                                                                    method=self.show_orbitalvector)
+            self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
+        vector_menu.addAction(self.orbitalvector_action)
+
+        self.forcevector_action = QWidgetAction(vector_menu)
+        if self.game_widget.is_showingforcevector is False:
+            self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Force Vectors',
+                                                                                method=self.show_forcevector)
+            self.forcevector_action.setDefaultWidget(self.forcevector_view)
+        vector_menu.addAction(self.forcevector_action)
+
         rotational_vector = QWidgetAction(vector_menu)
         rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)[0]
         rotational_vector.setDefaultWidget(rotational_vector_view)
@@ -743,13 +750,6 @@ class MainWindowFrame(QMainWindow):
 
             for k, l in enumerate(self.game_widget.kepler()):
                 ondisplay = self.get_orbitinfo_ondisplay[k]
-                ondisplay['Name'].setText(l['planet']['Name'])
-                ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
-                ondisplay['semimajor'].setText(f'Semi-major(a): {round(l['a'], 3)}')
-                ondisplay['velocity'].setText(f'Velocity: {round(l['vel'].magnitude(), 1)}')
-
-            for k, l in enumerate(self.game_widget.kepler()):
-                ondisplay = self.get_orbitinfo_ondisplay[k]
                 self.get_orbitinfo_ondisplay[k]['Name'].setText(l['planet']['nom'])
                 ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
                 ondisplay['semimajor'].setText(f'Semi-major(a): {round(l['a'], 3)}')
@@ -765,6 +765,16 @@ class MainWindowFrame(QMainWindow):
             color = color_window.name()
             self.color_button.setStyleSheet(
                 f"""QPushButton {{border: 1px solid #8a8a8a; padding: 2px; background-color: {color};}}""")
+
+    def show_orbitalvector(self, checked):
+        self.game_widget.is_showingorbitalvector = checked
+        # sod = show on display
+
+    def sod_orbitalvector(self):
+        pass
+
+    def show_forcevector(self, checked):
+        self.game_widget.is_showingforcevector = checked
 
     def keybinds(self):
         self.settings()
