@@ -29,14 +29,14 @@ class DragNDrop(QToolBar):
 
         planet_tab = QWidget()
         planet_layout = QHBoxLayout()
-        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Comète 10km', 'Comète 50km', 'Comète 200km']:
+        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']:
             planet_layout.addWidget(QtPlanetLabel(i))
         planet_tab.setLayout(planet_layout)
         tabs.addTab(planet_tab, 'Planets')
 
         ns_tabs = QWidget()
         ns_layout = QHBoxLayout()
-        for j in ['Lune', 'Europe', 'Io']:
+        for j in ['Lune', 'Europe', 'Io', 'Comète 10km', 'Comète 50km', 'Comète 200km']:
             ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
         tabs.addTab(ns_tabs, 'Satellites Naturels')
@@ -88,22 +88,22 @@ class StatsDock(QDockWidget):
         upper_panel_layout.addWidget(self.body_type, 1, 0, 1, 2)
 
         self.surface_label = QLabel()
-        self.surface_label.setText(f"Surface Composition: ")
+        self.surface_label.setText(f"Composition Surface: ")
         self.surface_label.setWordWrap(True)
         upper_panel_layout.addWidget(self.surface_label, 2, 0, 1, 2)
 
         self.age_label = QLabel()
-        self.age_label.setText(f"Age: ")
+        self.age_label.setText(f"Âge: ")
         self.age_label.setWordWrap(True)
         upper_panel_layout.addWidget(self.age_label, 3, 0, 1, 2)
 
         self.rotation_label = QLabel()
-        self.rotation_label.setText(f"Length of Rotation: ")
+        self.rotation_label.setText(f"Durée de la rotation: ")
         self.rotation_label.setWordWrap(True)
         upper_panel_layout.addWidget(self.rotation_label, 4, 0, 1, 2)
 
         self.revolution_label = QLabel()
-        self.revolution_label.setText(f"Length of Revolution: [body's revolution time]")
+        self.revolution_label.setText(f"Durée de la révolution: ")
         self.revolution_label.setWordWrap(True)
         upper_panel_layout.addWidget(self.revolution_label, 5, 0, 1, 2)
 
@@ -124,7 +124,7 @@ class StatsDock(QDockWidget):
         config_label.setFont(config_label_txt)
         mid_panel_layout.addWidget(config_label, 0, 0, 1, 3)
 
-        mass_label = QLabel('Mass')
+        mass_label = QLabel('Masse')
         mid_panel_layout.addWidget(mass_label, 1, 0)
         mass_spin = QDoubleSpinBox()
         mass_spin.setRange(0.0, 1000.0)
@@ -137,7 +137,7 @@ class StatsDock(QDockWidget):
         mass_unit.view().setFixedWidth(40)
         mid_panel_layout.addWidget(mass_unit, 2, 1)
 
-        size_label = QLabel('Radius')
+        size_label = QLabel('Rayon')
         mid_panel_layout.addWidget(size_label, 4, 0)
         mass_spin = QDoubleSpinBox()
         mass_spin.setRange(0.0, 1000.0)
@@ -150,7 +150,7 @@ class StatsDock(QDockWidget):
         size_unit.view().setFixedWidth(40)
         mid_panel_layout.addWidget(size_unit, 5, 1)
 
-        density_label = QLabel('Density')
+        density_label = QLabel('Densité')
         mid_panel_layout.addWidget(density_label, 6, 0)
         density_spin = QDoubleSpinBox()
         density_spin.lineEdit().setMaximumWidth(50)
@@ -162,7 +162,7 @@ class StatsDock(QDockWidget):
         size_unit.view().setFixedWidth(40)
         mid_panel_layout.addWidget(density_unit, 7, 1)
 
-        temp_label = QLabel('Temperature')
+        temp_label = QLabel('Température')
         mid_panel_layout.addWidget(temp_label, 8, 0)
         temp_spin = QDoubleSpinBox()
         temp_spin.lineEdit().setMaximumWidth(50)
@@ -176,7 +176,7 @@ class StatsDock(QDockWidget):
 
         momentum_lst = ['km/s', 'm/s', 'cm/s', 'km/h', 'm/h', 'cm/h', 'ml/s', 'yd/s', 'ft/s', 'inch/s', 'ml/h', 'yd/h', 'ft/h', 'inch/h']
 
-        rotation_label = QLabel('Rotational Momentum')
+        rotation_label = QLabel('Moment Cinétique')
         mid_panel_layout.addWidget(rotation_label, 10, 0, 1, 2)
         rotation_spin = QDoubleSpinBox()
         rotation_spin.lineEdit().setMaximumWidth(50)
@@ -186,7 +186,7 @@ class StatsDock(QDockWidget):
         rmomentum_unit.view().setFixedWidth(65)
         mid_panel_layout.addWidget(rmomentum_unit, 11, 1)
 
-        orbital_label = QLabel('Orbital Momentum')
+        orbital_label = QLabel('Moment Cinétique Orbital')
         mid_panel_layout.addWidget(orbital_label, 12, 0, 1, 2)
         orbital_spin = QDoubleSpinBox()
         orbital_spin.lineEdit().setMaximumWidth(50)
@@ -196,7 +196,7 @@ class StatsDock(QDockWidget):
         omomentum_unit.view().setFixedWidth(65)
         mid_panel_layout.addWidget(omomentum_unit, 13, 1)
 
-        gravity_label = QLabel('Surface Gravity')
+        gravity_label = QLabel('Gravité Surface')
         mid_panel_layout.addWidget(gravity_label, 14, 0, 1, 2)
         gravity_spin = QDoubleSpinBox()
         gravity_spin.lineEdit().setMaximumWidth(50)
