@@ -106,14 +106,14 @@ class MainWindowFrame(QMainWindow):
         vector_menu = view_menu.addMenu('Vectors')
         self.orbitalvector_action = QWidgetAction(vector_menu)
 
-        if self.game_widget.is_showingorbitalvector is False:
+        if not self.game_widget.is_showingorbitalvector:
             self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name='Orbital Vectors',
                                                                                     method=self.show_orbitalvector)
             self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
         vector_menu.addAction(self.orbitalvector_action)
 
         self.forcevector_action = QWidgetAction(vector_menu)
-        if self.game_widget.is_showingforcevector is False:
+        if not self.game_widget.is_showingforcevector:
             self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Force Vectors',
                                                                                 method=self.show_forcevector)
             self.forcevector_action.setDefaultWidget(self.forcevector_view)
