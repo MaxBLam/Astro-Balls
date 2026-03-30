@@ -13,9 +13,11 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock):
         super().__init__()
 
+        self.setMouseTracking(True)
         self.acceleration = None
         self.old_mouse = None
         self.souris_pos = None
+        self.souris_pos_vector = euclid.Vector2(0,0)
         self.centrum = None
         self.p_index = None
         self.statsdock = statsdock
@@ -52,16 +54,14 @@ class PyGameWidget(QWidget):
         self.timer = QTimer()
         self.timer.start(8)
 
-        self.distance_list = []
-
         pygame.init()
         pygame.font.init()
-        self.font = pygame.font.SysFont(None, 20)
+        self.font = pygame.font.Font("./Font/Orbitron-Regular.ttf", 15)
 
         self.simulation = 1
         self.G = 6.6743*10**-15
         self.scale = 20**6 / 100**6
-        self.facteur_ellipse = 0.5 # <1 pour une ellipse
+        self.facteur_ellipse = 1 # <1 pour une ellipse
         self.dtime = 1 / self.fps_simulation
 
         self.f_pressed_handled = False
@@ -263,7 +263,10 @@ class PyGameWidget(QWidget):
 
     def changer_vue(self):
         if self.camera_mode == "free":
-            self.camera_mode = "milieu"
+            if self.active:
+                self.camera_mode = "milieu"
+            else:
+                self.camera_mode = "follow"
         elif self.camera_mode == "milieu":
             self.camera_mode = "follow"
         elif self.camera_mode == "follow":
@@ -283,6 +286,8 @@ class PyGameWidget(QWidget):
 
     def display(self, planetes: list):
         self.playscreen.fill((0,0,0))
+        text_list = []
+        shift = 0
 
         for planete in planetes:
             rx, ry = self.pos_objet_orbite(planete["position"])
@@ -290,12 +295,15 @@ class PyGameWidget(QWidget):
 
             if rayon < 1:
                 text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
-                self.playscreen.blit(text, (int(rx) - 20, int(ry) - 7))
+                text_list.append((text, (rx,ry)))
             else:
                 if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
                     pygame.draw.circle(self.playscreen, (255,255,255), (rx, ry), rayon, int(0.05 * rayon))
                 else:
                     pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
+        for text in text_list:
+            self.playscreen.blit(text[0], (text[1][0], text[1][1] + shift))
+            shift += 10
 
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
@@ -395,21 +403,21 @@ class PyGameWidget(QWidget):
     def kepler(self):
         color_dimmer = None
         path = []
-        for i in self.planetes:
+        for planete_1 in self.planetes:
             max_centrum = -1
-            for j in self.planetes:
-                if j == i:
+            for planete_2 in self.planetes:
+                if planete_2 == planete_1:
                     continue
-                gravitational_force = j['masse'] / (i['position'] - j['position']).magnitude_squared() + (1 * 10 ** -10)
+                gravitational_force = planete_2['masse'] / (planete_1['position'] - planete_2['position']).magnitude_squared() + (1 * 10 ** -10)
                 if gravitational_force > max_centrum:
                     max_centrum = gravitational_force
-                    self.centrum = j
+                    self.centrum = planete_2
                     self.centrum['isCentrum'] = True
             if self.centrum is None:
                 continue
             gravitational_parameter = self.G * self.centrum['masse']
-            current_velocity = i['vitesse'] - self.centrum['vitesse']
-            current_position_vector = i['position'] - self.centrum['position']
+            current_velocity = planete_1['vitesse'] - self.centrum['vitesse']
+            current_position_vector = planete_1['position'] - self.centrum['position']
             current_position = current_position_vector.magnitude()
             vectorial_epsilon = (1 / gravitational_parameter *
                                  ((current_velocity.magnitude_squared() -
@@ -424,19 +432,19 @@ class PyGameWidget(QWidget):
             orb_dots = []
             for k in range(301):
                 theta = (2 * math.pi * k) / 300
-                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta)) + (1 * 10 ** -10)
+                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta))
                 x = (self.centrum['position'].x + r * math.cos(theta + omega))
                 y = (self.centrum['position'].y + r * math.sin(theta + omega))
                 orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
                 orb_dots.append((orbit_x, orbit_y))
-                color_dimmer = pygame.Color(i['couleur']).lerp((0, 0, 0), 0.7)
+                color_dimmer = pygame.Color(planete_1['couleur']).lerp((0, 0, 0), 0.7)
             orbital_momentum = math.sqrt((self.G * self.centrum['masse']) / current_position)
             tan_current_position = pygame.Vector2(
                 (current_position_vector.y * -1), current_position_vector.x).normalize()
             if self.is_helpingorbits is True:
-                i['vel'] = self.centrum['vel'] + (orbital_momentum * tan_current_position)
-            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': i,
-                         'vel': i['vitesse'], 'omega': omega})
+                planete_1['vel'] = self.centrum['vel'] + (orbital_momentum * tan_current_position)
+            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': planete_1,
+                         'vel': planete_1['vitesse'], 'omega': omega})
         return path
 
     def newton(self, planet):
@@ -606,6 +614,9 @@ class PyGameWidget(QWidget):
                     break
 
     def mouseMoveEvent(self, event):
+        pos_x, pos_y = event.pos().x(), event.pos().y()
+        self.souris_pos = euclid.Vector2(pos_x, pos_y)
+
         if self.active_planet is not None and self.souris_pos and self.camera_mode != 'follow':
             dragged_pos = event.position()
             distance = dragged_pos - self.old_mouse
@@ -617,11 +628,11 @@ class PyGameWidget(QWidget):
         self.active_planet = None
 
     def game_loop(self):
+        self.playscreen.fill((0, 0, 0))
         if self.measuringtape_state:
             self.measuringtape()
 
-        if not self.active:
-            self.playscreen.fill((0, 0, 0))
+        if not self.active and len(self.planetes) > 0:
             if self.target is not None and self.camera_mode == "follow":
                 pos_x = self.target.x - (self.width() / self.scale / 2)
                 pos_y = self.target.y - (self.height() / self.scale / 2)
@@ -633,13 +644,11 @@ class PyGameWidget(QWidget):
                 if rayon < 1:
                     text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                     self.playscreen.blit(text, (rx - 20, ry - 7))
-                    self.update()
                 else:
                     if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
                         pygame.draw.circle(self.playscreen, (255,255,255), (rx, ry), rayon, int(0.05 * rayon))
                     else:
                         pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
-                self.update()
 
         if self.camera_mode == "follow" and self.target is not None:
             pos_x = self.target.x - (self.width() / self.scale / 2)
@@ -694,11 +703,25 @@ class PyGameWidget(QWidget):
             if Qt.Key.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed / self.scale
 
-        if self.is_showingorbits:
+        if  not self.is_showingorbits:
             for w in self.kepler():
                 if len(w['dots']):
                     pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
-                    self.update()
+
+        if self.target is not None:
+            distance_x = self.souris_pos_vector.x + self.scale * (self.camera_pos.x - self.target.x)
+            distance_y = self.souris_pos_vector.y + self.scale * (self.camera_pos.y - self.target.y)
+            distance = math.sqrt(distance_x ** 2 + distance_y ** 2) / self.scale
+            if distance < 1000000000:
+                text_distance = self.font.render(f"{int(distance):,} km | {round(distance / 1.496e8, 3)} UA", True,(255, 255, 255))
+            else:
+                text_distance = self.font.render(f"{distance:.2e} km | {int(distance / 1.496e8)} UA", True,(255, 255, 255))
+            self.playscreen.blit(text_distance, (10, 10))
+
+        texte_camera = self.font.render(f"Mode caméra: {self.camera_mode}", True, (255, 255, 255))
+        self.playscreen.blit(texte_camera, (10, self.height() - 20))
+
+        self.update()
 
         if self.is_showingorbitalvector:
             dots = [(i.x, i.y) for i in self.orbital_vector()]

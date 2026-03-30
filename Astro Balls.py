@@ -90,17 +90,17 @@ class MainWindowFrame(QMainWindow):
         view_menu = QMenu('&View')
         self.orbits_action = QWidgetAction(view_menu)
         if self.game_widget.is_showingorbits is False:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbits', method=self.showorbits)
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Désactiver Orbite(s)', method=self.showorbits)
             self.orbits_action.setDefaultWidget(self.orbits_view)
         view_menu.addAction(self.orbits_action)
         self.scale_action = QWidgetAction(view_menu)
         if self.scale_state is False:
-            self.scale_view, self.scale_state = self.customcheckbox(func_name='Scale', method=self.scaleslider)
+            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider)
             self.scale_action.setDefaultWidget(self.scale_view)
         view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
         if self.timer_state is False:
-            self.timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Vitesse Sim.', method=self.timerscope)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
         vector_menu = view_menu.addMenu('Vectors')
@@ -132,6 +132,7 @@ class MainWindowFrame(QMainWindow):
         mt.triggered.connect(self.measuringtape)
         tool_menu.addAction(mt)
         of = QAction('&Orbit Info', parent=self)
+        of.setChecked(True)
         of.triggered.connect(self.showorbitinfo)
         tool_menu.addAction(of)
 
