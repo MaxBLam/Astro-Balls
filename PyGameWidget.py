@@ -358,7 +358,9 @@ class PyGameWidget(QWidget):
                 else:
                     surface = self.get_planet_surface(planete)
                     self.playscreen.blit(surface, (rx - rayon, ry - rayon))
-        self.update()
+            for text in text_list:
+                self.playscreen.blit(text[0], (text[1][0], text[1][1] + shift))
+                shift += 10
 
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
@@ -680,7 +682,6 @@ class PyGameWidget(QWidget):
                     else:
                         surface = self.get_planet_surface(planete)
                         self.playscreen.blit(surface, (rx - rayon, ry - rayon))
-            self.update()
 
         if self.camera_mode == "follow" and self.target is not None:
             pos_x = self.target.x - (self.width() / self.scale / 2)
@@ -753,14 +754,12 @@ class PyGameWidget(QWidget):
         texte_camera = self.font.render(f"Mode caméra: {self.camera_mode}", True, (255, 255, 255))
         self.playscreen.blit(texte_camera, (10, self.height() - 20))
 
-        self.update()
 
         if self.is_showingorbitalvector:
             dots = [(i.x, i.y) for i in self.orbital_vector()]
             if len(dots) >= 2:
                 print(dots)
                 pygame.draw.lines(self.playscreen, (255, 255, 255), False, dots, 2)
-                self.update()
 
         if self.is_showingforcevector:
             force = self.force_vector()
@@ -773,7 +772,7 @@ class PyGameWidget(QWidget):
                             norm_vector = vectorial_force.normalize() * 25
                             end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
                             pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
-                            self.update()
+        self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
