@@ -89,31 +89,31 @@ class MainWindowFrame(QMainWindow):
 
         view_menu = QMenu('&View')
         self.orbits_action = QWidgetAction(view_menu)
-        if self.game_widget.is_showingorbits is False:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Désactiver Orbite(s)', method=self.showorbits)
+        if not self.game_widget.is_showingorbits:
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbits', method=self.showorbits)
             self.orbits_action.setDefaultWidget(self.orbits_view)
         view_menu.addAction(self.orbits_action)
         self.scale_action = QWidgetAction(view_menu)
-        if self.scale_state is False:
-            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider)
+        if not self.scale_state:
+            self.scale_view, self.scale_state = self.customcheckbox(func_name='Scale', method=self.scaleslider)
             self.scale_action.setDefaultWidget(self.scale_view)
         view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
-        if self.timer_state is False:
-            self.timer_view, self.timer_state = self.customcheckbox(func_name='Vitesse Sim.', method=self.timerscope)
+        if not self.timer_state:
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
         vector_menu = view_menu.addMenu('Vectors')
         self.orbitalvector_action = QWidgetAction(vector_menu)
 
-        if self.game_widget.is_showingorbitalvector is False:
+        if not self.game_widget.is_showingorbitalvector:
             self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name='Orbital Vectors',
                                                                                     method=self.show_orbitalvector)
             self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
         vector_menu.addAction(self.orbitalvector_action)
 
         self.forcevector_action = QWidgetAction(vector_menu)
-        if self.game_widget.is_showingforcevector is False:
+        if not self.game_widget.is_showingforcevector:
             self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Force Vectors',
                                                                                 method=self.show_forcevector)
             self.forcevector_action.setDefaultWidget(self.forcevector_view)
@@ -132,16 +132,10 @@ class MainWindowFrame(QMainWindow):
         mt.triggered.connect(self.measuringtape)
         tool_menu.addAction(mt)
         of = QAction('&Orbit Info', parent=self)
-        of.setChecked(True)
         of.triggered.connect(self.showorbitinfo)
         tool_menu.addAction(of)
 
         help_menu = QMenu('&Aide')
-        keybinds_action = QAction('&Raccourcis clavier', parent=self)
-        keybinds_action.setIcon(QIcon('images/menubar symbol/space.png'))
-        keybinds_action.triggered.connect(self.keybinds)
-        keybinds_action.setShortcut('Alt+K')
-        help_menu.addAction(keybinds_action)
         info_action = QAction('&Mímisbrunnr', parent=self)
         info_action.setIcon(QIcon('images/menubar symbol/book.png'))
         info_action.triggered.connect(self.mimir)
@@ -577,7 +571,125 @@ class MainWindowFrame(QMainWindow):
         apropos_window.exec()
 
     def guide(self):
-        pass
+        guide_window = QDialog(parent=self)
+        guide_window.resize(700, 500)
+        guide_window.setWindowTitle('Guide d\'utilisation')
+        guide_layout = QGridLayout()
+        guide_layout.setContentsMargins(12, 12, 12, 12)
+        guide_layout.setHorizontalSpacing(10)
+        guide_layout.setVerticalSpacing(10)
+        guide_window.setLayout(guide_layout)
+
+        slides = [
+            {
+                "titre": "Bienvenue dans Astro Balls !",
+                "contenu": "Astro Balls est un simulateur de physique gravitationnelle qui vous permet de créer "
+                          "et d'observer des systèmes planétaires.\n\n"
+                          "Utilisez les boutons ci-dessous pour naviguer dans ce guide et découvrir toutes "
+                          "les fonctionnalités de l'application."
+            },
+            {
+                "titre": "Ajouter des corps célestes",
+                "contenu": "Pour ajouter un corps céleste :\n\n"
+                          "1. Faites glisser un objet depuis le panneau latéral\n"
+                          "2. Déposez-le sur la zone de simulation\n"
+                          "3. L'objet apparaîtra à l'endroit où vous l'avez déposé\n\n"
+                          "Vous pouvez ajouter des planètes, des étoiles, des lunes, et même des trous noirs !"
+            },
+            {
+                "titre": "Contrôles de la caméra",
+                "contenu": "Navigation dans la simulation :\n\n"
+                          "• Touche F : Changer le mode de caméra (libre / suivi / milieu)\n"
+                          "• Touches WASD : Déplacer la caméra en mode libre\n"
+                          "• Shift : Accélérer le déplacement de la caméra\n\n"
+                          "Cliquez sur une planète pour la suivre automatiquement."
+            },
+            {
+                "titre": "Contrôles de zoom et vitesse",
+                "contenu": "Ajuster la vue et la simulation :\n\n"
+                          "• Scale Slider : Contrôle le niveau de zoom\n"
+                          "  - Valeurs basses : Vue d'ensemble\n"
+                          "  - Valeurs élevées : Zoom rapproché\n\n"
+                          "• Time Slider : Contrôle la vitesse de la simulation\n"
+                          "  - Ralentir ou accélérer le temps"
+            },
+            {
+                "titre": "Outils de mesure et orbites",
+                "contenu": "Outils avancés :\n\n"
+                          "• Ruban à mesurer : Mesurez les distances entre deux points\n"
+                          "• Affichage des orbites : Visualisez les trajectoires orbitales\n"
+                          "• Éditeur d'orbites : Modifiez la position des objets sur leur orbite\n\n"
+                          "Ces outils vous aident à comprendre la physique du système."
+            },
+            {
+                "titre": "Informations et statistiques",
+                "contenu": "Obtenir des informations :\n\n"
+                          "• Cliquez sur un corps céleste pour voir ses propriétés\n"
+                          "• Le panneau latéral affiche :\n"
+                          "  - Type d'objet\n"
+                          "  - Composition de surface\n"
+                          "  - Âge\n"
+                          "  - Durée de rotation et révolution\n\n"
+                          "Explorez et apprenez !"
+            }
+        ]
+
+        current_slide = [0]
+
+        titre_label = QLabel(parent=guide_window)
+        titre_font = QFont()
+        titre_font.setPointSize(14)
+        titre_font.setBold(True)
+        titre_label.setFont(titre_font)
+        titre_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        guide_layout.addWidget(titre_label, 0, 0, 1, 3)
+
+        info_label = QLabel(parent=guide_window)
+        info_label.setWordWrap(True)
+        info_font = QFont()
+        info_font.setPointSize(10)
+        info_label.setFont(info_font)
+        info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        guide_layout.addWidget(info_label, 1, 0, 1, 3)
+
+        page_label = QLabel(parent=guide_window)
+        page_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        guide_layout.addWidget(page_label, 2, 0, 1, 3)
+
+        def update_slide():
+            slide = slides[current_slide[0]]
+            titre_label.setText(slide["titre"])
+            info_label.setText(slide["contenu"])
+            page_label.setText(f"Page {current_slide[0] + 1} / {len(slides)}")
+
+            bouton_precedent.setEnabled(current_slide[0] > 0)
+            bouton_suivant.setEnabled(current_slide[0] < len(slides) - 1)
+
+        def slide_precedent():
+            if current_slide[0] > 0:
+                current_slide[0] -= 1
+                update_slide()
+
+        def slide_suivant():
+            if current_slide[0] < len(slides) - 1:
+                current_slide[0] += 1
+                update_slide()
+
+        bouton_precedent = QPushButton('Précédent')
+        bouton_precedent.clicked.connect(slide_precedent)
+        guide_layout.addWidget(bouton_precedent, 3, 0, Qt.AlignmentFlag.AlignLeft)
+
+        bouton_fermer = QPushButton('Fermer')
+        bouton_fermer.clicked.connect(guide_window.close)
+        guide_layout.addWidget(bouton_fermer, 3, 1, Qt.AlignmentFlag.AlignCenter)
+
+        bouton_suivant = QPushButton('Suivant')
+        bouton_suivant.clicked.connect(slide_suivant)
+        guide_layout.addWidget(bouton_suivant, 3, 2, Qt.AlignmentFlag.AlignRight)
+
+        update_slide()
+
+        guide_window.exec()
 
     def savefile(self):
         pass

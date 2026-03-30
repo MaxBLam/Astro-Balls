@@ -1,3 +1,4 @@
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import QMainWindow, QWidget, QPushButton, QLabel, QGridLayout
@@ -7,6 +8,8 @@ class WelcomeWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.setWindowTitle('Astro Balls')
+        self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
         self.wwsc_simulation = None
         self.setFixedSize(700, 500)
         ww_widget = QWidget()
@@ -23,11 +26,11 @@ class WelcomeWindow(QMainWindow):
         ww_layout.addWidget(ww_pixmap_label, 0, 1, Qt.AlignmentFlag.AlignRight)
         ww_label = QLabel(self)
         ww_label.setFixedSize(500, 60)
-        ww_label.setText('C E L E S T I A')
+        ww_label.setText('A s t r o  B a l l s')
         ww_label_font = QFont()
         ww_label_font.setPointSize(40)
         ww_label.setFont(ww_label_font)
-        ww_label.move(70, 50)
+        ww_label.move(50, 50)
 
         ww_opensim1 = QPushButton('Simulation #1', self)
         ww_opensim1.setFixedSize(175, 100)
