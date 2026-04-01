@@ -38,7 +38,6 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider = None
         self.firstdotcoo = None
         self.seconddotcoo = None
-        self.measuring_window = None
         self.distance = None
         self.angle = None
         self.timer_scope = None
@@ -48,13 +47,13 @@ class MainWindowFrame(QMainWindow):
         self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        self.game_widget = PyGameWidget(self.main_statsdock_link)
+
+        self.game_widget = PyGameWidget(self.main_statsdock_link, ww.wwsc_simulation)
+
         layout = QVBoxLayout(central_widget)
         self.game_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self.game_widget)
         self.resize(1200, 600)
-
-        self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
 
         menu = self.menuBar()
         app_menu = QMenu('&Application')
@@ -80,30 +79,30 @@ class MainWindowFrame(QMainWindow):
         settings_action.setShortcut('Alt+S')
         app_menu.addAction(settings_action)
         app_menu.addSeparator()
-        quit_action = QAction('&Quit', parent=self)
+        quit_action = QAction('&Quitter', parent=self)
         quit_action.setIcon(QIcon('images/menubar symbol/cross.png'))
         quit_action.triggered.connect(self.closeapp)
         quit_action.setShortcut('Alt+F4')
         app_menu.addAction(quit_action)
         menu.addMenu(app_menu)
 
-        view_menu = QMenu('&View')
+        view_menu = QMenu('&Vue')
         self.orbits_action = QWidgetAction(view_menu)
         if not self.game_widget.is_showingorbits:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbits', method=self.showorbits)
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits)
             self.orbits_action.setDefaultWidget(self.orbits_view)
         view_menu.addAction(self.orbits_action)
         self.scale_action = QWidgetAction(view_menu)
         if not self.scale_state:
-            self.scale_view, self.scale_state = self.customcheckbox(func_name='Scale', method=self.scaleslider)
+            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider)
             self.scale_action.setDefaultWidget(self.scale_view)
         view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
         if not self.timer_state:
-            self.timer_view, self.timer_state = self.customcheckbox(func_name='Time', method=self.timerscope)
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Vitesse Sim.', method=self.timerscope)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
-        vector_menu = view_menu.addMenu('Vectors')
+        vector_menu = view_menu.addMenu('Vecteurs')
         self.orbitalvector_action = QWidgetAction(vector_menu)
 
         if not self.game_widget.is_showingorbitalvector:
@@ -127,10 +126,6 @@ class MainWindowFrame(QMainWindow):
 
         tool_menu = QMenu('&Outils')
         menu.addMenu(tool_menu)
-        mt = QAction('&Mesuring Tape', parent=self)
-        mt.setIcon(QIcon('images/menubar symbol/ruler.png'))
-        mt.triggered.connect(self.measuringtape)
-        tool_menu.addAction(mt)
         of = QAction('&Orbit Info', parent=self)
         of.triggered.connect(self.showorbitinfo)
         tool_menu.addAction(of)
@@ -158,65 +153,6 @@ class MainWindowFrame(QMainWindow):
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
 
-    def resizeEvent(self, event):
-        self.game_widget.window_resize_event(self.width(), self.height())
-        super().resizeEvent(event)
-
-    def measuringtape(self):
-        self.game_widget.toggle_measuringtape(True)
-
-        if self.measuring_window is None:
-            self.measuring_window = QDialog(parent=self)
-            self.measuring_window.setWindowTitle('Measuring Tool')
-            self.measuring_window.resize(180, 70)
-            measuring_window_layout = QGridLayout(self.measuring_window)
-            measuring_window_layout.setSpacing(10)
-
-            self.firstdotcoo = QLabel(f'Dot #1: ')
-            self.seconddotcoo = QLabel(f'Dot #2: ')
-            measuring_window_layout.addWidget(self.firstdotcoo, 0, 0)
-            measuring_window_layout.addWidget(self.seconddotcoo, 0, 1)
-            line_sep = QFrame()
-            line_sep.setFrameStyle(QFrame.Shape.HLine)
-            line_sep.setStyleSheet('background-color: #444444')
-            line_sep.setFixedHeight(1)
-            measuring_window_layout.addWidget(line_sep, 1, 0, 1, 2)
-            self.distance = QLabel()
-            self.distance.setText(f' Distance:\n0U')
-            distance_txt_font = QFont()
-            distance_txt_font.setBold(True)
-            self.distance.setFont(distance_txt_font)
-            measuring_window_layout.addWidget(self.distance, 2, 0)
-            self.angle = QLabel()
-            self.angle.setText(f' Angle:\n0°')
-            angle_txt_font = QFont()
-            angle_txt_font.setBold(True)
-            self.angle.setFont(angle_txt_font)
-            measuring_window_layout.addWidget(self.angle, 2, 1)
-
-            cancelbutton = QPushButton('Cancel')
-            cancelbutton.clicked.connect(self.game_widget.toggle_measuringtape)
-            cancelbutton.clicked.connect(self.measuring_window.close)
-            measuring_window_layout.addWidget(cancelbutton, 3, 0, 1, 2)
-
-            self.measuring_window.finished.connect(lambda: setattr(self, 'measuring_window', None))
-            self.measuring_window.finished.connect(lambda: self.game_widget.toggle_measuringtape(False))
-            self.measuring_window.show()
-
-    def update_measuringtape(self):
-        if self.measuring_window is None:
-            return
-        if len(self.game_widget.point) >= 1:
-            self.firstdotcoo.setText(f"Dot #1:\n{self.game_widget.point[0]}")
-        else:
-            self.firstdotcoo.setText("Dot #1:")
-        if len(self.game_widget.point) == 2:
-            self.seconddotcoo.setText(f"Dot #2:\n{self.game_widget.point[1]}")
-            self.distance.setText(f"Distance:\n{self.game_widget.pythagoras(self.game_widget.point)[0]}U")
-            self.angle.setText(f"Angle:\n{self.game_widget.pythagoras(self.game_widget.point)[1]}°")
-        else:
-            self.seconddotcoo.setText("Dot #2:")
-
     def timerscope(self):
         if getattr(self, 'timer_scope', None) is not None:
             self.timer_scope.setVisible(self.timer_state.isChecked())
@@ -225,7 +161,7 @@ class MainWindowFrame(QMainWindow):
         timerscope_container = QWidget()
         timerscope_widget = QGridLayout(timerscope_container)
         self.timer_scope.setWidget(timerscope_container)
-        self.timer_scope.setWindowTitle('Timer')
+        self.timer_scope.setWindowTitle('Vitesse Simulation')
 
         self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
         self.configure_slider(self.time_slider, 0, 100, 1)
@@ -234,11 +170,11 @@ class MainWindowFrame(QMainWindow):
         self.time_slider.valueChanged.connect(self.game_widget.speed_interactive)
         self.timescope_label = QLabel('', timerscope_container)
 
-        backward_button = QPushButton('Backward')
+        backward_button = QPushButton('Arrière')
         backward_button.clicked.connect(self.backward_timescope)
         timerscope_widget.addWidget(backward_button, 1, 0)
 
-        forward_button = QPushButton('Forward')
+        forward_button = QPushButton('Avant')
         forward_button.clicked.connect(self.forward_timescope)
         timerscope_widget.addWidget(forward_button, 1, 1)
 
@@ -288,7 +224,7 @@ class MainWindowFrame(QMainWindow):
         scale_scope_container = QWidget()
         scale_scope_widget = QGridLayout(scale_scope_container)
         self.scale_scope.setWidget(scale_scope_container)
-        self.scale_scope.setWindowTitle('Scale Slider')
+        self.scale_scope.setWindowTitle('Échelle de rendu')
 
         self.scale_slider = QSlider(Qt.Orientation.Horizontal, parent=scale_scope_container)
         self.configure_slider(self.scale_slider, 1, 100, 20)
@@ -297,11 +233,11 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
         self.scale_slider_label = QLabel('', scale_scope_container)
 
-        backward_button = QPushButton('Backward')
+        backward_button = QPushButton('Arrière')
         backward_button.clicked.connect(self.backward_scale_slider)
         scale_scope_widget.addWidget(backward_button, 1, 0)
 
-        forward_button = QPushButton('Forward')
+        forward_button = QPushButton('Avant')
         forward_button.clicked.connect(self.forward_scale_slider)
         scale_scope_widget.addWidget(forward_button, 1, 1)
 
@@ -607,10 +543,10 @@ class MainWindowFrame(QMainWindow):
             {
                 "titre": "Contrôles de zoom et vitesse",
                 "contenu": "Ajuster la vue et la simulation :\n\n"
-                          "• Scale Slider : Contrôle le niveau de zoom\n"
+                          "• Échelle : Contrôle le niveau de zoom\n"
                           "  - Valeurs basses : Vue d'ensemble\n"
                           "  - Valeurs élevées : Zoom rapproché\n\n"
-                          "• Time Slider : Contrôle la vitesse de la simulation\n"
+                          "• Vitesse Sim. : Contrôle la vitesse de la simulation\n"
                           "  - Ralentir ou accélérer le temps"
             },
             {

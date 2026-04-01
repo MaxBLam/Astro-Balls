@@ -43,19 +43,19 @@ class WelcomeWindow(QMainWindow):
         ww_opensim2.move(50, 250)
         ww_opensim2.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #1D0721;}""")
-        ww_opensim2.clicked.connect(lambda: self.wwsc(1))
+        ww_opensim2.clicked.connect(lambda: self.wwsc(2))
         ww_opensim3 = QPushButton('Simulation #3', self)
         ww_opensim3.setFixedSize(175, 200)
         ww_opensim3.move(225, 150)
         ww_opensim3.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #0E1F13;}""")
-        ww_opensim3.clicked.connect(lambda: self.wwsc(1))
+        ww_opensim3.clicked.connect(lambda: self.wwsc(3))
         ww_sandbox = QPushButton('SandBox', self)
         ww_sandbox.setFixedSize(350, 100)
         ww_sandbox.move(50, 350)
         ww_sandbox.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #072021;}""")
-        ww_sandbox.clicked.connect(lambda: self.wwsc(1))
+        ww_sandbox.clicked.connect(lambda: self.wwsc(4))
 
     def wwsc(self, sim_id):
         self.wwsc_simulation = sim_id

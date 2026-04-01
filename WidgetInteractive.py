@@ -1,7 +1,8 @@
-from PySide6.QtCore import QMimeData, Qt
-from PySide6.QtGui import QFont, QDrag
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget,QHBoxLayout, QLabel, QGridLayout, QFrame,
-                               QComboBox, QDoubleSpinBox, QScrollArea, QToolBar, QTabWidget)
+from PySide6.QtCore import QMimeData, Qt, QRegularExpression
+from PySide6.QtGui import QFont, QDrag, QRegularExpressionValidator
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget, QHBoxLayout, QLabel, QGridLayout, QFrame,
+                               QComboBox, QDoubleSpinBox, QScrollArea, QToolBar, QTabWidget, QLineEdit, QPushButton,
+                               QSpinBox, QSizePolicy)
 
 
 class QtPlanetLabel(QLabel):
@@ -65,17 +66,15 @@ class StatsDock(QDockWidget):
 
         widget = QWidget()
         layout = QVBoxLayout()
-
+#TODO LE SPACING DU TEXTE EST CHIANT
         upper_panel = QFrame()
         upper_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
         upper_panel_layout = QGridLayout()
         upper_panel.setLayout(upper_panel_layout)
-        upper_panel_layout.setSpacing(10)
         layout.addWidget(upper_panel)
-        upper_panel.setFixedSize(200, 450)
 
         self.body_label = QLabel()
-        self.body_label.setText("")
+        self.body_label.setText("None")
         body_label_txt = QFont()
         body_label_txt.setPointSize(20)
         body_label_txt.setBold(True)
@@ -98,22 +97,15 @@ class StatsDock(QDockWidget):
         upper_panel_layout.addWidget(self.age_label, 3, 0, 1, 2)
 
         self.rotation_label = QLabel()
-        self.rotation_label.setText(f"Durée de la rotation: ")
+        self.rotation_label.setText(f"Température: ")
         self.rotation_label.setWordWrap(True)
         upper_panel_layout.addWidget(self.rotation_label, 4, 0, 1, 2)
 
-        self.revolution_label = QLabel()
-        self.revolution_label.setText(f"Durée de la révolution: ")
-        self.revolution_label.setWordWrap(True)
-        upper_panel_layout.addWidget(self.revolution_label, 5, 0, 1, 2)
-
         mid_panel = QFrame()
         mid_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        mid_panel_layout = QGridLayout()
+        mid_panel_layout = QVBoxLayout()
         mid_panel.setLayout(mid_panel_layout)
-        mid_panel_layout.setSpacing(10)
         layout.addWidget(mid_panel)
-        mid_panel.setFixedSize(200, 450)
 
         config_label = QLabel()
         config_label.setText("CONFIGURATION")
@@ -122,98 +114,60 @@ class StatsDock(QDockWidget):
         config_label_txt.setBold(True)
         config_label_txt.setItalic(True)
         config_label.setFont(config_label_txt)
-        mid_panel_layout.addWidget(config_label, 0, 0, 1, 3)
+        mid_panel_layout.addWidget(config_label)
 
-        mass_label = QLabel('Masse')
-        mid_panel_layout.addWidget(mass_label, 1, 0)
-        mass_spin = QDoubleSpinBox()
-        mass_spin.setRange(0.0, 1000.0)
-        mass_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(mass_spin, 2, 0,)
-        mass_unit = QComboBox()
-        pg, ng, mcg, mg, g, kg, t, mt, gt = 'pg', 'ng', 'µg', 'mg', 'g', 'kg', 't', 'Mt', 'Gt'
-        unit_lst = [gt, mt, t, kg, g, mg, mcg, ng, pg]
-        mass_unit.addItems(unit_lst)
-        mass_unit.view().setFixedWidth(40)
-        mid_panel_layout.addWidget(mass_unit, 2, 1)
 
-        size_label = QLabel('Rayon')
-        mid_panel_layout.addWidget(size_label, 4, 0)
-        mass_spin = QDoubleSpinBox()
-        mass_spin.setRange(0.0, 1000.0)
-        mass_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(mass_spin, 5, 0,)
-        size_unit = QComboBox()
-        km, m, cm, mm, mcm, nm = 'km', 'm', 'cm', ' mm', 'µm', 'nm'
-        size_lst = [km, m, cm, mm, mcm, nm]
-        size_unit.addItems(size_lst)
-        size_unit.view().setFixedWidth(40)
-        mid_panel_layout.addWidget(size_unit, 5, 1)
+        h_layout1 = QHBoxLayout()
+        self.mass_label = QLabel('Masse: ')
+        mid_panel_layout.addWidget(self.mass_label)
+        self.mass_edit = QLineEdit()
+        regex = QRegularExpression(r"[0-9]+(\.[0-9]+)?e[+-]?[0-9]+")
+        validator = QRegularExpressionValidator(regex)
+        self.mass_edit.setValidator(validator)
+        self.mass_edit.setStyleSheet(""" QLineEdit {border: 1px solid grey;}""")
+        self.apply_button_mass = QPushButton('Appliquer')
+        self.apply_button_mass.setStyleSheet(""" QPushButton {border: 1px solid grey;}""")
+        h_layout1.addWidget(self.mass_edit)
+        h_layout1.addWidget(self.apply_button_mass)
+        mid_panel_layout.addLayout(h_layout1)
 
-        density_label = QLabel('Densité')
-        mid_panel_layout.addWidget(density_label, 6, 0)
-        density_spin = QDoubleSpinBox()
-        density_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(density_spin, 7, 0)
-        density_unit = QComboBox()
-        kgm, gcm = 'kg/m³', 'g/cm³'
-        density_lst = [kgm, gcm]
-        density_unit.addItems(density_lst)
-        size_unit.view().setFixedWidth(40)
-        mid_panel_layout.addWidget(density_unit, 7, 1)
 
-        temp_label = QLabel('Température')
-        mid_panel_layout.addWidget(temp_label, 8, 0)
-        temp_spin = QDoubleSpinBox()
-        temp_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(temp_spin, 9, 0)
-        temp_unit = QComboBox()
-        k, c, f = 'K', '℃', '℉'
-        temp_lst = [k, c, f]
-        temp_unit.addItems(temp_lst)
-        temp_unit.view().setFixedWidth(40)
-        mid_panel_layout.addWidget(temp_unit, 9, 1)
+        h_layout2 = QHBoxLayout()
+        self.rayon_label = QLabel('Rayon: ')
+        mid_panel_layout.addWidget(self.rayon_label)
+        self.rayon_edit = QLineEdit()
+        regex = QRegularExpression(r"[0-9]+")
+        validator = QRegularExpressionValidator(regex)
+        self.rayon_edit.setValidator(validator)
+        self.rayon_edit.setStyleSheet(""" QLineEdit {border: 1px solid grey;}""")
+        self.apply_button_rayon = QPushButton('Appliquer')
+        self.apply_button_rayon.setStyleSheet(""" QPushButton {border: 1px solid grey;}""")
+        h_layout2.addWidget(self.rayon_edit)
+        h_layout2.addWidget(self.apply_button_rayon)
+        mid_panel_layout.addLayout(h_layout2)
 
-        momentum_lst = ['km/s', 'm/s', 'cm/s', 'km/h', 'm/h', 'cm/h', 'ml/s', 'yd/s', 'ft/s', 'inch/s', 'ml/h', 'yd/h', 'ft/h', 'inch/h']
+        low_panel = QFrame()
+        low_panel.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
+        low_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+        low_panel_layout = QVBoxLayout()
+        low_panel.setLayout(low_panel_layout)
+        layout.addWidget(low_panel)
 
-        rotation_label = QLabel('Moment Cinétique')
-        mid_panel_layout.addWidget(rotation_label, 10, 0, 1, 2)
-        rotation_spin = QDoubleSpinBox()
-        rotation_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(rotation_spin, 11, 0)
-        rmomentum_unit = QComboBox()
-        rmomentum_unit.addItems(momentum_lst)
-        rmomentum_unit.view().setFixedWidth(65)
-        mid_panel_layout.addWidget(rmomentum_unit, 11, 1)
-
-        orbital_label = QLabel('Moment Cinétique Orbital')
-        mid_panel_layout.addWidget(orbital_label, 12, 0, 1, 2)
-        orbital_spin = QDoubleSpinBox()
-        orbital_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(orbital_spin, 13, 0)
-        omomentum_unit = QComboBox()
-        omomentum_unit.addItems(momentum_lst)
-        omomentum_unit.view().setFixedWidth(65)
-        mid_panel_layout.addWidget(omomentum_unit, 13, 1)
-
-        gravity_label = QLabel('Gravité Surface')
-        mid_panel_layout.addWidget(gravity_label, 14, 0, 1, 2)
-        gravity_spin = QDoubleSpinBox()
-        gravity_spin.lineEdit().setMaximumWidth(50)
-        mid_panel_layout.addWidget(gravity_spin, 15, 0)
-        gravity_lst = [i+'²' for i in momentum_lst]
-        gravity_unit = QComboBox()
-        gravity_unit.addItems(gravity_lst)
-        gravity_unit.view().setFixedWidth(70)
-        mid_panel_layout.addWidget(gravity_unit, 15, 1)
-
-        bottom_panel = QFrame()
-        bottom_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        bottom_panel_layout = QGridLayout()
-        bottom_panel.setLayout(bottom_panel_layout)
-        bottom_panel_layout.setSpacing(10)
-        layout.addWidget(bottom_panel)
-        bottom_panel.setFixedSize(200, 450)
+        h_layout3 = QHBoxLayout()
+        self.ellipse_label = QLabel('Facteur Ellipse: ')
+        low_panel_layout.addWidget(self.ellipse_label)
+        #TODO DOUBLE SPIN BOX EST BUGGÉ
+        self.ellipse_edit = QDoubleSpinBox()
+        self.ellipse_edit.setRange(0.3,1.0)
+        self.ellipse_edit.setDecimals(1)
+        self.ellipse_edit.setValue(1.0)
+        self.ellipse_edit.setSingleStep(0.1)
+        self.ellipse_edit.setStyleSheet(""" QDoubleSpinBox {border: 1px solid grey;}""")
+        self.apply_button_ellipse = QPushButton('Appliquer')
+        self.apply_button_ellipse.setStyleSheet(""" QPushButton {border: 1px solid grey;}""")
+        h_layout3.addWidget(self.ellipse_edit)
+        h_layout3.addWidget(self.apply_button_ellipse)
+        low_panel_layout.addLayout(h_layout3)
 
         widget.setLayout(layout)
         scroller = QScrollArea()
