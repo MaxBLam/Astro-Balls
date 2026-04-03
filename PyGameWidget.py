@@ -115,9 +115,11 @@ class PyGameWidget(QWidget):
     def speed_interactive(self, value: int):
         self.dtime = 1 / self.fps_simulation * (0.3 * value)**4
 
-    def scale_interactive(self, value: int):
+    def scale_interactive(self, value):
         if value < 90:
-            self.scale = float(value**6 / 100**6)
+            value_max = max(value, 1.7)
+            print(value, value_max)
+            self.scale = float(value_max**6 / 100**6)
         else:
             self.scale = 0.1 * (value - 88)**3 + (90**6/100**6 - 0.1 * 2**3)
 
@@ -133,6 +135,9 @@ class PyGameWidget(QWidget):
         pos_y = (pos.y() + self.camera_pos.y * self.scale) / self.scale
 
         self.corps(nom, pos_x, pos_y)
+
+        if self.simulation == 3:
+            self.vitesse_state = False
 
     def update_target(self, planete):
         self.target = planete["position"]
@@ -171,8 +176,8 @@ class PyGameWidget(QWidget):
         self.display(list_objets_update)
 
     def vitesse_simulation2(self):
-        self.planetes[0]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[0]) * random.uniform(0.4,1.0)
-        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) * random.uniform(0.8,1.2)
+        self.planetes[0]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[0]) * self.facteur_ellipse / 2
+        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) * self.facteur_ellipse / 2
         self.vitesse_state = True
 
     def simulation_2corps(self, objet_orbite1, objet_orbite2):
@@ -191,25 +196,43 @@ class PyGameWidget(QWidget):
 
         self.display(list_objets_update)
 
-    def vitesse_simulation3(self):
-        self.planetes[0]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[0]) * random.uniform(0.1,0.3)
-        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[2], self.planetes[1]) * random.uniform(0.1,0.3)
-        self.planetes[2]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[2]) * random.uniform(0.1,0.3)
+    def vitesse_simulation_n_corps(self):
+        for i in range(len(self.planetes)):
+            if i == len(self.planetes) - 1:
+                self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
+            else:
+                self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
         self.vitesse_state = True
 
-    def simulation_3corps(self, objet_orbite1, objet_orbite2, objet_orbite3):
-        dampener = 1 * max(objet_orbite1["rayon"], objet_orbite2["rayon"], objet_orbite2["rayon"])
-        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_orbite2, dampener) + self.force_gravitationnelle(objet_orbite1, objet_orbite3, dampener)
-        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1, dampener) + self.force_gravitationnelle(objet_orbite2, objet_orbite3, dampener)
-        acc_objet_orbite3 = self.force_gravitationnelle(objet_orbite3, objet_orbite1, dampener) + self.force_gravitationnelle(objet_orbite3, objet_orbite2, dampener)
+    def simulation_n_corps(self, planetes_liste: list):
+        rayon_max = 0
+        for objet in planetes_liste:
+            if objet["rayon"] > rayon_max:
+                rayon_max = objet["rayon"]
+        dampener = rayon_max
 
+        list_acc = []
+        for i in range(len(planetes_liste)):
+            acc = euclid.Vector2(0,0)
+            for j in range(min(len(planetes_liste) + i, i)):
+                if i != j:
+                    acc += self.force_gravitationnelle(planetes_liste[i], planetes_liste[j], dampener)
+            list_acc.append(acc)
 
-        list_objets = [(objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2), (objet_orbite3, acc_objet_orbite3)]
-        list_objets_update = self.mouvement(list_objets)
+        liste_objets = []
+        for i in range(len(planetes_liste)):
+            liste_objets.append([planetes_liste[i], list_acc[i]])
+        list_objets_update = self.mouvement(liste_objets)
 
         if self.camera_mode == "milieu":
-            pos_x = (objet_orbite1["position"].x + objet_orbite2["position"].x + objet_orbite3["position"].x) / 3 - (self.width() / self.scale / 2)
-            pos_y = (objet_orbite1["position"].y + objet_orbite2["position"].y + objet_orbite3["position"].y) / 3- (self.height() / self.scale / 2)
+            pos_x = 0
+            pos_y = 0
+            for i in range(len(self.planetes)):
+                pos_x += planetes_liste[i]["position"].x
+                pos_y += planetes_liste[i]["position"].y
+            pos_x = pos_x / len(planetes_liste) - (self.width() / self.scale / 2)
+            pos_y = pos_y / len(planetes_liste) - (self.height() / self.scale / 2)
+
             self.camera_pos = euclid.Vector2(pos_x, pos_y)
 
         self.display(list_objets_update)
@@ -652,7 +675,7 @@ class PyGameWidget(QWidget):
         pos_x, pos_y = event.pos().x(), event.pos().y()
         self.souris_pos = euclid.Vector2(pos_x, pos_y)
 
-        if self.active_planet is not None and self.souris_pos and self.camera_mode != 'follow':
+        if self.active_planet is not None and self.souris_pos and self.camera_mode == None:
             dragged_pos = event.position()
             distance = dragged_pos - self.old_mouse
             rel = euclid.Vector2(distance.x(), distance.y())/self.scale
@@ -703,12 +726,11 @@ class PyGameWidget(QWidget):
             objet_orbite1, objet_orbite2 = self.planetes[0], self.planetes[1]
             self.simulation_2corps(objet_orbite1, objet_orbite2)
 
-        elif self.simulation == 3 and len(self.planetes) > 2:
+        elif self.simulation == 3 and len(self.planetes) > 1:
             self.active = True
             if not self.vitesse_state:
-                self.vitesse_simulation3()
-            objet_orbite1, objet_orbite2, objet_orbite3 = self.planetes[0], self.planetes[1], self.planetes[2]
-            self.simulation_3corps(objet_orbite1, objet_orbite2, objet_orbite3)
+                self.vitesse_simulation_n_corps()
+            self.simulation_n_corps(self.planetes)
 
         elif self.simulation == 4:
             pass

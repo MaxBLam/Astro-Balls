@@ -89,7 +89,7 @@ class MainWindowFrame(QMainWindow):
         view_menu = QMenu('&Vue')
         self.orbits_action = QWidgetAction(view_menu)
         if not self.game_widget.is_showingorbits:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits)
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Désactiver Orbites', method=self.showorbits)
             self.orbits_action.setDefaultWidget(self.orbits_view)
         view_menu.addAction(self.orbits_action)
         self.scale_action = QWidgetAction(view_menu)
@@ -152,6 +152,8 @@ class MainWindowFrame(QMainWindow):
         self.dragndrop = DragNDrop()
         self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
+
+        QTimer.singleShot(0, self.guide)
 
     def timerscope(self):
         if getattr(self, 'timer_scope', None) is not None:
@@ -527,7 +529,7 @@ class MainWindowFrame(QMainWindow):
             {
                 "titre": "Ajouter des corps célestes",
                 "contenu": "Pour ajouter un corps céleste :\n\n"
-                          "1. Faites glisser un objet depuis le panneau latéral\n"
+                          "1. Faites glisser un objet depuis le panneau du bas\n"
                           "2. Déposez-le sur la zone de simulation\n"
                           "3. L'objet apparaîtra à l'endroit où vous l'avez déposé\n\n"
                           "Vous pouvez ajouter des planètes, des étoiles, des lunes, et même des trous noirs !"
@@ -552,20 +554,22 @@ class MainWindowFrame(QMainWindow):
             {
                 "titre": "Outils de mesure et orbites",
                 "contenu": "Outils avancés :\n\n"
-                          "• Ruban à mesurer : Mesurez les distances entre deux points\n"
-                          "• Affichage des orbites : Visualisez les trajectoires orbitales\n"
+                          "• Si un planète est sélectionné, la distance affiché dans le coin de l'écran "
+                           "est la distance entre la souris et l'objet sélectionné"
+                          "• Désactiver orbites : Désactive l'affichage des trajectoires orbitales\n"
                           "• Éditeur d'orbites : Modifiez la position des objets sur leur orbite\n\n"
                           "Ces outils vous aident à comprendre la physique du système."
             },
             {
-                "titre": "Informations et statistiques",
+                "titre": "Informations et Modifications",
                 "contenu": "Obtenir des informations :\n\n"
                           "• Cliquez sur un corps céleste pour voir ses propriétés\n"
-                          "• Le panneau latéral affiche :\n"
-                          "  - Type d'objet\n"
-                          "  - Composition de surface\n"
-                          "  - Âge\n"
-                          "  - Durée de rotation et révolution\n\n"
+                          "• Le premier panneau latéral affiche les informations de l'objet\n"
+                          "• Dans le deuxième panneau vous pourrez modifier la masse et le rayon des objets \n"
+                          "  - La masses est en notation scientifique\n"
+                          "  - Le rayon est en entier\n"
+                          "• Le dernier panneau permet de modifier le facteur elliptique des orbites\n"
+                          "  - Entre 0.3 et 1.0\n\n"
                           "Explorez et apprenez !"
             }
         ]
@@ -848,6 +852,7 @@ class MainWindowFrame(QMainWindow):
 
     def showrotationalvector(self):
         pass
+
 
 
 if __name__ == '__main__':

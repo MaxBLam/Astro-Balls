@@ -32,19 +32,19 @@ class WelcomeWindow(QMainWindow):
         ww_label.setFont(ww_label_font)
         ww_label.move(50, 50)
 
-        ww_opensim1 = QPushButton('Simulation #1', self)
+        ww_opensim1 = QPushButton('Système Orbitale\n à 3 Corps', self)
         ww_opensim1.setFixedSize(175, 100)
         ww_opensim1.move(50, 150)
         ww_opensim1.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #090C29;}""")
         ww_opensim1.clicked.connect(lambda: self.wwsc(1))
-        ww_opensim2 = QPushButton('Simulation #2', self)
+        ww_opensim2 = QPushButton('Système à 2 corps', self)
         ww_opensim2.setFixedSize(175, 100)
         ww_opensim2.move(50, 250)
         ww_opensim2.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #1D0721;}""")
         ww_opensim2.clicked.connect(lambda: self.wwsc(2))
-        ww_opensim3 = QPushButton('Simulation #3', self)
+        ww_opensim3 = QPushButton('Système à n corps', self)
         ww_opensim3.setFixedSize(175, 200)
         ww_opensim3.move(225, 150)
         ww_opensim3.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
