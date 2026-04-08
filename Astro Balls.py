@@ -89,9 +89,14 @@ class MainWindowFrame(QMainWindow):
         view_menu = QMenu('&Vue')
         self.orbits_action = QWidgetAction(view_menu)
         if not self.game_widget.is_showingorbits:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Désactiver Orbites', method=self.showorbits)
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits)
             self.orbits_action.setDefaultWidget(self.orbits_view)
         view_menu.addAction(self.orbits_action)
+        self.trace_action = QWidgetAction(view_menu)
+        if not self.game_widget.is_showingtrace:
+            self.trace_view, self.trace_state = self.customcheckbox(func_name='Trace', method=self.showtrace)
+            self.trace_action.setDefaultWidget(self.trace_view)
+        view_menu.addAction(self.trace_action)
         self.scale_action = QWidgetAction(view_menu)
         if not self.scale_state:
             self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider)
@@ -118,10 +123,11 @@ class MainWindowFrame(QMainWindow):
             self.forcevector_action.setDefaultWidget(self.forcevector_view)
         vector_menu.addAction(self.forcevector_action)
 
-        rotational_vector = QWidgetAction(vector_menu)
-        rotational_vector_view = self.customcheckbox(func_name='Rotational Vectors', method=self.showrotationalvector)[0]
-        rotational_vector.setDefaultWidget(rotational_vector_view)
-        vector_menu.addAction(rotational_vector)
+        self.velocityvector_action = QWidgetAction(vector_menu)
+        if not self.game_widget.is_showingvelocityvector:
+            self.velocityvector_view, self.velocityvector_state = self.customcheckbox(func_name='Vecteur de Vitesse', method=self.show_velocityvector)
+            self.velocityvector_action.setDefaultWidget(self.velocityvector_view)
+        vector_menu.addAction(self.velocityvector_action)
         menu.addMenu(view_menu)
 
         tool_menu = QMenu('&Outils')
@@ -828,6 +834,12 @@ class MainWindowFrame(QMainWindow):
 
     def show_forcevector(self, checked):
         self.game_widget.is_showingforcevector = checked
+
+    def show_velocityvector(self, checked):
+        self.game_widget.is_showingvelocityvector = checked
+
+    def showtrace(self, checked):
+        self.game_widget.is_showingtrace = checked
 
     def keybinds(self):
         self.settings()

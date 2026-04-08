@@ -15,6 +15,7 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock, simulation):
         super().__init__()
 
+        self.val = int()
         self.base_planet_image = None
         self.setMouseTracking(True)
         self.acceleration = None
@@ -43,6 +44,8 @@ class PyGameWidget(QWidget):
         self.vitesse_state = False
         self.is_showingorbitalvector = False
         self.is_showingforcevector = False
+        self.is_showingvelocityvector = False
+        self.is_showingtrace = False
 
         self.planetes = []
         self.planetes_pos = []
@@ -630,6 +633,22 @@ class PyGameWidget(QWidget):
             force_vec[i['nom']] = force
         return force_vec
 
+    def velocity_vector(self):
+        v_dict = {}
+        for i in self.planetes:
+            v_data = i['vitesse']
+            v_dict[i['nom']] = v_data
+        return v_dict
+
+    def body_trace(self, planet):
+        print(planet)
+        body_trace_lst = []
+        for i in planet:
+            print(i)
+            rx, ry = self.pos_objet_orbite(i['position'])
+            body_trace_lst.append((rx, ry))
+        return body_trace_lst
+
     def mousePressEvent(self, event):
         self.souris_pos = euclid.Vector2(event.pos().x(), event.pos().y())
         self.old_mouse = event.position()
@@ -675,12 +694,25 @@ class PyGameWidget(QWidget):
         pos_x, pos_y = event.pos().x(), event.pos().y()
         self.souris_pos = euclid.Vector2(pos_x, pos_y)
 
-        if self.active_planet is not None and self.souris_pos and self.camera_mode == None:
+        if self.active_planet is not None and self.souris_pos and self.camera_mode != 'follow':
             dragged_pos = event.position()
             distance = dragged_pos - self.old_mouse
             rel = euclid.Vector2(distance.x(), distance.y())/self.scale
             self.planetes[self.active_planet]['position'] += rel
             self.old_mouse = dragged_pos
+
+    def mouseReleaseEvent(self, event):
+        self.active_planet = None
+
+    def wheelEvent(self, event):
+        wheel_checker = event.angleDelta().y()
+        if wheel_checker > 0:
+            self.val += 0.2*2
+            self.scale_interactive(self.val)
+        else:
+            self.val -= 0.2*2
+            self.scale_interactive(self.val)
+
 
     def game_loop(self):
         self.playscreen.fill((0, 0, 0))
@@ -795,6 +827,19 @@ class PyGameWidget(QWidget):
                             norm_vector = vectorial_force.normalize() * 25
                             end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
                             pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+
+        if self.is_showingvelocityvector:
+            velocity = self.velocity_vector()
+            for pl in self.planetes:
+                screenx, screeny = self.pos_objet_orbite(pl['position'])
+                for x,y in velocity.items():
+                    if x==pl['nom']:
+                        v_vector = velocity[x]
+                        if v_vector.magnitude() > 0:
+                            norm_vector = v_vector.normalized()*25
+                            end_pos = (int(screenx + norm_vector.x), int(screeny+norm_vector.y))
+                            pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+
         self.update()
 
     def paintEvent(self, event):
