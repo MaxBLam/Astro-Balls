@@ -490,8 +490,8 @@ class PyGameWidget(QWidget):
                 continue
             semimajor_axis = 1 / paracond
             orb_dots = []
-            for k in range(301):
-                theta = (2 * math.pi * k) / 300
+            for k in range(201):
+                theta = (2 * math.pi * k) / 200
                 r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta))
                 x = (self.centrum['position'].x + r * math.cos(theta + omega))
                 y = (self.centrum['position'].y + r * math.sin(theta + omega))
@@ -775,13 +775,11 @@ class PyGameWidget(QWidget):
             force = self.force_vector()
             for pl in self.planetes:
                 screenx, screeny = self.pos_objet_orbite(pl['position'])
-                for x, y in self.force_vector().items():
-                    if x == pl['nom']:
-                        vectorial_force = force[x]
-                        if vectorial_force.magnitude() > 0:
-                            norm_vector = vectorial_force.normalize() * 25
-                            end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
-                            pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+                vectorial_force = force.get(pl['nom'])
+                if vectorial_force.magnitude() >= 0:
+                    norm_vector = vectorial_force.normalize() * 25
+                    end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
+                    pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
         if self.is_showingvelocityvector:
             velocity = self.velocity_vector()

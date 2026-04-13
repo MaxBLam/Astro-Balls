@@ -532,7 +532,6 @@ class MainWindowFrame(QMainWindow):
 
         info_window.exec()
 
-
     def apropos(self):
         apropos_window = QDialog(parent=self)
         apropos_window.resize(560, 360)
