@@ -11,6 +11,7 @@ import random
 #TODO LA FREE CAM DRAG AVEC LA SOURIS
 
 class PyGameWidget(QWidget):
+    measuring_updater_signal = Signal()
 
     def __init__(self, statsdock, simulation):
         super().__init__()
@@ -46,6 +47,8 @@ class PyGameWidget(QWidget):
         self.is_showingforcevector = False
         self.is_showingvelocityvector = False
         self.is_showingtrace = False
+        self.measuringtape_state = False
+
 
         self.planetes = []
         self.planetes_pos = []
@@ -67,6 +70,7 @@ class PyGameWidget(QWidget):
         self.scale = 20**6 / 100**6
         self.facteur_ellipse = 1.0 # <1 pour une ellipse
         self.dtime = 1 / self.fps_simulation
+        self.remover = 0
 
         self.f_pressed_handled = False
         self.target = None
@@ -267,32 +271,8 @@ class PyGameWidget(QWidget):
         theta = math.degrees(math.atan2(height, length))
         return round(hypotenus, 2), round(theta, 2)
 
-    @staticmethod
-    def vector_arrow(start, end):
-        vector = end - start
-        if vector.magnitude() > 1:
-            rotater = math.radians(135)
-            cos_angle = math.cos(rotater)
-            sin_angle = math.sin(rotater)
-
-            leftx = vector.x*cos_angle - vector.y*(-sin_angle)
-            lefty = vector.x*(-sin_angle) + vector.y*cos_angle
-            arrow_left = euclid.Vector2(leftx, lefty)
-            arrow_left.normalized()*10
-
-            rightx = vector.x * cos_angle - vector.y * sin_angle
-            righty = vector.x * sin_angle + vector.y * cos_angle
-            arrow_right = euclid.Vector2(rightx, righty)
-            arrow_right.normalized() * 10
-
-            vector_arrow_left = end + arrow_left
-            vector_arrow_right = end+arrow_right
-            return vector_arrow_left, vector_arrow_right
-        return end, end
-
     def kepler_orbit_helper(self, checked):
         self.is_helpingorbits = checked
-
 
     def orbit_editor(self):
         self.is_editingorbits = True
@@ -378,7 +358,6 @@ class PyGameWidget(QWidget):
         for planete in planetes:
             rx, ry = self.pos_objet_orbite(planete["position"])
             rayon = planete["rayon"] * self.scale
-
             if rayon < 1:
                 text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                 text_list.append((text, (rx,ry)))
@@ -523,7 +502,7 @@ class PyGameWidget(QWidget):
             tan_current_position = pygame.Vector2(
                 (current_position_vector.y * -1), current_position_vector.x).normalize()
             if self.is_helpingorbits is True:
-                planete_1['vel'] = self.centrum['vel'] + (orbital_momentum * tan_current_position)
+                planete_1['vitesse'] = self.centrum['vitesse'] + (orbital_momentum * tan_current_position)
             path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': planete_1,
                          'vel': planete_1['vitesse'], 'omega': omega})
         return path
@@ -606,24 +585,7 @@ class PyGameWidget(QWidget):
             self.planetes[self.p_index]['couleur'] = edited_value
 
     def orbital_vector(self):
-        scope_updater = 0
-        vector_data = []
-        for i in self.kepler():
-            orbital_data = i['dots'][scope_updater:scope_updater + 50]
-            vectorial_data = [euclid.Vector2(x + i['planet']['rayon'] / 2, y + i['planet']['rayon'] / 2) for x, y in
-                              orbital_data]
-            start = vectorial_data[0]
-            end = vectorial_data[-1]
-            arrow = self.vector_arrow(start=start, end=end)
-            arrow_left, arrow_right = arrow
-
-            vectorial_data.append(arrow_left)
-            vectorial_data.append(end)
-            vectorial_data.append(arrow_right)
-
-            vector_data.extend(vectorial_data)
-            scope_updater += 1
-        return vector_data
+        pass
 
     def force_vector(self):
         force_vec = {}
@@ -640,26 +602,15 @@ class PyGameWidget(QWidget):
             v_dict[i['nom']] = v_data
         return v_dict
 
-    def body_trace(self, planet):
-        print(planet)
-        body_trace_lst = []
-        for i in planet:
-            print(i)
-            rx, ry = self.pos_objet_orbite(i['position'])
-            body_trace_lst.append((rx, ry))
-        return body_trace_lst
-
     def mousePressEvent(self, event):
         self.souris_pos = euclid.Vector2(event.pos().x(), event.pos().y())
         self.old_mouse = event.position()
 
         if event.button() == Qt.MouseButton.RightButton:
-            # clic droit : sélectionner la planète active
-            for n, p in enumerate(self.planetes):
-                sx, sy = p['position'].x, p['position'].y
-                if self.souris_pos.distance_to((sx, sy)) <= p['rayon']:
-                    self.active_planet = n
-                    break
+            if self.measuringtape_state:
+                self.point.append((self.souris_pos.x, self.souris_pos.y))
+                self.point = self.point[-2:]
+                self.measuring_updater_signal.emit()
 
         elif event.button() == Qt.MouseButton.LeftButton:
             # clic gauche : sélectionner et mettre à jour statsdock
@@ -685,6 +636,12 @@ class PyGameWidget(QWidget):
                     self.statsdock.rayon_label.setText(f"Rayon: {planete["rayon"]} Km")
                     self.statsdock.rayon_label.repaint()
                     break
+
+    def toggle_measuringtape(self, state: bool):
+        self.measuringtape_state = state
+        if not state:
+            self.point.clear()
+            self.measuring_updater_signal.emit()
 
     def dragMoveEvent(self, event):
         pos_x, pos_y = event.pos().x(), event.pos().y()
@@ -712,7 +669,6 @@ class PyGameWidget(QWidget):
         else:
             self.val -= 0.2*2
             self.scale_interactive(self.val)
-
 
     def game_loop(self):
         self.playscreen.fill((0, 0, 0))
@@ -791,7 +747,7 @@ class PyGameWidget(QWidget):
             if Qt.Key.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed / self.scale
 
-        if  not self.is_showingorbits:
+        if not self.is_showingorbits:
             for w in self.kepler():
                 if len(w['dots']):
                     pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
@@ -808,7 +764,6 @@ class PyGameWidget(QWidget):
 
         texte_camera = self.font.render(f"Mode caméra: {self.camera_mode}", True, (255, 255, 255))
         self.playscreen.blit(texte_camera, (10, self.height() - 20))
-
 
         if self.is_showingorbitalvector:
             dots = [(i.x, i.y) for i in self.orbital_vector()]
@@ -840,6 +795,26 @@ class PyGameWidget(QWidget):
                             end_pos = (int(screenx + norm_vector.x), int(screeny+norm_vector.y))
                             pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
+        if self.is_showingtrace:
+            self.remover += 1
+            if self.remover % 10 == 0:
+                for i in self.planetes:
+                    pos = (i['position'])
+                    data = euclid.Vector2(pos.x, pos.y)
+                    if 'trace' not in i:
+                        i['trace'] = []
+                    i['trace'].append(data)
+                    if len(i['trace']) > 500:
+                        i['trace'].pop(0)
+
+            for k in self.planetes:
+                if k['trace']:
+                    trace_data = k['trace']
+                    to_scale_lst = [self.pos_objet_orbite(p) for p in trace_data]
+                    color_dimmer = pygame.Color(k['couleur']).lerp((0, 0, 0), 0.7)
+                    trace_size = int((k['rayon']*self.scale)/2)
+                    if len(to_scale_lst) >= 2:
+                        pygame.draw.lines(self.playscreen, color_dimmer, False, to_scale_lst, trace_size)
         self.update()
 
     def paintEvent(self, event):

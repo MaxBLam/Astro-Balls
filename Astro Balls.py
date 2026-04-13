@@ -41,6 +41,9 @@ class MainWindowFrame(QMainWindow):
         self.distance = None
         self.angle = None
         self.timer_scope = None
+        self.measuring_window = None
+        self.firstdotcoo = None
+        self.seconddotcoo = None
         self.main_statsdock_link = StatsDock()
 
         self.setWindowTitle('Astro Balls')
@@ -49,6 +52,7 @@ class MainWindowFrame(QMainWindow):
         self.setCentralWidget(central_widget)
 
         self.game_widget = PyGameWidget(self.main_statsdock_link, ww.wwsc_simulation)
+        self.game_widget.measuring_updater_signal.connect(self.update_measuringtape)
 
         layout = QVBoxLayout(central_widget)
         self.game_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -104,21 +108,21 @@ class MainWindowFrame(QMainWindow):
         view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
         if not self.timer_state:
-            self.timer_view, self.timer_state = self.customcheckbox(func_name='Vitesse Sim.', method=self.timerscope)
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Timer', method=self.timerscope)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
         vector_menu = view_menu.addMenu('Vecteurs')
         self.orbitalvector_action = QWidgetAction(vector_menu)
 
         if not self.game_widget.is_showingorbitalvector:
-            self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name='Orbital Vectors',
+            self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name='placeholder',
                                                                                     method=self.show_orbitalvector)
             self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
         vector_menu.addAction(self.orbitalvector_action)
 
         self.forcevector_action = QWidgetAction(vector_menu)
         if not self.game_widget.is_showingforcevector:
-            self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Force Vectors',
+            self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Vecteur de Force',
                                                                                 method=self.show_forcevector)
             self.forcevector_action.setDefaultWidget(self.forcevector_view)
         vector_menu.addAction(self.forcevector_action)
@@ -132,7 +136,11 @@ class MainWindowFrame(QMainWindow):
 
         tool_menu = QMenu('&Outils')
         menu.addMenu(tool_menu)
-        of = QAction('&Orbit Info', parent=self)
+        mt = QAction('&Mesuring Tape', parent=self)
+        mt.setIcon(QIcon('images/menubar symbol/ruler.png'))
+        mt.triggered.connect(self.measuringtape)
+        tool_menu.addAction(mt)
+        of = QAction('&Info Orbites', parent=self)
         of.triggered.connect(self.showorbitinfo)
         tool_menu.addAction(of)
 
@@ -160,6 +168,61 @@ class MainWindowFrame(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
 
         QTimer.singleShot(0, self.guide)
+
+    def measuringtape(self):
+        self.game_widget.toggle_measuringtape(True)
+
+        if self.measuring_window is None:
+            self.measuring_window = QDialog(parent=self)
+            self.measuring_window.setWindowTitle('Measuring Tool')
+            self.measuring_window.resize(180, 70)
+            measuring_window_layout = QGridLayout(self.measuring_window)
+            measuring_window_layout.setSpacing(10)
+
+            self.firstdotcoo = QLabel(f'Dot #1: ')
+            self.seconddotcoo = QLabel(f'Dot #2: ')
+            measuring_window_layout.addWidget(self.firstdotcoo, 0, 0)
+            measuring_window_layout.addWidget(self.seconddotcoo, 0, 1)
+            line_sep = QFrame()
+            line_sep.setFrameStyle(QFrame.Shape.HLine)
+            line_sep.setStyleSheet('background-color: #444444')
+            line_sep.setFixedHeight(1)
+            measuring_window_layout.addWidget(line_sep, 1, 0, 1, 2)
+            self.distance = QLabel()
+            self.distance.setText(f' Distance:\n0U')
+            distance_txt_font = QFont()
+            distance_txt_font.setBold(True)
+            self.distance.setFont(distance_txt_font)
+            measuring_window_layout.addWidget(self.distance, 2, 0)
+            self.angle = QLabel()
+            self.angle.setText(f' Angle:\n0°')
+            angle_txt_font = QFont()
+            angle_txt_font.setBold(True)
+            self.angle.setFont(angle_txt_font)
+            measuring_window_layout.addWidget(self.angle, 2, 1)
+
+            cancelbutton = QPushButton('Cancel')
+            cancelbutton.clicked.connect(self.game_widget.toggle_measuringtape)
+            cancelbutton.clicked.connect(self.measuring_window.close)
+            measuring_window_layout.addWidget(cancelbutton, 3, 0, 1, 2)
+
+            self.measuring_window.finished.connect(lambda: setattr(self, 'measuring_window', None))
+            self.measuring_window.finished.connect(lambda: self.game_widget.toggle_measuringtape(False))
+            self.measuring_window.show()
+
+    def update_measuringtape(self):
+        if self.measuring_window is None:
+            return
+        if len(self.game_widget.point) >= 1:
+            self.firstdotcoo.setText(f"Dot #1:\n{self.game_widget.point[0]}")
+        else:
+            self.firstdotcoo.setText("Dot #1:")
+        if len(self.game_widget.point) == 2:
+            self.seconddotcoo.setText(f"Dot #2:\n{self.game_widget.point[1]}")
+            self.distance.setText(f"Distance:\n{self.game_widget.pythagoras(self.game_widget.point)[0]}U")
+            self.angle.setText(f"Angle:\n{self.game_widget.pythagoras(self.game_widget.point)[1]}°")
+        else:
+            self.seconddotcoo.setText("Dot #2:")
 
     def timerscope(self):
         if getattr(self, 'timer_scope', None) is not None:
@@ -660,7 +723,7 @@ class MainWindowFrame(QMainWindow):
     def showorbitinfo(self):
         if self.orbitinfo_window is None:
             self.orbitinfo_window = QDialog(parent=self)
-            self.orbitinfo_window.setWindowTitle('Orbits')
+            self.orbitinfo_window.setWindowTitle('Orbites')
             self.orbitinfo_window.setFixedSize(380, 280)
             self.orbitinfo_window_layout1 = QGridLayout(self.orbitinfo_window)
             self.orbitinfo_window_layout1.setContentsMargins(2, 2, 2, 2)
@@ -677,13 +740,13 @@ class MainWindowFrame(QMainWindow):
             self.scroller_widget_layout.setSpacing(4)
             scroller.setWidget(scroller_widget)
 
-            orbit_helper = QPushButton('Help')
+            orbit_helper = QPushButton('Aide')
             orbit_helper.setCheckable(True)
-            orbit_helper.setToolTip('Pre-configures the sufficient velocity to maintain circular orbit')
+            orbit_helper.setToolTip('Pré-configure la vitesse suffisante pour maintenir une orbite circulaire')
             orbit_helper.clicked.connect(self.game_widget.kepler_orbit_helper)
             self.orbitinfo_window_layout1.addWidget(orbit_helper, 1, 0)
 
-            close_button = QPushButton('Close')
+            close_button = QPushButton('Fermer')
             close_button.clicked.connect(self.orbitinfo_window.close)
             close_button.clicked.connect(self.when_showorbit_closed)
             self.orbitinfo_window_layout1.addWidget(close_button, 1, 1)
@@ -695,33 +758,35 @@ class MainWindowFrame(QMainWindow):
             panel_layout.setSpacing(3)
             self.orbitinfo_window_layout1.addWidget(panel, 0, 0)
 
-            l_eccentricity_toggler = QLabel('Eccentricity: ')
+            l_eccentricity_toggler = QLabel('Excentricité: ')
             panel_layout.addWidget(l_eccentricity_toggler, 0, 0)
             self.s_eccentricity_toggler = QSlider(Qt.Orientation.Horizontal, parent=self)
             self.s_eccentricity_toggler.setMinimum(0)
             self.s_eccentricity_toggler.setMaximum(100)
             self.s_eccentricity_toggler.setSingleStep(1)
             self.s_eccentricity_toggler.setTickPosition(QSlider.TickPosition.TicksAbove)
+            self.s_eccentricity_toggler.valueChanged.connect(self.game_widget.orbital_eccentricity_editor)
             panel_layout.addWidget(self.s_eccentricity_toggler, 2, 0, 1, 2)
             self.b_eccentricity_toggler = QDoubleSpinBox()
             self.b_eccentricity_toggler.lineEdit().setMaximumWidth(50)
             self.b_eccentricity_toggler.setMaximumWidth(90)
             panel_layout.addWidget(self.b_eccentricity_toggler, 0, 1)
 
-            l_semimajor_toggler = QLabel('Velocity: ')
+            l_semimajor_toggler = QLabel('Vitesse: ')
             panel_layout.addWidget(l_semimajor_toggler, 3, 0)
             self.s_semimajor_toggler = QSlider(Qt.Orientation.Horizontal, parent=self)
             self.s_semimajor_toggler.setMinimum(0)
             self.s_semimajor_toggler.setMaximum(100)
             self.s_semimajor_toggler.setSingleStep(1)
             self.s_semimajor_toggler.setTickPosition(QSlider.TickPosition.TicksAbove)
+            self.s_semimajor_toggler.valueChanged.connect(self.game_widget.orbital_velocity_editor)
             panel_layout.addWidget(self.s_semimajor_toggler, 4, 0, 1, 2)
             self.b_semimajor_toggler = QDoubleSpinBox()
             self.b_semimajor_toggler.lineEdit().setMaximumWidth(50)
             self.b_semimajor_toggler.setMaximumWidth(90)
             panel_layout.addWidget(self.b_semimajor_toggler, 3, 1)
 
-            l_posorbit_toggler = QLabel('Orbital Position: ', parent=panel)
+            l_posorbit_toggler = QLabel('Position Orbitale: ', parent=panel)
             l_posorbit_toggler.move(10, 107)
             self.s_posorbit_toggler = QDial(parent=panel)
             self.s_posorbit_toggler.setMinimum(0)
@@ -742,9 +807,9 @@ class MainWindowFrame(QMainWindow):
             QDoubleSpinBox::down-button{subcontrol-position: bottom right; width: 16px}""")
             self.b_posorbit_toggler.move(8, 146)
 
-            l_orbitcolor_toggler = QLabel('Orbit Color: ')
+            l_orbitcolor_toggler = QLabel('Couleur: ')
             panel_layout.addWidget(l_orbitcolor_toggler, 6, 0)
-            self.color_button = QPushButton('Color Palette')
+            self.color_button = QPushButton('Palette')
             self.color_button.setStyleSheet("""QPushButton 
             {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
             QPushButton::hover { background-color: #4d4d4d}""")
@@ -811,8 +876,8 @@ class MainWindowFrame(QMainWindow):
                 ondisplay = self.get_orbitinfo_ondisplay[k]
                 self.get_orbitinfo_ondisplay[k]['Name'].setText(l['planet']['nom'])
                 ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
-                ondisplay['semimajor'].setText(f'Semi-major(a): {round(l['a'], 3)}')
-                ondisplay['velocity'].setText(f'Velocity: {round(l['vel'].magnitude(), 1)}')
+                ondisplay['semimajor'].setText(f'Semi-majeur(a): {round(l['a'], 3)}')
+                ondisplay['velocity'].setText(f'Vitesse: {round(l['vel'].magnitude(), 1)}')
 
     def when_showorbit_closed(self):
         self.orbit_timer.stop()
@@ -822,8 +887,9 @@ class MainWindowFrame(QMainWindow):
         color_window = QColorDialog.getColor()
         if color_window.isValid():
             color = color_window.name()
-            self.color_button.setStyleSheet(
-                f"""QPushButton {{border: 1px solid #8a8a8a; padding: 2px; background-color: {color};}}""")
+            self.game_widget.orbital_velocity_color(color)
+            self.color_button.setStyleSheet(f"""QPushButton {{border: 1px solid #8a8a8a; padding: 2px; 
+                                                background-color: {color};}}""")
 
     def show_orbitalvector(self, checked):
         self.game_widget.is_showingorbitalvector = checked
