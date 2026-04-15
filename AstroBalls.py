@@ -302,6 +302,7 @@ class MainWindowFrame(QMainWindow):
         scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
+
         self.scale_slider_label = QLabel('', scale_scope_container)
 
         backward_button = QPushButton('Arrière')

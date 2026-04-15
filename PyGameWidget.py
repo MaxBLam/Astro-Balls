@@ -1,6 +1,6 @@
 import os
-
 import pygame
+from PyQt6.QtGui import QCursor
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
@@ -8,7 +8,6 @@ import euclid
 import math
 import random
 
-#TODO LA FREE CAM DRAG AVEC LA SOURIS
 
 class PyGameWidget(QWidget):
     measuring_updater_signal = Signal()
@@ -16,7 +15,8 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock, simulation):
         super().__init__()
 
-        self.val = int()
+        self.scale_value = None
+        self.val = 20
         self.base_planet_image = None
         self.setMouseTracking(True)
         self.acceleration = None
@@ -48,7 +48,6 @@ class PyGameWidget(QWidget):
         self.is_showingvelocityvector = False
         self.is_showingtrace = False
         self.measuringtape_state = False
-
 
         self.planetes = []
         self.planetes_pos = []
@@ -106,7 +105,6 @@ class PyGameWidget(QWidget):
         self.statsdock.ellipse_label.setText(f"Facteur Ellipse: {str(round(self.facteur_ellipse,1))}")
         self.statsdock.ellipse_label.repaint()
 
-
     def resizeEvent(self, event):
         self.playscreen = pygame.Surface((self.width(), self.height()))
 
@@ -123,9 +121,9 @@ class PyGameWidget(QWidget):
         self.dtime = 1 / self.fps_simulation * (0.3 * value)**4
 
     def scale_interactive(self, value):
+        self.scale_value = value
         if value < 90:
             value_max = max(value, 1.7)
-            print(value, value_max)
             self.scale = float(value_max**6 / 100**6)
         else:
             self.scale = 0.1 * (value - 88)**3 + (90**6/100**6 - 0.1 * 2**3)
@@ -241,7 +239,6 @@ class PyGameWidget(QWidget):
             pos_y = pos_y / len(planetes_liste) - (self.height() / self.scale / 2)
 
             self.camera_pos = euclid.Vector2(pos_x, pos_y)
-
         self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2, dampener):
@@ -663,12 +660,21 @@ class PyGameWidget(QWidget):
 
     def wheelEvent(self, event):
         wheel_checker = event.angleDelta().y()
+        old = self.scale
+        if old <=0:
+            return
         if wheel_checker > 0:
-            self.val += 0.2*2
-            self.scale_interactive(self.val)
+            self.val += 0.2
         else:
-            self.val -= 0.2*2
-            self.scale_interactive(self.val)
+            self.val -= 0.2
+        self.val = max(1.7, self.val)
+        self.scale_interactive(self.val)
+        new = self.scale
+        if self.camera_mode == 'free':
+            pos_x = (self.souris_pos.x/old)-(self.souris_pos.x/new)
+            pos_y = (self.souris_pos.y/old)-(self.souris_pos.y/new)
+            self.camera_pos.x += pos_x
+            self.camera_pos.y += pos_y
 
     def game_loop(self):
         self.playscreen.fill((0, 0, 0))
@@ -768,7 +774,7 @@ class PyGameWidget(QWidget):
         if self.is_showingorbitalvector:
             dots = [(i.x, i.y) for i in self.orbital_vector()]
             if len(dots) >= 2:
-                print(dots)
+                #print(dots)
                 pygame.draw.lines(self.playscreen, (255, 255, 255), False, dots, 2)
 
         if self.is_showingforcevector:
