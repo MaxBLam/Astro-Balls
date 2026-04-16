@@ -1,4 +1,6 @@
 import os
+from mmap import ACCESS_COPY
+
 import pygame
 from PyQt6.QtGui import QCursor
 from PySide6.QtCore import Qt, QTimer, Signal
@@ -505,15 +507,11 @@ class PyGameWidget(QWidget):
         return path
 
     def newton(self, planet):
-        for i in self.kepler():
-            if planet == i['planet']:
-                direction = self.centrum['position'] - i['planet']['position']
-                if direction.magnitude() == 0:
-                    vector = euclid.Vector2(0, 0)
-                    return vector
-                acceleration = direction.normalize()/self.acceleration.magnitude()
-                return acceleration
-        return euclid.Vector2(0, 0)
+        direction = self.centrum['position'] - planet['position']
+        if direction.magnitude() == 0:
+            return euclid.Vector2(0, 0)
+        acceleration = direction.normalize()/self.acceleration.magnitude()
+        return acceleration
 
     # TODO: needs improvement
     def orbital_position_editor(self, angle_degrees):
@@ -581,16 +579,18 @@ class PyGameWidget(QWidget):
         if self.is_editingorbits is not None:
             self.planetes[self.p_index]['couleur'] = edited_value
 
-    def orbital_vector(self):
-        pass
+    def acceleration_vector(self, planet):
+        momentum = planet['vitesse']
+        radius = self.centrum['position']-planet['position']
+        if radius.magnitude() <= 0:
+            return euclid.Vector2(0, 0)
+        circular_momentum = momentum.magnitude_squared()/radius.magnitude()
+        return -radius.normalized()*circular_momentum
 
-    def force_vector(self):
-        force_vec = {}
-        for i in self.planetes:
-            acc = self.newton(i)
-            force = i['masse'] * acc
-            force_vec[i['nom']] = force
-        return force_vec
+    def force_vector(self, planet):
+        acc = self.newton(planet)
+        force = planet['masse'] * acc
+        return force
 
     def velocity_vector(self):
         v_dict = {}
@@ -691,6 +691,15 @@ class PyGameWidget(QWidget):
                 if rayon < 1:
                     text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                     self.playscreen.blit(text, (rx - 20, ry - 7))
+
+                if self.is_showingorbitalvector:
+                    acc = self.acceleration_vector(planete)
+                    screenx, screeny = self.pos_objet_orbite(planete['position'])
+                    if acc.magnitude() >= 0:
+                        norm_vector = acc.normalized() * 25
+                        end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
+                        pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+
                 else:
                     if rayon > 800 or not os.path.exists("./images/Skins/soleil.jpg"):
                         if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
@@ -771,32 +780,35 @@ class PyGameWidget(QWidget):
         texte_camera = self.font.render(f"Mode caméra: {self.camera_mode}", True, (255, 255, 255))
         self.playscreen.blit(texte_camera, (10, self.height() - 20))
 
-        if self.is_showingorbitalvector:
-            dots = [(i.x, i.y) for i in self.orbital_vector()]
-            if len(dots) >= 2:
-                #print(dots)
-                pygame.draw.lines(self.playscreen, (255, 255, 255), False, dots, 2)
-
-        if self.is_showingforcevector:
-            force = self.force_vector()
-            for pl in self.planetes:
-                screenx, screeny = self.pos_objet_orbite(pl['position'])
-                vectorial_force = force.get(pl['nom'])
-                if vectorial_force.magnitude() >= 0:
-                    norm_vector = vectorial_force.normalize() * 25
-                    end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
+        for i in self.planetes:
+            if self.is_showingorbitalvector:
+                acc = self.acceleration_vector(i)
+                screenx, screeny = self.pos_objet_orbite(i['position'])
+                if acc.magnitude() >= 0:
+                    norm_vector = acc.normalized() * 25
+                    end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
                     pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
-        if self.is_showingvelocityvector:
-            velocity = self.velocity_vector()
-            for pl in self.planetes:
-                screenx, screeny = self.pos_objet_orbite(pl['position'])
-                for x,y in velocity.items():
-                    if x==pl['nom']:
+            if self.is_showingforcevector:
+                force = self.force_vector(i)
+                print(force)
+                screenx, screeny = self.pos_objet_orbite(i['position'])
+                if force.magnitude() >= 0:
+                    norm_vector = force.normalize() * 25
+                    print(norm_vector)
+                    end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
+                    print(end_pos)
+                    pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+
+            if self.is_showingvelocityvector:
+                velocity = self.velocity_vector()
+                screenx, screeny = self.pos_objet_orbite(i['position'])
+                for x, y in velocity.items():
+                    if x == i['nom']:
                         v_vector = velocity[x]
                         if v_vector.magnitude() > 0:
-                            norm_vector = v_vector.normalized()*25
-                            end_pos = (int(screenx + norm_vector.x), int(screeny+norm_vector.y))
+                            norm_vector = v_vector.normalized() * 25
+                            end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
                             pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
         if self.is_showingtrace:

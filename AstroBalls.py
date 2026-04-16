@@ -115,7 +115,7 @@ class MainWindowFrame(QMainWindow):
         self.orbitalvector_action = QWidgetAction(vector_menu)
 
         if not self.game_widget.is_showingorbitalvector:
-            self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name='placeholder',
+            self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name="Vecteur d'acceleration",
                                                                                     method=self.show_orbitalvector)
             self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
         vector_menu.addAction(self.orbitalvector_action)
