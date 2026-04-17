@@ -17,6 +17,7 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock, simulation):
         super().__init__()
 
+        self.slingshot_oldpos = None
         self.scale_value = None
         self.val = 20
         self.base_planet_image = None
@@ -592,12 +593,10 @@ class PyGameWidget(QWidget):
         force = planet['masse'] * acc
         return force
 
-    def velocity_vector(self):
-        v_dict = {}
-        for i in self.planetes:
-            v_data = i['vitesse']
-            v_dict[i['nom']] = v_data
-        return v_dict
+    @staticmethod
+    def velocity_vector(planet):
+        v_data = planet['vitesse']
+        return v_data
 
     def mousePressEvent(self, event):
         self.souris_pos = euclid.Vector2(event.pos().x(), event.pos().y())
@@ -608,6 +607,14 @@ class PyGameWidget(QWidget):
                 self.point.append((self.souris_pos.x, self.souris_pos.y))
                 self.point = self.point[-2:]
                 self.measuring_updater_signal.emit()
+            if not self.measuringtape_state:
+                if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                    for i, j in enumerate(self.planetes):
+                        x, y = self.pos_objet_orbite(j['position'])
+                        diff = self.souris_pos - euclid.Vector2(x+8, y-5)
+                        if abs(diff.magnitude()) <= max(j['rayon']*self.scale, 15):
+                            self.slingshot_planet = j
+                            self.slingshot_oldpos = euclid.Vector2(self.souris_pos.x, self.souris_pos.y)
 
         elif event.button() == Qt.MouseButton.LeftButton:
             # clic gauche : sélectionner et mettre à jour statsdock
@@ -657,6 +664,19 @@ class PyGameWidget(QWidget):
 
     def mouseReleaseEvent(self, event):
         self.active_planet = None
+        if event.button() == Qt.MouseButton.RightButton:
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                if hasattr(self, 'slingshot_oldpos'):
+                    slingshot_dist = (self.souris_pos - self.slingshot_oldpos).magnitude()
+                    if slingshot_dist > 1000:
+                        slingshot_dist = 1000
+                    raw_slingshot_vector = self.souris_pos - self.slingshot_oldpos
+                    slingshot_vector = raw_slingshot_vector * -1
+                    for i in self.planetes:
+                        if i == self.slingshot_planet:
+                            i['vitesse'].x += slingshot_vector.x**2
+                            i['vitesse'].y += slingshot_vector.y**2
+                    self.slingshot_oldpos = None
 
     def wheelEvent(self, event):
         wheel_checker = event.angleDelta().y()
@@ -762,11 +782,6 @@ class PyGameWidget(QWidget):
             if Qt.Key.Key_S in self.keys_pressed:
                 self.camera_pos.y += speed / self.scale
 
-        if not self.is_showingorbits:
-            for w in self.kepler():
-                if len(w['dots']):
-                    pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
-
         if self.target is not None:
             distance_x = self.souris_pos.x + self.scale * (self.camera_pos.x - self.target.x)
             distance_y = self.souris_pos.y + self.scale * (self.camera_pos.y - self.target.y)
@@ -780,6 +795,11 @@ class PyGameWidget(QWidget):
         texte_camera = self.font.render(f"Mode caméra: {self.camera_mode}", True, (255, 255, 255))
         self.playscreen.blit(texte_camera, (10, self.height() - 20))
 
+        if not self.is_showingorbits:
+            for w in self.kepler():
+                if len(w['dots']):
+                    pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
+
         for i in self.planetes:
             if self.is_showingorbitalvector:
                 acc = self.acceleration_vector(i)
@@ -791,25 +811,24 @@ class PyGameWidget(QWidget):
 
             if self.is_showingforcevector:
                 force = self.force_vector(i)
-                print(force)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
                 if force.magnitude() >= 0:
                     norm_vector = force.normalize() * 25
-                    print(norm_vector)
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    print(end_pos)
                     pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
             if self.is_showingvelocityvector:
-                velocity = self.velocity_vector()
+                velocity = self.velocity_vector(i)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
-                for x, y in velocity.items():
-                    if x == i['nom']:
-                        v_vector = velocity[x]
-                        if v_vector.magnitude() > 0:
-                            norm_vector = v_vector.normalized() * 25
-                            end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
-                            pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+                if velocity.magnitude() >= 0:
+                    norm_vector = velocity.normalized() * 25
+                    end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
+                    pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+
+            if self.slingshot_oldpos is not None:
+                pygame.draw.line(self.playscreen, (255, 255, 255),
+                                 (self.slingshot_oldpos.x, self.slingshot_oldpos.y),
+                                 (self.souris_pos.x, self.souris_pos.y), 1)
 
         if self.is_showingtrace:
             self.remover += 1

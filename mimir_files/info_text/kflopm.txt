@@ -1,0 +1,3 @@
+La première loi de Kepler stipule que chaque planète se déplace sur une orbite elliptique dont le Soleil est l'un des foyers. En termes plus simples : les planètes ne décrivent pas des cercles parfaits ; elles suivent une trajectoire ovale, et le Soleil se trouve décentré à l'un des deux « points d'ancrage » à l'intérieur de cet ovale. (change)
+
+La formule est :

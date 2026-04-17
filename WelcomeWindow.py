@@ -9,7 +9,7 @@ class WelcomeWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle('Astro Balls')
-        self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
+        self.setWindowIcon(QIcon('images/app_icon/Astro Balls Icon.png'))
         self.wwsc_simulation = None
         self.setFixedSize(700, 500)
         ww_widget = QWidget()

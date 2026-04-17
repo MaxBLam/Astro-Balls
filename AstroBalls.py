@@ -1,6 +1,6 @@
 import sys
 import pygame
-
+from PyQt6.QtWidgets import QSizePolicy
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
@@ -47,7 +47,7 @@ class MainWindowFrame(QMainWindow):
         self.main_statsdock_link = StatsDock()
 
         self.setWindowTitle('Astro Balls')
-        self.setWindowIcon(QIcon('./images/Astro Balls Icon.png'))
+        self.setWindowIcon(QIcon('images/app_icon/Astro Balls Icon.png'))
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
@@ -485,18 +485,21 @@ class MainWindowFrame(QMainWindow):
         b_n1_label.setFont(b_n1_label_font)
         b_n1_label.move(20, 20)
         pixmap_newton1 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
-                                                                            Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                                                                            Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
         l_pixmap_newton1 = QLabel(parent=newton1tab)
         l_pixmap_newton1.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_newton1.setFixedSize(200, 280)
         l_pixmap_newton1.setPixmap(pixmap_newton1)
         l_pixmap_newton1.move(420, 95)
-        i_n1_label = QLabel("Newton's first law states that an object in motion will remain in motion\nindefinitely as "
-                            "long as there is no opposing force. Similarly, an object at\nrest will remain at rest "
-                            "indefinitely as long as no force is applied to it.", parent=newton1tab)
-        i_n1_label.setFixedSize(390, 50)
+        with open('mimir_files/info_text/newton1.txt', 'r', encoding='utf-8') as newton1_txtfile:
+            i_n1_label = QLabel(str(newton1_txtfile.read()), parent=newton1tab)
+        fixed_sizedw = info_window.width()*(3/5)
+        i_n1_label.setFixedWidth(int(fixed_sizedw))
+        i_n1_label.setWordWrap(True)
+        i_n1_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        i_n1_label.adjustSize()
         i_n1_label.move(20, 100)
-
         im_n1_label = QLabel("Sir Isaac Newton\nBy Godfrey Kneller\n1689", parent=newton1tab)
         im_n1_label.setFixedSize(100, 100)
         im_n1_label.move(470, 350)
@@ -504,16 +507,94 @@ class MainWindowFrame(QMainWindow):
         info_tabs.addTab(newton1tab, "Newton's First Law")
 
         newton2tab = QWidget()
+        b_n2_label = QLabel(parent=newton2tab)
+        b_n2_label.setFixedSize(500, 40)
+        b_n2_label.setText("NEWTON'S SECOND LAW")
+        b_n2_label_font = QFont()
+        b_n2_label_font.setPointSize(30)
+        b_n2_label.setFont(b_n2_label_font)
+        b_n2_label.move(20, 20)
+        with open('mimir_files/info_text/newton2.txt', 'r', encoding='utf-8') as newton2_txtfile:
+            i_n2_label = QLabel(str(newton2_txtfile.read()), parent=newton2tab)
+        i_n2_label.setFixedWidth(int(fixed_sizedw))
+        i_n2_label.setWordWrap(True)
+        i_n2_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        i_n2_label.adjustSize()
+        i_n2_label.move(20, 100)
+        e_n2_label = QLabel("<span style='font-family: Cambria Math; font-style: italic; font-size: 20px;'>"
+                            "F = m \u00b7 a</span>", parent=newton2tab)
+        e_n2_label.move(100, 250)
         newton2tab_layout = QGridLayout()
         newton2tab.setLayout(newton2tab_layout)
         info_tabs.addTab(newton2tab, "Newton's Second Law")
 
         newton3tab = QWidget()
+        b_n3_label = QLabel(parent=newton3tab)
+        b_n3_label.setFixedSize(500, 40)
+        b_n3_label.setText("NEWTON'S THIRD LAW")
+        b_n3_label_font = QFont()
+        b_n3_label_font.setPointSize(30)
+        b_n3_label.setFont(b_n3_label_font)
+        b_n3_label.move(20, 20)
+        with open('mimir_files/info_text/newton3.txt', 'r', encoding='utf-8') as newton3_txtfile:
+            i_n3_label = QLabel(str(newton3_txtfile.read()), parent=newton3tab)
+        i_n3_label.setFixedWidth(int(fixed_sizedw))
+        i_n3_label.setWordWrap(True)
+        i_n3_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        i_n3_label.adjustSize()
+        i_n3_label.move(20, 100)
+        e_n3_label = QLabel("<span style='font-family: Cambria Math; font-style: italic; font-size: 20px;'>"
+                            "F<sub>AB</sub> = -F<sub>BA</sub>", parent=newton3tab)
+        e_n3_label.move(100, 250)
         newton3tab_layout = QGridLayout()
         newton3tab.setLayout(newton3tab_layout)
         info_tabs.addTab(newton3tab, "Newton's Third Law")
 
         kflopmtab = QWidget()
+        b_k_label = QLabel(parent=kflopmtab)
+        b_k_label.setFixedSize(500, 100)
+        b_k_label.setText("KEPLER'S FIRST LAW OF \nPLANETARY MOTION")
+        b_k_label.setFixedWidth(info_window.width())
+        b_k_label_font = QFont()
+        b_k_label_font.setPointSize(30)
+        b_k_label.setFont(b_n3_label_font)
+        b_k_label.move(20, 20)
+        with open('mimir_files/info_text/kflopm.txt', 'r', encoding='utf-8') as kflopm_txtfile:
+            i_k_label = QLabel(str(kflopm_txtfile.read()), parent=kflopmtab)
+        i_k_label.setFixedWidth(int(fixed_sizedw))
+        i_k_label.setWordWrap(True)
+        i_k_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        i_k_label.adjustSize()
+        i_k_label.move(20, 150)
+        e_k_label = QLabel(parent=kflopmtab)
+        e_k_txt = """
+        <table style='color: white; font-family: "Cambria Math", serif; font-size: 20px; border-collapse: collapse;'>
+          <tr>
+            <td style='vertical-align: middle; padding-right: 10px; font-style: italic;'>
+              r(&theta;) <span style='font-style: normal;'>=</span>
+            </td>
+        
+            <td style='vertical-align: middle;'>
+              <table style='border-collapse: collapse; display: inline-table;'>
+                <tr>
+                  <td style='border-bottom: 2px solid white; text-align: center; padding: 2px 10px; font-style: italic;'>
+                    a(1 &minus; e<sup>2</sup>)
+                  </td>
+                </tr>
+                <tr>
+                  <td style='text-align: center; padding: 2px 10px; font-style: italic;'>
+                    1 + e <span style='font-style: normal;'>cos</span>(&theta;)
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        """
+        e_k_label.setTextFormat(Qt.TextFormat.RichText)
+        e_k_label.setText(e_k_txt)
+        e_k_label.setFixedSize(500, 70)
+        e_k_label.move(100, 290)
         kflopmtab_layout = QGridLayout()
         kflopmtab.setLayout(kflopmtab_layout)
         info_tabs.addTab(kflopmtab, "Kepler's First Law of Planetary Motion")
@@ -543,7 +624,7 @@ class MainWindowFrame(QMainWindow):
         apropos_layout.setVerticalSpacing(10)
         apropos_window.setLayout(apropos_layout)
 
-        about_icon = QPixmap('./images/Astro Balls Icon.png').scaled(170, 170, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        about_icon = QPixmap('images/app_icon/Astro Balls Icon.png').scaled(170, 170, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         icon_label = QLabel()
         icon_label.setPixmap(about_icon)
         apropos_layout.addWidget(icon_label, 0, 0, 2, 1, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
@@ -930,7 +1011,6 @@ class MainWindowFrame(QMainWindow):
 
     def showrotationalvector(self):
         pass
-
 
 
 if __name__ == '__main__':

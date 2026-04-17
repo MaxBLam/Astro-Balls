@@ -1,0 +1,3 @@
+L'accélération d'un objet est directement proportionnelle à la force nette qui s'exerce sur lui. En d'autres termes, si l'on applique une force à un objet immobile, l'accélération sera proportionnelle à l'intensité de la poussée.
+
+Ce phénomène est défini par la formule suivante :

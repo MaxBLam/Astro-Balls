@@ -24,7 +24,6 @@ class DragNDrop(QToolBar):
     def __init__(self):
         super().__init__("Drag-and-Drop Menu")
 
-
         tabs = QTabWidget()
         tabs.setMovable(False)
 
@@ -58,6 +57,7 @@ class DragNDrop(QToolBar):
 
         self.addWidget(tabs)
         self.setFixedHeight(100)
+
 
 class StatsDock(QDockWidget):
     def __init__(self):
@@ -130,7 +130,6 @@ class StatsDock(QDockWidget):
         h_layout1.addWidget(self.mass_edit)
         h_layout1.addWidget(self.apply_button_mass)
         mid_panel_layout.addLayout(h_layout1)
-
 
         h_layout2 = QHBoxLayout()
         self.rayon_label = QLabel('Rayon: ')
