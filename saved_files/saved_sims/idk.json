@@ -1,0 +1,103 @@
+{
+    "planets": [
+        {
+            "nom": "Soleil",
+            "position": {
+                "__Vector2__": true,
+                "x": 6221033.961306279,
+                "y": 3636743.862956061
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": 172.0498158680723,
+                "y": -292.36437241917184
+            },
+            "masse": 1.989e+30,
+            "rayon": 696340,
+            "couleur": [
+                255,
+                200,
+                0
+            ],
+            "type": "\u00c9toile",
+            "composition_surface": "Hydrog\u00e8ne (74%)",
+            "\u00e2ge": "4,603 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "5778 K",
+            "isCentrum": true
+        },
+        {
+            "nom": "Jupiter",
+            "position": {
+                "__Vector2__": true,
+                "x": 9889861.360939188,
+                "y": 5969293.019140484
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": -13381.446300702459,
+                "y": 4681.2456965029205
+            },
+            "masse": 1.899e+27,
+            "rayon": 69911,
+            "couleur": [
+                200,
+                150,
+                50
+            ],
+            "type": "G\u00e9ante gazeuse",
+            "composition_surface": "Hydrog\u00e8ne (90%)",
+            "\u00e2ge": "4,603 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "128 K",
+            "isCentrum": true
+        },
+        {
+            "nom": "Saturne",
+            "position": {
+                "__Vector2__": true,
+                "x": 11600617.612147452,
+                "y": 4040637.409181953
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": -6043.290836946387,
+                "y": 9544.278324735837
+            },
+            "masse": 5.683e+26,
+            "rayon": 58232,
+            "couleur": [
+                195,
+                146,
+                79
+            ],
+            "type": "G\u00e9ante gazeuse",
+            "composition_surface": "Hydrog\u00e8ne (94%)",
+            "\u00e2ge": "4,503 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "95 K"
+        },
+        {
+            "nom": "Uranus",
+            "position": {
+                "__Vector2__": true,
+                "x": 1684864.2657179413,
+                "y": 2353398.9942601533
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": 8687.171854905158,
+                "y": -8607.723126158766
+            },
+            "masse": 6.681e+25,
+            "rayon": 25362,
+            "couleur": [
+                172,
+                229,
+                238
+            ],
+            "type": "G\u00e9ante gazeuse",
+            "composition_surface": "Hydrog\u00e8ne (90%)",
+            "\u00e2ge": "4,503 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "49 K"
+        }
+    ],
+    "scale": 6.4e-05
+}

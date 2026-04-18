@@ -1,0 +1,104 @@
+{
+    "planets": [
+        {
+            "nom": "Mars",
+            "position": {
+                "__Vector2__": true,
+                "x": 10097821.859676324,
+                "y": 4051935.175133844
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": 152.40897109447505,
+                "y": 189.40143980672627
+            },
+            "masse": 6.416993e+23,
+            "rayon": 3389.5,
+            "couleur": [
+                255,
+                100,
+                100
+            ],
+            "type": "Plan\u00e8te",
+            "composition_surface": "Fer oxyd\u00e9",
+            "\u00e2ge": "4,603 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "210 K",
+            "isCentrum": true
+        },
+        {
+            "nom": "Saturne",
+            "position": {
+                "__Vector2__": true,
+                "x": 8093613.354530602,
+                "y": 5656079.8180676475
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": -5.107844183187618,
+                "y": -6.375308073922847
+            },
+            "masse": 5.683e+26,
+            "rayon": 58232,
+            "couleur": [
+                195,
+                146,
+                79
+            ],
+            "type": "G\u00e9ante gazeuse",
+            "composition_surface": "Hydrog\u00e8ne (94%)",
+            "\u00e2ge": "4,503 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "95 K",
+            "isCentrum": true
+        },
+        {
+            "nom": "Mercure",
+            "position": {
+                "__Vector2__": true,
+                "x": 7031367.916456145,
+                "y": 3109346.7802138943
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": 7.063559103221305,
+                "y": 4.78628051884577
+            },
+            "masse": 3.285e+23,
+            "rayon": 2439.7,
+            "couleur": [
+                245,
+                245,
+                220
+            ],
+            "type": "Plan\u00e8te",
+            "composition_surface": "M\u00e9tallique (70%)",
+            "\u00e2ge": "4,503 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "93 \u00e0 703 K"
+        },
+        {
+            "nom": "Jupiter",
+            "position": {
+                "__Vector2__": true,
+                "x": 9062000.060239,
+                "y": 4672008.944706482
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": -37.82143955653984,
+                "y": 21.97822500542203
+            },
+            "masse": 1.899e+27,
+            "rayon": 69911,
+            "couleur": [
+                200,
+                150,
+                50
+            ],
+            "type": "G\u00e9ante gazeuse",
+            "composition_surface": "Hydrog\u00e8ne (90%)",
+            "\u00e2ge": "4,603 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "128 K",
+            "isCentrum": true
+        }
+    ],
+    "scale": 6.4e-05
+}

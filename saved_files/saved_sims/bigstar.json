@@ -1,0 +1,55 @@
+{
+    "planets": [
+        {
+            "nom": "Soleil",
+            "position": {
+                "__Vector2__": true,
+                "x": 5615550.959471688,
+                "y": 3707852.845324555
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": 14673.13771065388,
+                "y": -43050.43233974865
+            },
+            "masse": 1.989e+30,
+            "rayon": 696340,
+            "couleur": [
+                255,
+                200,
+                0
+            ],
+            "type": "\u00c9toile",
+            "composition_surface": "Hydrog\u00e8ne (74%)",
+            "\u00e2ge": "4,603 milliards d\u2019ann\u00e9es",
+            "temp\u00e9rature": "5778 K",
+            "isCentrum": true
+        },
+        {
+            "nom": "B\u00e9telgeuse",
+            "position": {
+                "__Vector2__": true,
+                "x": 10333536.00595557,
+                "y": 5778932.280287381
+            },
+            "vitesse": {
+                "__Vector2__": true,
+                "x": -3281.269181219442,
+                "y": 9626.269768104565
+            },
+            "masse": 3.978e+31,
+            "rayon": 617000000,
+            "couleur": [
+                255,
+                80,
+                50
+            ],
+            "type": "Superg\u00e9ante rouge",
+            "composition_surface": "Hydrog\u00e8ne et h\u00e9lium",
+            "\u00e2ge": "10 millions d\u2019ann\u00e9es",
+            "temp\u00e9rature": "3500 K",
+            "isCentrum": true
+        }
+    ],
+    "scale": 6.4e-05
+}
