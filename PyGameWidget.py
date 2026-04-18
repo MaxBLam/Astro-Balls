@@ -1,13 +1,13 @@
 import os
-from mmap import ACCESS_COPY
-
 import pygame
-from PyQt6.QtGui import QCursor
+import pygame.gfxdraw
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
 import euclid
 import math
+from tinydb import TinyDB
+import json
 import random
 
 
@@ -86,6 +86,8 @@ class PyGameWidget(QWidget):
 
         self.timer.timeout.connect(self.game_loop)
         self.planet_surfaces_cache = {}
+
+        self.save_in_db = TinyDB('saved_files/saved_sims/tester.json')
 
     def edit_masse(self):
         if self.active_planet is not None:
@@ -206,10 +208,11 @@ class PyGameWidget(QWidget):
 
     def vitesse_simulation_n_corps(self):
         for i in range(len(self.planetes)):
-            if i == len(self.planetes) - 1:
-                self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
-            else:
-                self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
+            if self.planetes[i]['vitesse'].magnitude() == 0: # (sam) j'ai add sa pour arreter de reset la vitesse des autres planetes apres chaque nouvelle planete
+                if i == len(self.planetes) - 1:
+                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
+                else:
+                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
         self.vitesse_state = True
 
     def simulation_n_corps(self, planetes_liste: list):
@@ -674,9 +677,9 @@ class PyGameWidget(QWidget):
                     slingshot_vector = raw_slingshot_vector * -1
                     for i in self.planetes:
                         if i == self.slingshot_planet:
-                            i['vitesse'].x += slingshot_vector.x**2
-                            i['vitesse'].y += slingshot_vector.y**2
-                    self.slingshot_oldpos = None
+                            i['vitesse'].x += (slingshot_vector.x**3)*0.1
+                            i['vitesse'].y += (slingshot_vector.y**3)*0.1
+                self.slingshot_oldpos = None
 
     def wheelEvent(self, event):
         wheel_checker = event.angleDelta().y()
@@ -711,14 +714,6 @@ class PyGameWidget(QWidget):
                 if rayon < 1:
                     text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                     self.playscreen.blit(text, (rx - 20, ry - 7))
-
-                if self.is_showingorbitalvector:
-                    acc = self.acceleration_vector(planete)
-                    screenx, screeny = self.pos_objet_orbite(planete['position'])
-                    if acc.magnitude() >= 0:
-                        norm_vector = acc.normalized() * 25
-                        end_pos = (int(screenx + norm_vector.x), int(screeny + norm_vector.y))
-                        pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
                 else:
                     if rayon > 800 or not os.path.exists("./images/Skins/soleil.jpg"):
@@ -798,7 +793,7 @@ class PyGameWidget(QWidget):
         if not self.is_showingorbits:
             for w in self.kepler():
                 if len(w['dots']):
-                    pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
+                    pygame.draw.aalines(self.playscreen, w['color'], False, w['dots'], 1)
 
         for i in self.planetes:
             if self.is_showingorbitalvector:
@@ -807,7 +802,7 @@ class PyGameWidget(QWidget):
                 if acc.magnitude() >= 0:
                     norm_vector = acc.normalized() * 25
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+                    pygame.draw.aaline(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
             if self.is_showingforcevector:
                 force = self.force_vector(i)
@@ -815,7 +810,7 @@ class PyGameWidget(QWidget):
                 if force.magnitude() >= 0:
                     norm_vector = force.normalize() * 25
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+                    pygame.draw.aaline(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
             if self.is_showingvelocityvector:
                 velocity = self.velocity_vector(i)
@@ -823,10 +818,10 @@ class PyGameWidget(QWidget):
                 if velocity.magnitude() >= 0:
                     norm_vector = velocity.normalized() * 25
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.line(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
+                    pygame.draw.aaline(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
             if self.slingshot_oldpos is not None:
-                pygame.draw.line(self.playscreen, (255, 255, 255),
+                pygame.draw.aaline(self.playscreen, (255, 255, 255),
                                  (self.slingshot_oldpos.x, self.slingshot_oldpos.y),
                                  (self.souris_pos.x, self.souris_pos.y), 1)
 

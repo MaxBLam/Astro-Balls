@@ -1,20 +1,37 @@
+import os.path
 import sys
+
+import euclid
 import pygame
 from PyQt6.QtWidgets import QSizePolicy
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
-    QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog
+    QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, QFileDialog
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
 
+import json
+from tinydb import TinyDB
+from datetime import datetime
+
+
+class VectorEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, euclid.Vector2):
+            return {"__Vector2__": True, 'x': obj.x, 'y': obj.y}
+        return super().default(obj)
+
 
 class MainWindowFrame(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.load_window = None
+        self.save_simwindow_layout = None
+        self.save_simwindow = None
         self.orbit_timer = None
         self.get_orbitinfo_ondisplay = None
         self.scroller_widget_layout = None
@@ -63,17 +80,17 @@ class MainWindowFrame(QMainWindow):
         app_menu = QMenu('&Application')
         savenew_action = QAction('&New Save', parent=self)
         savenew_action.setIcon(QIcon('images/menubar symbol/plus.png'))
-        savenew_action.triggered.connect(self.newsavefile)
+        savenew_action.triggered.connect(self.save_sim)
         savenew_action.setShortcut('Ctrl+N')
         app_menu.addAction(savenew_action)
         save_action = QAction('&Save', parent=self)
         save_action.setIcon(QIcon('images/menubar symbol/diskette.png'))
-        save_action.triggered.connect(self.savefile)
+        save_action.triggered.connect(self.save_sim)
         save_action.setShortcut('Ctrl+S')
         app_menu.addAction(save_action)
         open_action = QAction('&Open', parent=self)
         open_action.setIcon(QIcon('images/menubar symbol/open-folder.png'))
-        open_action.triggered.connect(self.openfile)
+        open_action.triggered.connect(self.loadsim)
         open_action.setShortcut('Ctrl+O')
         app_menu.addAction(open_action)
         app_menu.addSeparator()
@@ -168,6 +185,67 @@ class MainWindowFrame(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
 
         QTimer.singleShot(0, self.guide)
+
+    @staticmethod
+    def vector_decoder(dct):
+        if '__Vector2__' in dct:
+            return euclid.Vector2(dct['x'], dct['y'])
+        return dct
+
+    def save_sim(self):
+        self.save_simwindow = QDialog(parent=self)
+        self.save_simwindow.setWindowTitle('Saving...')
+        self.save_simwindow.resize(300, 150)
+        self.save_simwindow_layout = QGridLayout(self.save_simwindow)
+        s_label = QLabel("Enter Save Name: ")
+        s_label.setFixedWidth(int(self.save_simwindow.width()/2))
+        self.save_simwindow_layout.addWidget(s_label, 0, 0)
+        self.save_name = QLineEdit()
+        self.save_name.setPlaceholderText('not a big fan of the government')
+        self.save_name.setFixedWidth(int(self.save_simwindow.width()/2))
+        self.save_name.textChanged.connect(self.save_sim_update_text)
+        self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
+        self.save_button = QPushButton(f'Save')
+        self.save_button.clicked.connect(self.saving)
+        cancel_button = QPushButton('Cancel')
+        cancel_button.clicked.connect(self.save_simwindow.close)
+        self.save_simwindow_layout.addWidget(cancel_button, 1, 0)
+        self.save_simwindow_layout.addWidget(self.save_button, 1, 1)
+        self.save_simwindow.exec()
+
+    def save_sim_update_text(self, text):
+        if text.strip == "":
+            self.save_button.setText('Save')
+        else:
+            self.save_button.setText(f'Save {text}')
+
+    def saving(self):
+        saving_bar = QProgressDialog()
+        saving_bar.setWindowTitle('Saving...')
+        saving_bar.setMinimum(0)
+        saving_bar.setMaximum(0)
+        saving_bar.setWindowModality(Qt.WindowModal)
+        saving_bar.setValue(0)
+        saving_bar.show()
+
+        name = self.save_name.text().strip()
+        get_path = os.path.join('saved_files', 'saved_sims')
+        path = os.path.join(get_path, f'{name}.json')
+        saved_data = {'planets': self.game_widget.planetes, 'scale': self.game_widget.scale}
+        with open(path, 'w') as file:
+            json.dump(saved_data, file, indent=4, cls=VectorEncoder)
+
+    def loadsim(self):
+        get_path = os.path.join('saved_files', 'saved_sims')
+        file, _ = QFileDialog.getOpenFileName(self, 'Json', get_path, 'JSON Files (*.json)')
+        if file:
+            self.loader(file)
+
+    def loader(self, path):
+        with open(path, 'r') as file:
+            file_unloader = json.load(file, object_hook=self.vector_decoder)
+            self.game_widget.scale = file_unloader['scale']
+            self.game_widget.planetes = file_unloader['planets']
 
     def measuringtape(self):
         self.game_widget.toggle_measuringtape(True)
@@ -566,9 +644,17 @@ class MainWindowFrame(QMainWindow):
         i_k_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         i_k_label.adjustSize()
         i_k_label.move(20, 150)
+        pixmap_kflopm = QPixmap('images/mimir_usedimages/Johannes_Kepler_1610-746x1024.jpg').scaled(200, 280,
+                                                                                Qt.AspectRatioMode.KeepAspectRatio,
+                                                                           Qt.TransformationMode.SmoothTransformation)
+        l_pixmap_kflopm = QLabel(parent=kflopmtab)
+        l_pixmap_kflopm.setFrameStyle(QFrame.Shape.Panel)
+        l_pixmap_kflopm.setFixedSize(200, 280)
+        l_pixmap_kflopm.setPixmap(pixmap_kflopm)
+        l_pixmap_kflopm.move(420, 95)
         e_k_label = QLabel(parent=kflopmtab)
         e_k_txt = """
-        <table style='color: white; font-family: "Cambria Math", serif; font-size: 20px; border-collapse: collapse;'>
+        <table style='color: white; font-family: "Cambria Math", serif; font-size: 15px; border-collapse: collapse;'>
           <tr>
             <td style='vertical-align: middle; padding-right: 10px; font-style: italic;'>
               r(&theta;) <span style='font-style: normal;'>=</span>
@@ -594,7 +680,13 @@ class MainWindowFrame(QMainWindow):
         e_k_label.setTextFormat(Qt.TextFormat.RichText)
         e_k_label.setText(e_k_txt)
         e_k_label.setFixedSize(500, 70)
-        e_k_label.move(100, 290)
+        e_k_label.move(110, 238)
+        ei_k_label = QLabel("Ou:\nr(θ) = La distance radiale"
+                            "\na = L'axe semi-majeur"
+                            "\nε = Excentricité"
+                            "\nθ = L'angle depuis le perihelion", parent=kflopmtab)
+        ei_k_label.setFixedSize(150, 60)
+        ei_k_label.move(284, 235)
         kflopmtab_layout = QGridLayout()
         kflopmtab.setLayout(kflopmtab_layout)
         info_tabs.addTab(kflopmtab, "Kepler's First Law of Planetary Motion")
@@ -780,9 +872,6 @@ class MainWindowFrame(QMainWindow):
         update_slide()
 
         guide_window.exec()
-
-    def savefile(self):
-        pass
 
     def openfile(self):
         pass
@@ -990,27 +1079,6 @@ class MainWindowFrame(QMainWindow):
 
     def keybinds(self):
         self.settings()
-
-    def newton1(self):
-        pass
-
-    def newton2(self):
-        pass
-
-    def newton3(self):
-        pass
-
-    def kflopm(self):
-        pass
-
-    def showorbitvector(self):
-        pass
-
-    def showforcevector(self):
-        pass
-
-    def showrotationalvector(self):
-        pass
 
 
 if __name__ == '__main__':
