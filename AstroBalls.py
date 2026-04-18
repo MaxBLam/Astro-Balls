@@ -15,8 +15,8 @@ from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
 
 import json
-from tinydb import TinyDB
 from datetime import datetime
+from functools import partial
 
 
 class VectorEncoder(json.JSONEncoder):
@@ -63,6 +63,8 @@ class MainWindowFrame(QMainWindow):
         self.seconddotcoo = None
         self.main_statsdock_link = StatsDock()
 
+        self.saveinfo = []
+
         self.setWindowTitle('Astro Balls')
         self.setWindowIcon(QIcon('images/app_icon/Astro Balls Icon.png'))
         central_widget = QWidget()
@@ -80,7 +82,7 @@ class MainWindowFrame(QMainWindow):
         app_menu = QMenu('&Application')
         savenew_action = QAction('&New Save', parent=self)
         savenew_action.setIcon(QIcon('images/menubar symbol/plus.png'))
-        savenew_action.triggered.connect(self.save_sim)
+        savenew_action.triggered.connect(self.new_save)
         savenew_action.setShortcut('Ctrl+N')
         app_menu.addAction(savenew_action)
         save_action = QAction('&Save', parent=self)
@@ -90,7 +92,7 @@ class MainWindowFrame(QMainWindow):
         app_menu.addAction(save_action)
         open_action = QAction('&Open', parent=self)
         open_action.setIcon(QIcon('images/menubar symbol/open-folder.png'))
-        open_action.triggered.connect(self.loadsim)
+        open_action.triggered.connect(self.load_sim_window)
         open_action.setShortcut('Ctrl+O')
         app_menu.addAction(open_action)
         app_menu.addSeparator()
@@ -195,9 +197,9 @@ class MainWindowFrame(QMainWindow):
     def save_sim(self):
         self.save_simwindow = QDialog(parent=self)
         self.save_simwindow.setWindowTitle('Saving...')
-        self.save_simwindow.resize(300, 150)
+        self.save_simwindow.resize(300, 100)
         self.save_simwindow_layout = QGridLayout(self.save_simwindow)
-        s_label = QLabel("Enter Save Name: ")
+        s_label = QLabel("Entrez un nom: ")
         s_label.setFixedWidth(int(self.save_simwindow.width()/2))
         self.save_simwindow_layout.addWidget(s_label, 0, 0)
         self.save_name = QLineEdit()
@@ -207,6 +209,7 @@ class MainWindowFrame(QMainWindow):
         self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
         self.save_button = QPushButton(f'Save')
         self.save_button.clicked.connect(self.saving)
+        self.save_button.clicked.connect(self.save_simwindow.close)
         cancel_button = QPushButton('Cancel')
         cancel_button.clicked.connect(self.save_simwindow.close)
         self.save_simwindow_layout.addWidget(cancel_button, 1, 0)
@@ -241,11 +244,132 @@ class MainWindowFrame(QMainWindow):
         if file:
             self.loader(file)
 
+    def load_sim_window(self):
+        self.load_window = QDialog()
+        self.load_window.setWindowTitle('Load Save')
+        self.load_window.resize(350, 250)
+        self.load_window_layout = QGridLayout(self.load_window)
+        self.load_window_layout.setSpacing(1)
+
+        scroller = QScrollArea()
+        scroller.setFrameShape(QFrame.Shape.NoFrame)
+        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroller.setWidgetResizable(True)
+        self.load_window_layout.addWidget(scroller, 0, 0, 1, 2)
+        self.load_window_layout.setSpacing(1)
+
+        scroller_widget = QWidget()
+        self.swll = QVBoxLayout(scroller_widget)
+        self.swll.setSpacing(4)
+        scroller.setWidget(scroller_widget)
+
+        close_button = QPushButton('Fermer')
+        close_button.clicked.connect(self.load_window.close)
+        self.load_window_layout.addWidget(close_button, 1, 1)
+
+        ofe_button = QPushButton('Ouvrir File Explorer')
+        ofe_button.clicked.connect(self.loadsim)
+        self.load_window_layout.addWidget(ofe_button, 1, 0)
+
+        self.save_timer = QTimer(self)
+        self.save_timer.timeout.connect(self.update_loadwindow)
+        self.save_timer.start(50)
+
+        self.load_window.exec()
+
+    def update_loadwindow(self):
+        if self.load_window and hasattr(self, 'swll'):
+            while self.swll.count():
+                item = self.swll.takeAt(0)
+                panel_widget = item.widget()
+                if panel_widget is not None:
+                    panel_widget.deleteLater()
+            self.saveinfo = []
+            paths = os.path.join('saved_files', 'saved_sims')
+            if not os.path.exists(paths):
+                return
+            getter = os.listdir(paths)
+            files = [f for f in getter if os.path.isfile(os.path.join(paths, f))]
+            path_dict = []
+            for j, k in enumerate(files):
+                panel = QFrame()
+                panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
+                panel_layout = QGridLayout()
+                panel.setLayout(panel_layout)
+                panel_layout.setSpacing(1)
+                name_label = QLabel(k)
+                name_label_font = QFont()
+                name_label_font.setBold(True)
+                name_label.setFont(name_label_font)
+                name_label.setFixedWidth(130)
+                name_label.setWordWrap(True)
+                panel_layout.addWidget(name_label, 0, 0)
+                get_paths = os.path.abspath(os.path.join(paths, k))
+                path_dict.append(get_paths)
+                load_button = QPushButton('Load')
+                load_button.setStyleSheet("""QPushButton 
+                                        {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
+                                        QPushButton::hover { background-color: #4d4d4d}""")
+                load_button.pressed.connect(partial(self.loader, path_dict[j]))
+                panel_layout.addWidget(load_button, 0, 1)
+                delete_file_button = QPushButton('Delete')
+                delete_file_button.setStyleSheet("""QPushButton 
+                                        {border: 1px solid #FF8A8A; padding: 2px; background-color: #A30000} 
+                                        QPushButton::hover { background-color: #FF0000}""")
+                delete_file_button.pressed.connect(partial(self.deleter_prevention, path_dict[j]))
+                panel_layout.addWidget(delete_file_button, 0, 2)
+                self.swll.addWidget(panel)
+                self.saveinfo.append(name_label)
+
+    def deleter_prevention(self, path):
+        get_path = path
+        preventer = QDialog(parent=self)
+        preventer.setWindowTitle('delete file?')
+        preventer_layout = QGridLayout(preventer)
+        preventer.setFixedWidth(240)
+        q_label = QLabel("Êtes-vous sûr de vouloir supprimer ce fichier ? Il ne pourra plus être récupéré.")
+        q_label.setWordWrap(True)
+        preventer_layout.addWidget(q_label, 0, 0, 1, 2)
+        yes_button = QPushButton('Oui')
+        yes_button.clicked.connect(partial(self.deleter, get_path))
+        preventer_layout.addWidget(yes_button, 1, 0)
+        no_button = QPushButton('Non')
+        no_button.clicked.connect(preventer.close)
+        preventer_layout.addWidget(no_button, 1, 1)
+        preventer.exec()
+
+    def deleter(self, path):
+        if os.path.exists(path):
+            os.remove(path)
+            self.update_loadwindow()
+
     def loader(self, path):
         with open(path, 'r') as file:
             file_unloader = json.load(file, object_hook=self.vector_decoder)
+            self.game_widget.planetes.clear()
             self.game_widget.scale = file_unloader['scale']
             self.game_widget.planetes = file_unloader['planets']
+
+    def new_save(self):
+        preventer = QDialog(parent=self)
+        preventer.setWindowTitle('new save?')
+        preventer_layout = QGridLayout(preventer)
+        preventer.setFixedWidth(240)
+        q_label = QLabel("Voulez-vous créer un nouveau fichier? Toutes les modifications non enregistrées seront perdues.")
+        q_label.setWordWrap(True)
+        preventer_layout.addWidget(q_label, 0, 0, 1, 2)
+        yes_button = QPushButton('Oui')
+        yes_button.clicked.connect(self.load_newsave)
+        yes_button.clicked.connect(preventer.close)
+        preventer_layout.addWidget(yes_button, 1, 0)
+        no_button = QPushButton('Non')
+        no_button.clicked.connect(preventer.close)
+        preventer_layout.addWidget(no_button, 1, 1)
+        preventer.exec()
+
+    def load_newsave(self):
+        self.game_widget.planetes.clear()
 
     def measuringtape(self):
         self.game_widget.toggle_measuringtape(True)
