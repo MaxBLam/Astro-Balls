@@ -6,9 +6,6 @@ from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
 import euclid
 import math
-from tinydb import TinyDB
-import json
-import random
 
 
 class PyGameWidget(QWidget):
@@ -35,13 +32,10 @@ class PyGameWidget(QWidget):
         self.statsdock_x = None
         self.statsdock_y = None
         self.setAcceptDrops(True)
-        self.planetes = []
-        self.planetes_pos = []
         self.active_planet = None
         self.vitesse_state = False
         self.active = False
         self.playscreen = None
-        self.point = []
         self.is_editingorbits = False
         self.is_showingorbits = False
         self.is_helpingorbits = False
@@ -54,6 +48,7 @@ class PyGameWidget(QWidget):
 
         self.planetes = []
         self.planetes_pos = []
+        self.point = []
 
         self.keys_pressed = set()
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -86,8 +81,6 @@ class PyGameWidget(QWidget):
 
         self.timer.timeout.connect(self.game_loop)
         self.planet_surfaces_cache = {}
-
-        self.save_in_db = TinyDB('saved_files/saved_sims/tester.json')
 
     def edit_masse(self):
         if self.active_planet is not None:
@@ -365,8 +358,8 @@ class PyGameWidget(QWidget):
                 text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                 text_list.append((text, (rx,ry)))
             else:
-                if rayon > 800 or not os.path.exists("./images/Skins/soleil.jpg"):
-                    if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
+                if rayon >= 696340 or not os.path.exists("./images/Skins/soleil.jpg"):
+                    if all(c < 50 for c in planete["couleur"]) and rayon < 696340:
                         pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon, int(0.05 * rayon))
                     else:
                         pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
@@ -668,11 +661,9 @@ class PyGameWidget(QWidget):
     def mouseReleaseEvent(self, event):
         self.active_planet = None
         if event.button() == Qt.MouseButton.RightButton:
-            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                if hasattr(self, 'slingshot_oldpos'):
+            if event.modifiers() or Qt.KeyboardModifier.ShiftModifier:
+                if hasattr(self, 'slingshot_oldpos') and self.slingshot_oldpos is not None:
                     slingshot_dist = (self.souris_pos - self.slingshot_oldpos).magnitude()
-                    if slingshot_dist > 1000:
-                        slingshot_dist = 1000
                     raw_slingshot_vector = self.souris_pos - self.slingshot_oldpos
                     slingshot_vector = raw_slingshot_vector * -1
                     for i in self.planetes:
@@ -680,6 +671,7 @@ class PyGameWidget(QWidget):
                             i['vitesse'].x += (slingshot_vector.x**3)*0.1
                             i['vitesse'].y += (slingshot_vector.y**3)*0.1
                 self.slingshot_oldpos = None
+                self.slingshot_planet = None
 
     def wheelEvent(self, event):
         wheel_checker = event.angleDelta().y()
@@ -821,9 +813,14 @@ class PyGameWidget(QWidget):
                     pygame.draw.aaline(self.playscreen, (255, 255, 255), (screenx, screeny), end_pos, 1)
 
             if self.slingshot_oldpos is not None:
-                pygame.draw.aaline(self.playscreen, (255, 255, 255),
-                                 (self.slingshot_oldpos.x, self.slingshot_oldpos.y),
-                                 (self.souris_pos.x, self.souris_pos.y), 1)
+                x, y = self.pos_objet_orbite(self.slingshot_planet['position'])
+                true_pos = euclid.Vector2(x, y)
+                mpirtpp = (true_pos - self.slingshot_oldpos).magnitude()
+                print(mpirtpp)
+                if mpirtpp <= self.slingshot_planet['rayon']:
+                    pygame.draw.aaline(self.playscreen, (255, 255, 255),
+                                       (self.slingshot_oldpos.x, self.slingshot_oldpos.y),
+                                       (self.souris_pos.x, self.souris_pos.y), 1)
 
         if self.is_showingtrace:
             self.remover += 1
