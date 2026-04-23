@@ -3,7 +3,6 @@ import sys
 
 import euclid
 import pygame
-from PyQt6.QtWidgets import QSizePolicy
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \

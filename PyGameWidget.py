@@ -17,7 +17,6 @@ class PyGameWidget(QWidget):
         self.slingshot_oldpos = None
         self.scale_value = None
         self.val = 20
-        self.base_planet_image = None
         self.setMouseTracking(True)
         self.acceleration = None
         self.old_mouse = None
@@ -335,10 +334,8 @@ class PyGameWidget(QWidget):
         if key in self.planet_surfaces_cache:
             return self.planet_surfaces_cache[key]
 
-        if self.base_planet_image is None:
-            self.base_planet_image = pygame.image.load("./images/Skins/soleil.jpg")
-
-        image = pygame.transform.scale(self.base_planet_image, (rayon*2, rayon*2))
+        planet_image = pygame.image.load(planete["image"])
+        image = pygame.transform.scale(planet_image, (rayon*2, rayon*2))
         circle_surface = pygame.Surface((rayon*2, rayon*2), pygame.SRCALPHA)
         pygame.draw.circle(circle_surface, (255, 255, 255, 255), (rayon, rayon), rayon)
         circle_surface.blit(image, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
@@ -358,7 +355,7 @@ class PyGameWidget(QWidget):
                 text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                 text_list.append((text, (rx,ry)))
             else:
-                if rayon >= 696340 or not os.path.exists("./images/Skins/soleil.jpg"):
+                if rayon >= 696340:
                     if all(c < 50 for c in planete["couleur"]) and rayon < 696340:
                         pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon, int(0.05 * rayon))
                     else:
@@ -379,80 +376,103 @@ class PyGameWidget(QWidget):
     def corps(self, nom, x, y):
         corps = {
             "Mercure": {'nom': 'Mercure', 'type': 'Planète', 'composition_surface': 'Métallique (70%)',
-                        'Température': '93 à 703 K', 'âge': '4,503 milliards d’années', "masse": 3.285e23, "rayon": 2439.7, "couleur": (245, 245, 220)},
+                        'Température': '93 à 703 K', 'âge': '4,503 milliards d’années', "masse": 3.285e23, "rayon": 2439.7, "couleur": (245, 245, 220),
+                        "image": "./images/Skins/mercure.png"},
 
             "Vénus": {'nom': 'Vénus', 'type': 'Planète', 'composition_surface': 'Basalte',
-                      'Température': '738 K', 'âge': '4,503 milliards d’années', "masse": 4.867e24, "rayon": 6051.8, "couleur": (255, 215, 0)},
+                      'Température': '738 K', 'âge': '4,503 milliards d’années', "masse": 4.867e24, "rayon": 6051.8, "couleur": (255, 215, 0),
+                        "image": "./images/Skins/vénus.jpg"},
 
             "Terre": {'nom': 'Terre', 'type': 'Planète', 'composition_surface': 'Granite', 'Température': '288 K',
-                      'âge': '4,543 milliards d’années', "masse": 5.972e24, "rayon": 6371.0, "couleur": (0, 100, 255)},
+                      'âge': '4,543 milliards d’années', "masse": 5.972e24, "rayon": 6371.0, "couleur": (0, 100, 255),
+                        "image": "./images/Skins/terre.png"},
 
             "Mars": {'nom': 'Mars', 'type': 'Planète', 'composition_surface': 'Fer oxydé',
-                     'Température': '210 K', 'âge': '4,603 milliards d’années', "masse": 6.416993e23, "rayon": 3389.5, "couleur": (255, 100, 100)},
+                     'Température': '210 K', 'âge': '4,603 milliards d’années', "masse": 6.416993e23, "rayon": 3389.5, "couleur": (255, 100, 100),
+                        "image": "./images/Skins/mars.jpg"},
 
             "Jupiter": {'nom': 'Jupiter', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
-                        'Température': '128 K', 'âge': '4,603 milliards d’années', "masse": 1.899e27, "rayon": 69911, "couleur": (200, 150, 50)},
+                        'Température': '128 K', 'âge': '4,603 milliards d’années', "masse": 1.899e27, "rayon": 69911, "couleur": (200, 150, 50),
+                        "image": "./images/Skins/jupiter.jpg"},
 
-            "Saturn": {'nom': 'Saturne', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (94%)',
-                       'Température': '95 K', 'âge': '4,503 milliards d’années', "masse": 5.683e26, "rayon": 58232, "couleur": (195, 146, 79)},
+            "Saturne": {'nom': 'Saturne', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (94%)',
+                       'Température': '95 K', 'âge': '4,503 milliards d’années', "masse": 5.683e26, "rayon": 58232, "couleur": (195, 146, 79),
+                        "image": "./images/Skins/saturne.jpg"},
 
             "Uranus": {'nom': 'Uranus', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
-                       'Température': '49 K', 'âge': '4,503 milliards d’années', "masse": 6.681e25, "rayon": 25362, "couleur": (172, 229, 238)},
+                       'Température': '49 K', 'âge': '4,503 milliards d’années', "masse": 6.681e25, "rayon": 25362, "couleur": (172, 229, 238),
+                       "image": "./images/Skins/uranus.jpg"},
 
             "Neptune": {'nom': 'Neptune', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
-                        'Température': '59 K', 'âge': '4,503 milliards d’années', "masse": 1.024e26, "rayon": 24622, "couleur": (124, 183, 187)},
+                        'Température': '59 K', 'âge': '4,503 milliards d’années', "masse": 1.024e26, "rayon": 24622, "couleur": (124, 183, 187),
+                        "image": "./images/Skins/neptune.jpg"},
 
             "Soleil": {'nom': 'Soleil', 'type': 'Étoile', 'composition_surface': 'Hydrogène (74%)',
-                       'Température': '5778 K', 'âge': '4,603 milliards d’années', "masse": 1.989e30, "rayon": 696340, "couleur": (255, 200, 0)},
+                       'Température': '5778 K', 'âge': '4,603 milliards d’années', "masse": 1.989e30, "rayon": 696340, "couleur": (255, 200, 0),
+                       "image": "./images/Skins/soleil.jpg"},
 
             "Lune": {'nom': 'Lune', 'type': 'Satellite naturel', 'composition_surface': 'Régolithe lunaire',
-                     'Température': '100 à 400 K', 'âge': '4,46 milliards d’années', "masse": 7.347e22, "rayon": 1737.4, "couleur": (200, 200, 200)},
+                     'Température': '100 à 400 K', 'âge': '4,46 milliards d’années', "masse": 7.347e22, "rayon": 1737.4, "couleur": (200, 200, 200),
+                     "image": "./images/Skins/lune.png"},
 
             "Europe": {'nom': 'Europe', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
-                       'Température': '110 K', 'âge': '4,5 milliards d’années', "masse": 4.799e22, "rayon": 1560.8, "couleur": (191, 207, 217)},
+                       'Température': '110 K', 'âge': '4,5 milliards d’années', "masse": 4.799e22, "rayon": 1560.8, "couleur": (191, 207, 217),
+                       "image": "./images/Skins/europe.jpg"},
 
             "Io": {'nom': 'Io', 'type': 'Satellite naturel', 'composition_surface': 'Dioxyde de soufre',
-                   'Température': '143 K', 'âge': '4,57 milliards d’années', "masse": 8.931e22, "rayon": 1821.6, "couleur": (200, 180, 100)},
+                   'Température': '143 K', 'âge': '4,57 milliards d’années', "masse": 8.931e22, "rayon": 1821.6, "couleur": (200, 180, 100),
+                   "image": "./images/Skins/io.jpg"},
 
             "TON 618": {'nom': 'TON 618', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
-                        'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15)},
+                        'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15),
+                        "image": "./images/Skins/grey.jpg"},
 
             "Phoenix A": {'nom': 'Phoenix A', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
-                          'Température': '1e-14 K', 'âge': '8 milliards d’années', "masse": 2.0e41, "rayon": 590000000000, "couleur": (15, 15, 15)},
+                          'Température': '1e-14 K', 'âge': '8 milliards d’années', "masse": 2.0e41, "rayon": 590000000000, "couleur": (15, 15, 15),
+                          "image": "./images/Skins/grey.jpg"},
 
             "Hubble": {'nom': 'Télescope Hubble', 'type': 'Satellite artificiel', 'composition_surface': 'Métal et instruments',
-                       'Température': '150 à 390 K', 'âge': '36', "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180)},
+                       'Température': '150 à 390 K', 'âge': '36', "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180),
+                       "image": "./images/Skins/hubble.jpeg"},
 
             "Your Mom": {'nom': 'Your Mom', 'type': 'Trou noir supermassif', 'composition_surface': 'Peau',
-                         'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000, "couleur": (255, 105, 180)},
+                         'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000, "couleur": (255, 105, 180),
+                         "image": "./images/Skins/your_mom.jpg"},
 
             "Comète 50km": {'nom': 'Comète (50 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
-                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e15, "rayon": 50, "couleur": (200, 200, 255)},
+                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e15, "rayon": 50, "couleur": (200, 200, 255),
+                            "image": "./images/Skins/comete.png"},
 
             "Comète 10km": {'nom': 'Comète (10 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
-                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e13, "rayon": 10, "couleur": (220, 220, 255)},
+                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e13, "rayon": 10, "couleur": (220, 220, 255),
+                            "image": "./images/Skins/comete.png"},
 
             "Comète 200km": {'nom': 'Comète (200 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
-                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e17, "rayon": 200, "couleur": (180, 180, 255)},
+                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e17, "rayon": 200, "couleur": (180, 180, 255),
+                             "image": "./images/Skins/comete.png"},
 
             "Arcturus": {'nom': 'Arcturus', 'type': 'Étoile géante rouge', 'composition_surface': 'Hydrogène et hélium',
-                         'Température': '4300 K', 'âge': '7 milliards d’années', "masse": 2.2 * 1.989e30, "rayon": 17700000, "couleur": (255, 140, 80)},
+                         'Température': '4300 K', 'âge': '7 milliards d’années', "masse": 2.2 * 1.989e30, "rayon": 17700000, "couleur": (255, 140, 80),
+                         "image": "./images/Skins/arcturus.jpg"},
 
             "Bételgeuse": {'nom': 'Bételgeuse', 'type': 'Supergéante rouge', 'composition_surface': 'Hydrogène et hélium',
-                           'Température': '3500 K', 'âge': '10 millions d’années', "masse": 20 * 1.989e30, "rayon": 617000000, "couleur": (255, 80, 50)},
+                           'Température': '3500 K', 'âge': '10 millions d’années', "masse": 20 * 1.989e30, "rayon": 617000000, "couleur": (255, 80, 50),
+                           "image": "./images/Skins/betelgeuse.png"},
 
             "Sirius B": {'nom': 'Sirius B', 'type': 'Naine blanche', 'composition_surface': 'Carbone et oxygène',
-                         'Température': '25000 K', 'âge': '120 millions d’années', "masse": 1.02 * 1.989e30, "rayon": 5800, "couleur": (200, 220, 255)},
+                         'Température': '25000 K', 'âge': '120 millions d’années', "masse": 1.02 * 1.989e30, "rayon": 5800, "couleur": (200, 220, 255),
+                         "image" : "./images/Skins/sirius_b.jpg"},
 
             "Rigel": {'nom': 'Rigel', 'type': 'Supergéante bleue', 'composition_surface': 'Hydrogène',
-                      'Température': '12000 K', 'âge': '8 millions d’années', "masse": 21 * 1.989e30, "rayon": 78000000, "couleur": (180, 220, 255)}
+                      'Température': '12000 K', 'âge': '8 millions d’années', "masse": 21 * 1.989e30, "rayon": 78000000, "couleur": (180, 220, 255),
+                      "image" : "./images/Skins/rigel.png"},
         }
 
         data = corps.get(nom, corps["Mercure"])
 
         planete = {"nom": data["nom"], "position": euclid.Vector2(x, y), "vitesse": euclid.Vector2(0, 0),
                    "masse": data["masse"], "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'],
-                   'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température': data["Température"]}
+                   'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température': data["Température"], "image": data["image"]}
 
         self.planetes.append(planete)
 
@@ -708,7 +728,7 @@ class PyGameWidget(QWidget):
                     self.playscreen.blit(text, (rx - 20, ry - 7))
 
                 else:
-                    if rayon > 800 or not os.path.exists("./images/Skins/soleil.jpg"):
+                    if rayon > 800:
                         if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
                             pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon, int(0.05 * rayon))
                         else:

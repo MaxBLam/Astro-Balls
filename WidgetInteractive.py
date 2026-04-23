@@ -29,7 +29,7 @@ class DragNDrop(QToolBar):
 
         planet_tab = QWidget()
         planet_layout = QHBoxLayout()
-        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']:
+        for i in ['Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturne', 'Uranus', 'Neptune']:
             planet_layout.addWidget(QtPlanetLabel(i))
         planet_tab.setLayout(planet_layout)
         tabs.addTab(planet_tab, 'Planets')
