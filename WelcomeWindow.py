@@ -50,7 +50,7 @@ class WelcomeWindow(QMainWindow):
         ww_opensim3.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #0E1F13;}""")
         ww_opensim3.clicked.connect(lambda: self.wwsc(3))
-        ww_sandbox = QPushButton('SandBox', self)
+        ww_sandbox = QPushButton('Système Solaire', self)
         ww_sandbox.setFixedSize(350, 100)
         ww_sandbox.move(50, 350)
         ww_sandbox.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 

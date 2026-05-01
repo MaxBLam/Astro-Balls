@@ -36,7 +36,6 @@ class MainWindowFrame(QMainWindow):
         self.scroller_widget_layout = None
         self.orbitinfo_window_layout1 = None
         self.orbitinfo_window = None
-        self.timer_state = False
         self.timescope_label = None
         self.time_slider = None
         self.scale_slider_label = None
@@ -49,17 +48,25 @@ class MainWindowFrame(QMainWindow):
         self.s_posorbit_toggler = None
         self.b_posorbit_toggler = None
         self.color_button = None
-        self.scale_state = False
         self.scale_scope = None
         self.scale_slider = None
+        self.stat_dock = None
         self.firstdotcoo = None
         self.seconddotcoo = None
         self.distance = None
         self.angle = None
-        self.timer_scope = None
         self.measuring_window = None
         self.firstdotcoo = None
         self.seconddotcoo = None
+
+        self.timer_state = False
+        self.scale_state = False
+        self.statdock_state = False
+        self.dragndrop_state = False
+
+        self.timer_scope = None
+        self.statdock_scope = None
+        self.dragndrop_scope = None
         self.main_statsdock_link = StatsDock()
 
         self.saveinfo = []
@@ -109,45 +116,58 @@ class MainWindowFrame(QMainWindow):
         menu.addMenu(app_menu)
 
         view_menu = QMenu('&Vue')
-        self.orbits_action = QWidgetAction(view_menu)
-        if not self.game_widget.is_showingorbits:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits)
-            self.orbits_action.setDefaultWidget(self.orbits_view)
-        view_menu.addAction(self.orbits_action)
-        self.trace_action = QWidgetAction(view_menu)
-        if not self.game_widget.is_showingtrace:
-            self.trace_view, self.trace_state = self.customcheckbox(func_name='Trace', method=self.showtrace)
-            self.trace_action.setDefaultWidget(self.trace_view)
-        view_menu.addAction(self.trace_action)
+        self.statdock_action = QWidgetAction(view_menu)
+        if not self.statdock_state:
+            self.statdock_view, self.statdock_state = self.customcheckbox(func_name='StatDock', method=self.display_statdock, is_checked=True)
+            self.statdock_action.setDefaultWidget(self.statdock_view)
+        view_menu.addAction(self.statdock_action)
+
+        self.dragndrop_action = QWidgetAction(view_menu)
+        if not self.dragndrop_state:
+            self.dragndrop_view, self.dragndrop_state = self.customcheckbox(func_name='Drag&Drop', method=self.display_dragndrop, is_checked=True)
+            self.dragndrop_action.setDefaultWidget(self.dragndrop_view)
+        view_menu.addAction(self.dragndrop_action)
+
         self.scale_action = QWidgetAction(view_menu)
         if not self.scale_state:
-            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider)
+            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider, is_checked=False)
             self.scale_action.setDefaultWidget(self.scale_view)
         view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
         if not self.timer_state:
-            self.timer_view, self.timer_state = self.customcheckbox(func_name='Timer', method=self.timerscope)
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Timer', method=self.timerscope, is_checked=False)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
+        view_menu.addSeparator()
+        self.orbits_action = QWidgetAction(view_menu)
+        if not self.game_widget.is_showingorbits:
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits, is_checked=True)
+            self.orbits_action.setDefaultWidget(self.orbits_view)
+        view_menu.addAction(self.orbits_action)
+        self.trace_action = QWidgetAction(view_menu)
+        if not self.game_widget.is_showingtrace:
+            self.trace_view, self.trace_state = self.customcheckbox(func_name='Trace', method=self.showtrace, is_checked=False)
+            self.trace_action.setDefaultWidget(self.trace_view)
+        view_menu.addAction(self.trace_action)
         vector_menu = view_menu.addMenu('Vecteurs')
         self.orbitalvector_action = QWidgetAction(vector_menu)
 
         if not self.game_widget.is_showingorbitalvector:
             self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name="Vecteur d'acceleration",
-                                                                                    method=self.show_orbitalvector)
+                                                                                    method=self.show_orbitalvector, is_checked=False)
             self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
         vector_menu.addAction(self.orbitalvector_action)
 
         self.forcevector_action = QWidgetAction(vector_menu)
         if not self.game_widget.is_showingforcevector:
             self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Vecteur de Force',
-                                                                                method=self.show_forcevector)
+                                                                                method=self.show_forcevector, is_checked=False)
             self.forcevector_action.setDefaultWidget(self.forcevector_view)
         vector_menu.addAction(self.forcevector_action)
 
         self.velocityvector_action = QWidgetAction(vector_menu)
         if not self.game_widget.is_showingvelocityvector:
-            self.velocityvector_view, self.velocityvector_state = self.customcheckbox(func_name='Vecteur de Vitesse', method=self.show_velocityvector)
+            self.velocityvector_view, self.velocityvector_state = self.customcheckbox(func_name='Vecteur de Vitesse', method=self.show_velocityvector, is_checked=False)
             self.velocityvector_action.setDefaultWidget(self.velocityvector_view)
         vector_menu.addAction(self.velocityvector_action)
         menu.addMenu(view_menu)
@@ -182,8 +202,8 @@ class MainWindowFrame(QMainWindow):
         menu.addMenu(help_menu)
 
         self.dragndrop = DragNDrop()
-        self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
+        #self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
+        #self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
 
         QTimer.singleShot(0, self.guide)
 
@@ -369,6 +389,7 @@ class MainWindowFrame(QMainWindow):
 
     def load_newsave(self):
         self.game_widget.planetes.clear()
+        self.game_widget.update()
 
     def measuringtape(self):
         self.game_widget.toggle_measuringtape(True)
@@ -424,6 +445,34 @@ class MainWindowFrame(QMainWindow):
             self.angle.setText(f"Angle:\n{self.game_widget.pythagoras(self.game_widget.point)[1]}°")
         else:
             self.seconddotcoo.setText("Dot #2:")
+
+    def display_statdock(self):
+        if getattr(self, 'statdock_scope', None) is not None:
+            self.statdock_scope.setVisible(self.statdock_state.isChecked())
+            return
+        self.statdock_scope = self.main_statsdock_link
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
+        self.statdock_scope.visibilityChanged.connect(self.statdock_close)
+        self.statdock_scope.show()
+
+    def statdock_close(self, active):
+        if hasattr(self, 'statdock_state'):
+            #self.statdock_state.blockSignals(True)
+            self.statdock_state.setChecked(active)
+            #self.statdock_state.blockSignals(False)
+
+    def display_dragndrop(self):
+        if getattr(self, 'dragndrop_scope', None) is not None:
+            self.dragndrop_scope.setVisible(self.dragndrop_state.isChecked())
+            return
+        self.dragndrop_scope = self.dragndrop
+        self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
+        self.dragndrop_scope.visibilityChanged.connect(self.dragndrop_closed)
+        self.dragndrop_scope.show()
+
+    def dragndrop_closed(self, active):
+        if hasattr(self, 'dragndrop_state'):
+            self.dragndrop_state.setChecked(active)
 
     def timerscope(self):
         if getattr(self, 'timer_scope', None) is not None:
@@ -544,11 +593,13 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider.setValue(self.scale_slider.value() + 1)
 
     @staticmethod
-    def customcheckbox(func_name, method):
+    def customcheckbox(func_name, method, is_checked:bool):
         view_widget = QWidget()
         view_layout = QHBoxLayout(view_widget)
         checkbox = QCheckBox(func_name)
         checkbox.toggled.connect(method)
+        if is_checked is True:
+            checkbox.setChecked(True)
         view_layout.addWidget(checkbox)
         view_widget.setLayout(view_layout)
         return view_widget, checkbox
@@ -996,12 +1047,6 @@ class MainWindowFrame(QMainWindow):
 
         guide_window.exec()
 
-    def openfile(self):
-        pass
-
-    def newsavefile(self):
-        pass
-
     def closeapp(self):
         pygame.quit()
         self.close()
@@ -1133,6 +1178,7 @@ class MainWindowFrame(QMainWindow):
                         panel.deleteLater()
                 self.get_orbitinfo_ondisplay = []
                 for k, j in enumerate(self.game_widget.kepler()):
+                    #print(j['planet']['nom'])
                     panel = QFrame()
                     panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
                     panel_layout = QVBoxLayout()
@@ -1157,7 +1203,7 @@ class MainWindowFrame(QMainWindow):
                     configure_orbit_button.setStyleSheet("""QPushButton 
                      {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
                      QPushButton::hover { background-color: #4d4d4d}""")
-                    configure_orbit_button.setProperty('index', k)
+                    configure_orbit_button.setProperty('planet_name', j['planet']['nom'])
                     configure_orbit_button.clicked.connect(getattr(self.game_widget, 'orbit_editor'))
                     panel_layout.addWidget(configure_orbit_button)
                     ondisplay_structure = {'Name': planet_label, 'epstein': epstein_label,
@@ -1186,10 +1232,6 @@ class MainWindowFrame(QMainWindow):
 
     def show_orbitalvector(self, checked):
         self.game_widget.is_showingorbitalvector = checked
-        # sod = show on display
-
-    def sod_orbitalvector(self):
-        pass
 
     def show_forcevector(self, checked):
         self.game_widget.is_showingforcevector = checked
