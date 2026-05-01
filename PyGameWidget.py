@@ -260,11 +260,58 @@ class PyGameWidget(QWidget):
         self.display(list_objets_update)
 
     def full_solarsys(self):
-        for i, j in self.fsysb.items():
-            name = i
-            pos = (j[0], j[1])
-            self.corps(i, j[0], j[1])
-            #TODO:work in progess
+        if getattr(self, "_solarsys_initialized", False):
+            return
+        for name, j in self.fsysb.items():
+            self.corps(name, j[0], j[1])
+        self.vitesse_full_solarsys()
+        self._solarsys_initialized = True
+
+    def vitesse_full_solarsys(self):
+        for i in range(len(self.planetes)):
+            if self.planetes[i][
+                'vitesse'].magnitude() == 0:  # (sam) j'ai add sa pour arreter de reset la vitesse des autres planetes apres chaque nouvelle planete
+                if i == len(self.planetes) - 1:
+                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0],
+                                                                                self.planetes[i]) * 0.2
+                else:
+                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1],
+                                                                                self.planetes[i]) * 0.2
+        self.vitesse_state = True
+
+    def full_solarsys_planet(self, planetes_liste: list):
+        rayon_max = 0
+        for objet in planetes_liste:
+            if objet["rayon"] > rayon_max:
+                rayon_max = objet["rayon"]
+        dampener = rayon_max
+
+        list_acc = []
+        for i in range(len(planetes_liste)):
+            acc = euclid.Vector2(0, 0)
+            for j in range(len(planetes_liste)):
+                if i != j:
+                    acc += self.force_gravitationnelle(planetes_liste[i], planetes_liste[j], dampener)
+                    print(acc)
+            list_acc.append(acc)
+
+        liste_objets = []
+        for i in range(len(planetes_liste)):
+            liste_objets.append([planetes_liste[i], list_acc[i]])
+        list_objets_update = self.mouvement(liste_objets)
+        print(list_objets_update)
+
+        if self.camera_mode == "milieu":
+            pos_x = 0
+            pos_y = 0
+            for i in range(len(self.planetes)):
+                pos_x += planetes_liste[i]["position"].x
+                pos_y += planetes_liste[i]["position"].y
+            pos_x = pos_x / len(planetes_liste) - (self.width() / self.scale / 2)
+            pos_y = pos_y / len(planetes_liste) - (self.height() / self.scale / 2)
+
+            self.camera_pos = euclid.Vector2(pos_x, pos_y)
+        self.display(list_objets_update)
 
     def force_gravitationnelle(self, obj1, obj2, dampener):
         d_vecteur = obj2["position"] - obj1["position"]
@@ -300,7 +347,7 @@ class PyGameWidget(QWidget):
             objet[0]["position"] += objet[0]["vitesse"] * self.dtime
             list_objets_update.append(objet[0])
 
-            return list_objets_update
+        return list_objets_update
 
     def changer_vue(self):
         if self.camera_mode == "free":
@@ -343,12 +390,6 @@ class PyGameWidget(QWidget):
 
     def display(self, planetes: list):
         self.playscreen.fill((0,0,0))
-        #for i, j, k, l in self.stars_lst:
-        #    px_star, py_star = self.pos_objet_orbite(euclid.Vector2(i, j))
-        #    px_star %= self.width()
-        #    py_star %= self.height()
-        #    color_dimmer = pygame.Color(255, 255, 255).lerp((0, 0, 0), 0.3)
-        #    pygame.draw.circle(self.playscreen, color_dimmer, (int(px_star), int(py_star)), k)
         text_list = []
         shift = 0
 
@@ -370,6 +411,7 @@ class PyGameWidget(QWidget):
         for text in text_list:
             self.playscreen.blit(text[0], (text[1][0], text[1][1] + shift))
             shift += 10
+
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
         if len(self.point) == 2:
@@ -797,10 +839,12 @@ class PyGameWidget(QWidget):
             self.simulation_n_corps(self.planetes)
 
         elif self.simulation == 4:
+            pass
             self.active = True
             self.full_solarsys()
-            #self.mouvement()
-            self.display(self.planetes)
+            if not self.vitesse_state:
+                self.vitesse_full_solarsys()
+            self.full_solarsys_planet(self.planetes)
         else:
             pass
 
