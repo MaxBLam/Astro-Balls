@@ -68,6 +68,7 @@ class MainWindowFrame(QMainWindow):
         self.statdock_scope = None
         self.dragndrop_scope = None
         self.main_statsdock_link = StatsDock()
+        self.dragndrop = DragNDrop()
 
         self.saveinfo = []
 
@@ -200,10 +201,6 @@ class MainWindowFrame(QMainWindow):
         apropos_action.setShortcut('Alt+H')
         help_menu.addAction(apropos_action)
         menu.addMenu(help_menu)
-
-        self.dragndrop = DragNDrop()
-        #self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.dragndrop)
-        #self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.main_statsdock_link)
 
         QTimer.singleShot(0, self.guide)
 
@@ -1062,7 +1059,7 @@ class MainWindowFrame(QMainWindow):
         if self.orbitinfo_window is None:
             self.orbitinfo_window = QDialog(parent=self)
             self.orbitinfo_window.setWindowTitle('Orbites')
-            self.orbitinfo_window.setFixedSize(380, 280)
+            self.orbitinfo_window.setFixedSize(400, 280)
             self.orbitinfo_window_layout1 = QGridLayout(self.orbitinfo_window)
             self.orbitinfo_window_layout1.setContentsMargins(2, 2, 2, 2)
 
@@ -1106,6 +1103,7 @@ class MainWindowFrame(QMainWindow):
             self.s_eccentricity_toggler.valueChanged.connect(self.game_widget.orbital_eccentricity_editor)
             panel_layout.addWidget(self.s_eccentricity_toggler, 2, 0, 1, 2)
             self.b_eccentricity_toggler = QDoubleSpinBox()
+            self.b_eccentricity_toggler.setDecimals(4)
             self.b_eccentricity_toggler.lineEdit().setMaximumWidth(50)
             self.b_eccentricity_toggler.setMaximumWidth(90)
             panel_layout.addWidget(self.b_eccentricity_toggler, 0, 1)
@@ -1178,7 +1176,6 @@ class MainWindowFrame(QMainWindow):
                         panel.deleteLater()
                 self.get_orbitinfo_ondisplay = []
                 for k, j in enumerate(self.game_widget.kepler()):
-                    #print(j['planet']['nom'])
                     panel = QFrame()
                     panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
                     panel_layout = QVBoxLayout()
@@ -1214,9 +1211,9 @@ class MainWindowFrame(QMainWindow):
             for k, l in enumerate(self.game_widget.kepler()):
                 ondisplay = self.get_orbitinfo_ondisplay[k]
                 self.get_orbitinfo_ondisplay[k]['Name'].setText(l['planet']['nom'])
-                ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 3)}')
+                ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 5)}')
                 ondisplay['semimajor'].setText(f'Semi-majeur(a): {round(l['a'], 3)}')
-                ondisplay['velocity'].setText(f'Vitesse: {round(l['vel'].magnitude(), 1)}')
+                ondisplay['velocity'].setText(f'Vitesse: {round(l['vel'].magnitude(), 1)}m/s')
 
     def when_showorbit_closed(self):
         self.orbit_timer.stop()

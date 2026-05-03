@@ -1,8 +1,10 @@
+import copy
 import os
 import random
 
 import pygame
 import pygame.gfxdraw
+from pygame_light2d import LightingEngine, PointLight, Hull
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
@@ -18,6 +20,8 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock, simulation):
         super().__init__()
 
+        self.slingshot_vector = euclid.Vector2(0,0)
+        self.slingshot_planet = None
         self.planet_receiver = None
         self.slingshot_oldpos = None
         self.scale_value = None
@@ -95,11 +99,12 @@ class PyGameWidget(QWidget):
                     random.random())
             self.stars_lst.append(star)
 
-        self.fsysb = {'Soleil': (0, 0), 'Mercure': (4.6e7, 0, 0.206), 'Vénus': (6.7e7, 0, 0.0067),
-                 'Terre': (15.07e7, 0, 0.0167), 'Lune': (15.07e7+3.84e5, 0, 0.0549), 'Mars': (22.8e7, 0, 0.0934),
-                 'Jupiter': (77.8e7, 0, 0.0489), 'Europa': (77.8e7+6.709e5, 0, 0.009),
-                 'Io': (77.8e7+4.217e5, 0, 0.0041), 'Saturne': (134.4e7, 0, 0.0565), 'Uranus': (290e7, 0, 0.046),
-                 'Neptune': (447e7, 0, 0.0086)}
+        self.fsysb = {'Soleil': (0, 0), 'Mercure': (4.6e7, 0), 'Vénus': (6.7e7, 0),
+                 'Terre': (15.07e7, 0), 'Lune': (15.07e7+3.84e5, 0), 'Mars': (22.8e7, 0),
+                 'Jupiter': (77.8e7, 0), 'Europe': (77.8e7+6.709e5, 0),
+                 'Io': (77.8e7+4.217e5, 0), 'Saturne': (134.4e7, 0), 'Uranus': (290e7, 0),
+                 'Neptune': (447e7, 0)}
+        self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 5.49, 9.34, 4.89, 0.9, 0.41, 5.65, 4.6, 0.86]
 
     def edit_masse(self):
         if self.active_planet is not None:
@@ -160,6 +165,10 @@ class PyGameWidget(QWidget):
 
         if self.simulation == 3:
             self.vitesse_state = False
+
+    # TODO : later
+    def lightsource(self):
+        pass
 
     def update_target(self, planete):
         self.target = planete["position"]
@@ -269,8 +278,12 @@ class PyGameWidget(QWidget):
 
     def vitesse_full_solarsys(self):
         for i in range(len(self.planetes)):
-            if self.planetes[i][
-                'vitesse'].magnitude() == 0:  # (sam) j'ai add sa pour arreter de reset la vitesse des autres planetes apres chaque nouvelle planete
+            if self.fsysb_ecc[i] is not None:
+                self.is_editingorbits = True
+                self.p_index = self.planetes[i]
+                self.orbital_eccentricity_editor(self.fsysb_ecc[i])
+                self.is_editingorbits = False
+            if self.planetes[i]['vitesse'].magnitude() == 0:
                 if i == len(self.planetes) - 1:
                     self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0],
                                                                                 self.planetes[i]) * 0.2
@@ -292,14 +305,12 @@ class PyGameWidget(QWidget):
             for j in range(len(planetes_liste)):
                 if i != j:
                     acc += self.force_gravitationnelle(planetes_liste[i], planetes_liste[j], dampener)
-                    print(acc)
             list_acc.append(acc)
 
         liste_objets = []
         for i in range(len(planetes_liste)):
             liste_objets.append([planetes_liste[i], list_acc[i]])
         list_objets_update = self.mouvement(liste_objets)
-        print(list_objets_update)
 
         if self.camera_mode == "milieu":
             pos_x = 0
@@ -392,6 +403,19 @@ class PyGameWidget(QWidget):
         self.playscreen.fill((0,0,0))
         text_list = []
         shift = 0
+
+        if self.slingshot_oldpos is not None:
+            x, y = self.pos_objet_orbite(self.slingshot_planet['position'])
+            true_pos = euclid.Vector2(x, y)
+            mpirtpp = true_pos - self.slingshot_oldpos
+            if mpirtpp.magnitude() <= self.slingshot_planet['rayon']:
+                pygame.draw.aaline(self.playscreen, (255, 255, 255),
+                                   (self.slingshot_oldpos.x, self.slingshot_oldpos.y),
+                                   (self.souris_pos.x, self.souris_pos.y), 1)
+                forecast_vector = true_pos - self.souris_pos
+                color_dimmer = pygame.Color(250, 250, 250).lerp((0, 0, 0), 0.5)
+                pygame.draw.aaline(self.playscreen, color_dimmer, (x, y),
+                                   ((x + forecast_vector.x), (y + forecast_vector.y)), 1)
 
         for planete in planetes:
             rx, ry = self.pos_objet_orbite(planete["position"])
@@ -656,6 +680,8 @@ class PyGameWidget(QWidget):
 
                         urvx = velocity * math.cos(theta + omega) - velocity_tangent * math.sin(theta + omega)
                         urvy = velocity * math.sin(theta + omega) + velocity_tangent * math.cos(theta + omega)
+                        planet['position'].x = self.centrum['position'].x + new_r * math.cos(theta + omega)
+                        planet['position'].y = self.centrum['position'].y + new_r * math.sin(theta + omega)
                         planet['vitesse'].x = urvx + self.centrum['vitesse'].x
                         planet['vitesse'].y = urvy + self.centrum['vitesse'].y
 
@@ -761,19 +787,20 @@ class PyGameWidget(QWidget):
             if event.modifiers() or Qt.KeyboardModifier.ShiftModifier:
                 if hasattr(self, 'slingshot_oldpos') and self.slingshot_oldpos is not None:
                     slingshot_dist = (self.souris_pos - self.slingshot_oldpos).magnitude()
-                    raw_slingshot_vector = self.souris_pos - self.slingshot_oldpos
-                    slingshot_vector = raw_slingshot_vector * -1
+                    if self.slingshot_planet is not None and self.slingshot_oldpos is not None:
+                        raw_slingshot_vector = self.souris_pos - self.slingshot_oldpos
+                        self.slingshot_vector = raw_slingshot_vector * -1
                     for i in self.planetes:
                         if i == self.slingshot_planet:
-                            i['vitesse'].x += (slingshot_vector.x**3)*0.1
-                            i['vitesse'].y += (slingshot_vector.y**3)*0.1
+                            i['vitesse'].x += (self.slingshot_vector.x**3)*0.1
+                            i['vitesse'].y += (self.slingshot_vector.y**3)*0.1
                 self.slingshot_oldpos = None
                 self.slingshot_planet = None
 
     def wheelEvent(self, event):
         wheel_checker = event.angleDelta().y()
         old = self.scale
-        if old <=0:
+        if old <= 0:
             return
         if wheel_checker > 0:
             self.val += 0.2
@@ -912,16 +939,6 @@ class PyGameWidget(QWidget):
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
                     pygame.draw.aaline(self.playscreen, (0, 255, 0), (screenx, screeny), end_pos, 1)
 
-            if self.slingshot_oldpos is not None:
-                x, y = self.pos_objet_orbite(self.slingshot_planet['position'])
-                true_pos = euclid.Vector2(x, y)
-                mpirtpp = (true_pos - self.slingshot_oldpos).magnitude()
-                print(mpirtpp)
-                if mpirtpp <= self.slingshot_planet['rayon']:
-                    pygame.draw.aaline(self.playscreen, (255, 255, 255),
-                                       (self.slingshot_oldpos.x, self.slingshot_oldpos.y),
-                                       (self.souris_pos.x, self.souris_pos.y), 1)
-
         if self.is_showingtrace:
             self.remover += 1
             if self.remover % 10 == 0:
@@ -942,6 +959,7 @@ class PyGameWidget(QWidget):
                     trace_size = int((k['rayon']*self.scale)/2)
                     if len(to_scale_lst) >= 2:
                         pygame.draw.lines(self.playscreen, color_dimmer, False, to_scale_lst, trace_size)
+
         self.update()
 
     def paintEvent(self, event):
