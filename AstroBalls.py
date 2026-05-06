@@ -549,6 +549,8 @@ class MainWindowFrame(QMainWindow):
         scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
+        self.scale_slider.sliderPressed.connect(self.game_widget.on_slider_pressed)
+        self.scale_slider.sliderReleased.connect(self.game_widget.on_slider_released)
 
         self.scale_slider_label = QLabel('', scale_scope_container)
 

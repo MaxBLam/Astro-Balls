@@ -4,7 +4,6 @@ import random
 
 import pygame
 import pygame.gfxdraw
-from pygame_light2d import LightingEngine, PointLight, Hull
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtWidgets import QWidget
@@ -26,6 +25,7 @@ class PyGameWidget(QWidget):
         self.slingshot_oldpos = None
         self.scale_value = None
         self.val = 20
+        self.slider_is_dragging = False
         self.setMouseTracking(True)
         self.acceleration = None
         self.old_mouse = None
@@ -89,6 +89,7 @@ class PyGameWidget(QWidget):
 
         self.timer.timeout.connect(self.game_loop)
         self.planet_surfaces_cache = {}
+        self._original_images_cache = {}
         self.nb_stars = int(200*self.scale)
 
         self.stars_lst = []
@@ -149,6 +150,13 @@ class PyGameWidget(QWidget):
             self.scale = float(value_max**6 / 100**6)
         else:
             self.scale = 0.1 * (value - 88)**3 + (90**6/100**6 - 0.1 * 2**3)
+
+    def on_slider_pressed(self):
+        self.slider_is_dragging = True
+
+    def on_slider_released(self):
+        self.slider_is_dragging = False
+        self.planet_surfaces_cache.clear()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
@@ -384,20 +392,22 @@ class PyGameWidget(QWidget):
         return new_world_x * self.scale, new_world_y * self.scale
 
     def get_planet_surface(self, planete):
+        nom = planete["nom"]
+        if nom not in self._original_images_cache:
+            self._original_images_cache[nom] = pygame.image.load(planete["image"])
+
         rayon = int(planete["rayon"] * self.scale)
-        key = (planete["nom"], rayon)
+        key = (nom, rayon)
 
-        if key in self.planet_surfaces_cache:
-            return self.planet_surfaces_cache[key]
+        if key not in self.planet_surfaces_cache:
+            original_image = self._original_images_cache[nom]
+            image = pygame.transform.scale(original_image, (rayon * 2, rayon * 2))
+            circle_surface = pygame.Surface((rayon * 2, rayon * 2), pygame.SRCALPHA)
+            pygame.draw.circle(circle_surface, (255, 255, 255, 255), (rayon, rayon), rayon)
+            circle_surface.blit(image, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+            self.planet_surfaces_cache[key] = circle_surface
 
-        planet_image = pygame.image.load(planete["image"])
-        image = pygame.transform.scale(planet_image, (rayon*2, rayon*2))
-        circle_surface = pygame.Surface((rayon*2, rayon*2), pygame.SRCALPHA)
-        pygame.draw.circle(circle_surface, (255, 255, 255, 255), (rayon, rayon), rayon)
-        circle_surface.blit(image, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-
-        self.planet_surfaces_cache[key] = circle_surface
-        return circle_surface
+        return self.planet_surfaces_cache[key]
 
     def display(self, planetes: list):
         self.playscreen.fill((0,0,0))
@@ -530,7 +540,7 @@ class PyGameWidget(QWidget):
 
             "Sirius B": {'nom': 'Sirius B', 'type': 'Naine blanche', 'composition_surface': 'Carbone et oxygène',
                          'Température': '25000 K', 'âge': '120 millions d’années', "masse": 1.02 * 1.989e30, "rayon": 5800, "couleur": (200, 220, 255),
-                         "image" : "./images/Skins/sirius_b.jpg"},
+                         "image" : "./images/Skins/sirius_b.png"},
 
             "Rigel": {'nom': 'Rigel', 'type': 'Supergéante bleue', 'composition_surface': 'Hydrogène',
                       'Température': '12000 K', 'âge': '8 millions d’années', "masse": 21 * 1.989e30, "rayon": 78000000, "couleur": (180, 220, 255),
