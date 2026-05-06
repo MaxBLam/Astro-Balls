@@ -41,6 +41,7 @@ class PyGameWidget(QWidget):
         self.statsdock_y = None
         self.setAcceptDrops(True)
         self.active_planet = None
+        self.active_planet_updater = None
         self.vitesse_state = False
         self.active = False
         self.playscreen = None
@@ -108,17 +109,17 @@ class PyGameWidget(QWidget):
         self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 5.49, 9.34, 4.89, 0.9, 0.41, 5.65, 4.6, 0.86]
 
     def edit_masse(self):
-        if self.active_planet is not None:
+        if self.active_planet_updater is not None:
             masse = self.statsdock.mass_edit.text()
-            self.planetes[self.active_planet]["masse"] = float(masse)
-            self.statsdock.mass_label.setText(f"Masse: {self.planetes[self.active_planet]["masse"]:.3e} Kg")
+            self.planetes[self.active_planet_updater]["masse"] = float(masse)
+            self.statsdock.mass_label.setText(f"Masse: {self.planetes[self.active_planet_updater]["masse"]:.3e} Kg")
             self.statsdock.mass_label.repaint()
 
     def edit_rayon(self):
-        if self.active_planet is not None:
+        if self.active_planet_updater is not None:
             rayon = self.statsdock.rayon_edit.text()
-            self.planetes[self.active_planet]["rayon"] = float(rayon)
-            self.statsdock.rayon_label.setText(f"Rayon: {self.planetes[self.active_planet]["rayon"]} Km")
+            self.planetes[self.active_planet_updater]["rayon"] = float(rayon)
+            self.statsdock.rayon_label.setText(f"Rayon: {self.planetes[self.active_planet_updater]["rayon"]} Km")
             self.statsdock.rayon_label.repaint()
 
     def edit_ellipse(self):
@@ -173,10 +174,6 @@ class PyGameWidget(QWidget):
 
         if self.simulation == 3:
             self.vitesse_state = False
-
-    # TODO : later
-    def lightsource(self):
-        pass
 
     def update_target(self, planete):
         self.target = planete["position"]
@@ -237,11 +234,10 @@ class PyGameWidget(QWidget):
 
     def vitesse_simulation_n_corps(self):
         for i in range(len(self.planetes)):
-            if self.planetes[i]['vitesse'].magnitude() == 0: # (sam) j'ai add sa pour arreter de reset la vitesse des autres planetes apres chaque nouvelle planete
-                if i == len(self.planetes) - 1:
-                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
-                else:
-                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
+            if i == len(self.planetes) - 1:
+                self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
+            else:
+                self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
         self.vitesse_state = True
 
     def simulation_n_corps(self, planetes_liste: list):
@@ -752,6 +748,7 @@ class PyGameWidget(QWidget):
                 diff = self.souris_pos - euclid.Vector2(x + 8, y - 5)
                 if abs(diff) <= max(planete["rayon"] * self.scale, 15):
                     self.active_planet = index
+                    self.active_planet_updater = index
                     self.update_target(planete)
                     # Mettre à jour les infos dans statsdock
                     self.statsdock.body_label.setText(f'{planete["nom"]}')
@@ -796,7 +793,6 @@ class PyGameWidget(QWidget):
         if event.button() == Qt.MouseButton.RightButton:
             if event.modifiers() or Qt.KeyboardModifier.ShiftModifier:
                 if hasattr(self, 'slingshot_oldpos') and self.slingshot_oldpos is not None:
-                    slingshot_dist = (self.souris_pos - self.slingshot_oldpos).magnitude()
                     if self.slingshot_planet is not None and self.slingshot_oldpos is not None:
                         raw_slingshot_vector = self.souris_pos - self.slingshot_oldpos
                         self.slingshot_vector = raw_slingshot_vector * -1
