@@ -603,6 +603,7 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
         self.scale_slider.sliderPressed.connect(self.game_widget.on_slider_pressed)
         self.scale_slider.sliderReleased.connect(self.game_widget.on_slider_released)
+        self.game_widget.scale_updater.connect(self.view_update)
 
         self.scale_slider_label = QLabel('', scale_scope_container)
 
@@ -632,16 +633,24 @@ class MainWindowFrame(QMainWindow):
         self.scale_slider_label.adjustSize()
         ratio = (self.scale_slider.value() - self.scale_slider.minimum()) / (
                 self.scale_slider.maximum() - self.scale_slider.minimum())
-        x_pos = 16 / 2 + ratio * (self.scale_slider.width() - 16)
+        x_pos = 16 / 2 + ratio * (self.scale_slider.width())+85
         x_pos_parent = self.scale_slider.x() + x_pos - (self.scale_slider.width() // 2)
         y_pos = self.scale_slider.y() - 15
-        self.scale_slider.move(int(x_pos_parent), int(y_pos))
+        self.scale_slider_label.move(int(x_pos_parent), int(y_pos))
+
+    def view_update(self, val):
+        self.scale_slider.blockSignals(True)
+        self.scale_slider.setValue(int(val))
+        self.scale_slider.blockSignals(False)
+        self.update_scale_slider()
 
     def backward_scale_slider(self):
         self.scale_slider.setValue(self.scale_slider.value() - 1)
+        self.game_widget.val = self.scale_slider.value() -1
 
     def forward_scale_slider(self):
         self.scale_slider.setValue(self.scale_slider.value() + 1)
+        self.game_widget.val = self.scale_slider.value() + 1
 
     @staticmethod
     def customcheckbox(func_name, method, is_checked:bool):

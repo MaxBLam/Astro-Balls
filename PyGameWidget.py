@@ -15,6 +15,7 @@ from pygame.transform import scale
 
 class PyGameWidget(QWidget):
     measuring_updater_signal = Signal()
+    scale_updater = Signal(float)
 
     def __init__(self, statsdock, simulation):
         super().__init__()
@@ -813,8 +814,9 @@ class PyGameWidget(QWidget):
             self.val += 0.2
         else:
             self.val -= 0.2
-        self.val = max(1.7, self.val)
+        self.val = max(1.7, min(100, self.val))
         self.scale_interactive(self.val)
+        self.scale_updater.emit(self.val)
         new = self.scale
         if self.camera_mode == 'free':
             pos_x = (self.souris_pos.x/old)-(self.souris_pos.x/new)
@@ -947,6 +949,7 @@ class PyGameWidget(QWidget):
                     pygame.draw.aaline(self.playscreen, (0, 255, 0), (screenx, screeny), end_pos, 1)
 
         if self.is_showingtrace:
+            ttt = getattr(self, 'dtime', 1)
             self.remover += 1
             if self.remover % 10 == 0:
                 for i in self.planetes:
@@ -955,7 +958,8 @@ class PyGameWidget(QWidget):
                     if 'trace' not in i:
                         i['trace'] = []
                     i['trace'].append(data)
-                    if len(i['trace']) > 500:
+                    dynamic_ttt = max(10, int(500/ttt))
+                    if len(i['trace']) > dynamic_ttt:
                         i['trace'].pop(0)
 
             for k in self.planetes:
@@ -965,7 +969,7 @@ class PyGameWidget(QWidget):
                     color_dimmer = pygame.Color(k['couleur']).lerp((0, 0, 0), 0.7)
                     trace_size = int((k['rayon']*self.scale)/2)
                     if len(to_scale_lst) >= 2:
-                        pygame.draw.lines(self.playscreen, color_dimmer, False, to_scale_lst, trace_size)
+                        pygame.draw.aalines(self.playscreen, color_dimmer, False, to_scale_lst, 1)
 
         self.update()
 
