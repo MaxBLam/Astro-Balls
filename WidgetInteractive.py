@@ -153,11 +153,12 @@ class StatsDock(QDockWidget):
         layout.addWidget(low_panel)
 
         h_layout3 = QHBoxLayout()
-        self.ellipse_label = QLabel('Facteur Ellipse: ')
+        self.ellipse_label = QLabel('Facteur Ellipse: ', parent=self)
         low_panel_layout.addWidget(self.ellipse_label)
         #TODO DOUBLE SPIN BOX EST BUGGÉ
         self.ellipse_edit = QDoubleSpinBox()
-        self.ellipse_edit.setRange(0.3,1.0)
+        self.ellipse_edit.lineEdit().setMaximumWidth(50)
+        self.ellipse_edit.setRange(0, 1)
         self.ellipse_edit.setDecimals(1)
         self.ellipse_edit.setValue(1.0)
         self.ellipse_edit.setSingleStep(0.1)

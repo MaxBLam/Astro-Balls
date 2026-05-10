@@ -109,6 +109,11 @@ class MainWindowFrame(QMainWindow):
         settings_action.setShortcut('Alt+S')
         app_menu.addAction(settings_action)
         app_menu.addSeparator()
+        new_sim_action = QAction('&Reload', parent=self)
+        new_sim_action.setIcon(QIcon('images/menubar symbol/loading-arrow.png'))
+        new_sim_action.triggered.connect(self.reload_ww)
+        new_sim_action.setShortcut('Ctrl+R')
+        app_menu.addAction(new_sim_action)
         quit_action = QAction('&Quitter', parent=self)
         quit_action.setIcon(QIcon('images/menubar symbol/cross.png'))
         quit_action.triggered.connect(self.closeapp)
@@ -147,7 +152,8 @@ class MainWindowFrame(QMainWindow):
         view_menu.addAction(self.orbits_action)
         self.trace_action = QWidgetAction(view_menu)
         if not self.game_widget.is_showingtrace:
-            self.trace_view, self.trace_state = self.customcheckbox(func_name='Trace', method=self.showtrace, is_checked=False)
+            self.trace_view, self.trace_state = self.customcheckbox(func_name='Trace', method=self.showtrace,
+                                                                    is_checked=False)
             self.trace_action.setDefaultWidget(self.trace_view)
         view_menu.addAction(self.trace_action)
         vector_menu = view_menu.addMenu('Vecteurs')
@@ -155,20 +161,24 @@ class MainWindowFrame(QMainWindow):
 
         if not self.game_widget.is_showingorbitalvector:
             self.orbitalvector_view, self.orbitalvector_state = self.customcheckbox(func_name="Vecteur d'acceleration",
-                                                                                    method=self.show_orbitalvector, is_checked=False)
+                                                                                    method=self.show_orbitalvector,
+                                                                                    is_checked=False)
             self.orbitalvector_action.setDefaultWidget(self.orbitalvector_view)
         vector_menu.addAction(self.orbitalvector_action)
 
         self.forcevector_action = QWidgetAction(vector_menu)
         if not self.game_widget.is_showingforcevector:
             self.forcevector_view, self.forcevector_state = self.customcheckbox(func_name='Vecteur de Force',
-                                                                                method=self.show_forcevector, is_checked=False)
+                                                                                method=self.show_forcevector,
+                                                                                is_checked=False)
             self.forcevector_action.setDefaultWidget(self.forcevector_view)
         vector_menu.addAction(self.forcevector_action)
 
         self.velocityvector_action = QWidgetAction(vector_menu)
         if not self.game_widget.is_showingvelocityvector:
-            self.velocityvector_view, self.velocityvector_state = self.customcheckbox(func_name='Vecteur de Vitesse', method=self.show_velocityvector, is_checked=False)
+            self.velocityvector_view, self.velocityvector_state = self.customcheckbox(func_name='Vecteur de Vitesse',
+                                                                                      method=self.show_velocityvector,
+                                                                                      is_checked=False)
             self.velocityvector_action.setDefaultWidget(self.velocityvector_view)
         vector_menu.addAction(self.velocityvector_action)
         menu.addMenu(view_menu)
@@ -178,9 +188,12 @@ class MainWindowFrame(QMainWindow):
         mt = QAction('&Mesuring Tape', parent=self)
         mt.setIcon(QIcon('images/menubar symbol/ruler.png'))
         mt.triggered.connect(self.measuringtape)
+        mt.setShortcut('M')
         tool_menu.addAction(mt)
         of = QAction('&Info Orbites', parent=self)
+        of.setIcon(QIcon('images/menubar symbol/orbit.png'))
         of.triggered.connect(self.showorbitinfo)
+        of.setShortcut('I')
         tool_menu.addAction(of)
 
         help_menu = QMenu('&Aide')
@@ -203,6 +216,45 @@ class MainWindowFrame(QMainWindow):
         menu.addMenu(help_menu)
 
         QTimer.singleShot(0, self.guide)
+
+    def reload_ww(self):
+        self.reload = QDialog(self)
+        self.reload.setWindowTitle('Reload')
+        self.reload.setFixedSize(700, 400)
+
+        ww_opensim1 = QPushButton('Système Orbitale\n à 3 Corps', parent=self.reload)
+        ww_opensim1.setFixedSize(175, 400)
+        ww_opensim1.move(0, 0)
+        ww_opensim1.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+               QPushButton:hover {background-color: #090C29;}""")
+        ww_opensim1.clicked.connect(lambda: self.exec_reload(sim_id=1))
+        ww_opensim2 = QPushButton('Système à 2 corps', parent=self.reload)
+        ww_opensim2.setFixedSize(175, 400)
+        ww_opensim2.move(175, 0)
+        ww_opensim2.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+               QPushButton:hover {background-color: #1D0721;}""")
+        ww_opensim2.clicked.connect(lambda: self.exec_reload(sim_id=2))
+        ww_opensim3 = QPushButton('Système à n corps', parent=self.reload)
+        ww_opensim3.setFixedSize(175, 400)
+        ww_opensim3.move(175*2, 0)
+        ww_opensim3.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+               QPushButton:hover {background-color: #0E1F13;}""")
+        ww_opensim3.clicked.connect(lambda: self.exec_reload(sim_id=3))
+        ww_sandbox = QPushButton('Système Solaire', parent=self.reload)
+        ww_sandbox.setFixedSize(175, 400)
+        ww_sandbox.move(175*3, 0)
+        ww_sandbox.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
+               QPushButton:hover {background-color: #072021;}""")
+        ww_sandbox.clicked.connect(lambda: self.exec_reload(sim_id=4))
+
+        self.reload.show()
+
+    def exec_reload(self, sim_id):
+        self.reload.close()
+        self.close()
+        ww.wwsc_simulation = sim_id
+        self.mw = MainWindowFrame()
+        self.mw.show()
 
     @staticmethod
     def vector_decoder(dct):
@@ -722,7 +774,7 @@ class MainWindowFrame(QMainWindow):
     def mimir(self):
         info_window = QDialog(parent=self)
         info_window.setFixedSize(650, 500)
-        info_window.setWindowTitle('Mímisbrunnr')
+        info_window.setWindowTitle('Infd')
         info_layout = QHBoxLayout()
         info_tabs = QTabWidget()
 

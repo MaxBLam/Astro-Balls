@@ -100,12 +100,12 @@ class PyGameWidget(QWidget):
                     random.randint(1, 2),
                     random.random())
             self.stars_lst.append(star)
-
+        x = 1.496e8
         self.fsysb = {'Soleil': (0, 0), 'Mercure': (4.6e7, 0), 'Vénus': (6.7e7, 0),
-                 'Terre': (15.07e7, 0), 'Lune': (15.07e7+3.84e5, 0), 'Mars': (22.8e7, 0),
-                 'Jupiter': (77.8e7, 0), 'Europe': (77.8e7+6.709e5, 0),
-                 'Io': (77.8e7+4.217e5, 0), 'Saturne': (134.4e7, 0), 'Uranus': (290e7, 0),
-                 'Neptune': (447e7, 0)}
+                 'Terre': (x, 0), 'Lune': (x+3e5, 0), 'Mars': (1.52*x, 0),
+                 'Jupiter': (5.2*x, 0), 'Europe': (5.2*x+6.71e5, 0),
+                 'Io': (5.2*x+4.22e5, 0), 'Saturne': (x*9.58, 0), 'Uranus': (19.2*x, 0),
+                 'Neptune': (x*30.1, 0)}
         self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 5.49, 9.34, 4.89, 0.9, 0.41, 5.65, 4.6, 0.86]
 
     def edit_masse(self):
@@ -234,10 +234,11 @@ class PyGameWidget(QWidget):
 
     def vitesse_simulation_n_corps(self):
         for i in range(len(self.planetes)):
-            if i == len(self.planetes) - 1:
-                self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
-            else:
-                self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
+            if self.planetes[i]['vitesse'].magnitude() == 0:
+                if i == len(self.planetes) - 1:
+                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
+                else:
+                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
         self.vitesse_state = True
 
     def simulation_n_corps(self, planetes_liste: list):
@@ -581,8 +582,8 @@ class PyGameWidget(QWidget):
                 continue
             semimajor_axis = 1 / paracond
             orb_dots = []
-            for k in range(201):
-                theta = (2 * math.pi * k) / 200
+            for k in range(301):
+                theta = (2 * math.pi * k) / 300
                 r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta))
                 x = (self.centrum['position'].x + r * math.cos(theta + omega))
                 y = (self.centrum['position'].y + r * math.sin(theta + omega))
@@ -903,8 +904,8 @@ class PyGameWidget(QWidget):
                 self.camera_pos.y += speed / self.scale
 
         if self.target is not None:
-            distance_x = self.souris_pos.x + self.scale * (self.camera_pos.x - self.target.x)
-            distance_y = self.souris_pos.y + self.scale * (self.camera_pos.y - self.target.y)
+            distance_x = 2 * (self.souris_pos.x + self.scale * (self.camera_pos.x - self.target.x))
+            distance_y = 2 * (self.souris_pos.y + self.scale * (self.camera_pos.y - self.target.y))
             distance = math.sqrt(distance_x ** 2 + distance_y ** 2) / self.scale
             if distance < 1000000000:
                 text_distance = self.font.render(f"{int(distance):,} km | {round(distance / 1.496e8, 3)} UA", True,(255, 255, 255))
@@ -917,8 +918,8 @@ class PyGameWidget(QWidget):
 
         if self.is_showingorbits:
             for w in self.kepler():
-                if len(w['dots']):
-                    pygame.draw.aalines(self.playscreen, w['color'], False, w['dots'], 1)
+                if len(w['dots']) > 1:
+                    pygame.draw.lines(self.playscreen, w['color'], False, w['dots'], 1)
 
         for i in self.planetes:
             if self.is_showingorbitalvector:
