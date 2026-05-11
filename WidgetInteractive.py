@@ -36,7 +36,7 @@ class DragNDrop(QToolBar):
 
         ns_tabs = QWidget()
         ns_layout = QHBoxLayout()
-        for j in ['Lune', 'Europe', 'Io', 'Comète 10km', 'Comète 50km', 'Comète 200km']:
+        for j in ['Lune', 'Europe', 'Io', 'Callisto', 'Ganymede', 'Titan', 'Triton', 'Comète 10km', 'Comète 50km', 'Comète 200km']:
             ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
         tabs.addTab(ns_tabs, 'Satellites Naturels')

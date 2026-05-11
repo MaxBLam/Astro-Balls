@@ -500,13 +500,29 @@ class PyGameWidget(QWidget):
                    'Température': '143 K', 'âge': '4,57 milliards d’années', "masse": 8.931e22, "rayon": 1821.6, "couleur": (200, 180, 100),
                    "image": "./images/Skins/io.jpg"},
 
+            "Callisto": {'nom': 'Callisto', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
+                         'Température': '134 K', 'âge': '4,5 milliard d’années', 'masse': 1.076e23, 'rayon': 2410.3, 'couleur': (199, 199, 199),
+                         'image': 'images/Skins/callisto.png'},
+
+            "Ganymede": {'nom': 'Ganymede', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
+                         'Température': '111.5 K', 'âge': '4,5 milliard d’années', 'masse': 1.48e24, 'rayon': 2634.1,
+                         'couleur': (184, 180, 180), 'image': 'images/Skins/ganymede.png'},
+
+            "Titan": {'nom': 'Titan', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
+                         'Température': '94 K', 'âge': '4,5 milliard d’années', 'masse': 1.3452e23, 'rayon': 2574.5,
+                         'couleur': (180, 143, 98), 'image': 'images/Skins/titan.png'},
+
+            "Triton": {'nom': 'Triton', 'type': 'Satellite naturel', 'composition_surface': 'Nitrogen & Glace',
+                      'Température': '94 K', 'âge': '> 100 million d’années', 'masse': 2.14e22, 'rayon': 1353.4,
+                      'couleur': (172, 180, 184), 'image': 'images/Skins/triton.png'},
+
             "TON 618": {'nom': 'TON 618', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
                         'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15),
                         "image": "./images/Skins/grey.jpg"},
 
             "Phoenix A": {'nom': 'Phoenix A', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
                           'Température': '1e-14 K', 'âge': '8 milliards d’années', "masse": 2.0e41, "rayon": 590000000000, "couleur": (15, 15, 15),
-                          "image": "./images/Skins/grey.jpg"},
+                          "image": "images/Skins/titan.png"},
 
             "Hubble": {'nom': 'Télescope Hubble', 'type': 'Satellite artificiel', 'composition_surface': 'Métal et instruments',
                        'Température': '150 à 390 K', 'âge': '36', "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180),
@@ -610,7 +626,6 @@ class PyGameWidget(QWidget):
 
     def kepler_orbit_helper(self):
         self.is_helpingorbits = True
-        #self.is_helpingorbits = False
 
     def orbit_editor(self):
         self.is_editingorbits = True
