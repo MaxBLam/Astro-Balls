@@ -596,6 +596,7 @@ class PyGameWidget(QWidget):
                 (current_position_vector.y * -1), current_position_vector.x).normalize()
             if self.is_helpingorbits is True:
                 planete_1['vitesse'] = self.centrum['vitesse'] + (orbital_momentum * tan_current_position)
+                self.is_helpingorbits = False
             path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': planete_1,
                          'vel': planete_1['vitesse'], 'omega': omega})
         return path
@@ -607,8 +608,9 @@ class PyGameWidget(QWidget):
         acceleration = direction.normalize()/self.acceleration.magnitude()
         return acceleration
 
-    def kepler_orbit_helper(self, checked):
-        self.is_helpingorbits = checked
+    def kepler_orbit_helper(self):
+        self.is_helpingorbits = True
+        #self.is_helpingorbits = False
 
     def orbit_editor(self):
         self.is_editingorbits = True
@@ -621,23 +623,16 @@ class PyGameWidget(QWidget):
 
         # TODO: may delete this later
     def uopt_editor(self):
-        orbital_data = None
-        if self.p_index is None:
-            return 0.0
         planet = self.p_index
+        if planet is None:
+            return 0.0
         centrum = self.centrum
-        rpx = planet['position'].x - centrum['position'].x  # type: ignore
-        rpy = planet['position'].y - centrum['position'].y  # type: ignore
-        angle = math.atan2(rpy, rpx)
-        for i in self.kepler():
-            if i['planet'] == planet:
-                orbital_data = i
-                break
-        if orbital_data is not None:
-            theta = angle - orbital_data['omega']
-            theta = theta % (2 * math.pi)
-            return math.degrees(theta)
-        return 0.0
+        rpx = planet['position'].x - centrum['position'].x
+        rpy = planet['position'].y - centrum['position'].y
+        angle = math.degrees(math.atan2(rpy, rpx))
+        angle = (angle + 360.0) % 360.0
+        print(angle)
+        return angle
 
     # TODO: needs improvement
     def orbital_position_editor(self, angle_degrees):

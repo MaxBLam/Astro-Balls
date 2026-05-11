@@ -1139,7 +1139,6 @@ class MainWindowFrame(QMainWindow):
             scroller.setWidget(scroller_widget)
 
             orbit_helper = QPushButton('Aide')
-            orbit_helper.setCheckable(True)
             orbit_helper.setToolTip('Pré-configure la vitesse suffisante pour maintenir une orbite circulaire')
             orbit_helper.clicked.connect(self.game_widget.kepler_orbit_helper)
             self.orbitinfo_window_layout1.addWidget(orbit_helper, 1, 0)
@@ -1167,6 +1166,7 @@ class MainWindowFrame(QMainWindow):
             panel_layout.addWidget(self.s_eccentricity_toggler, 2, 0, 1, 2)
             self.b_eccentricity_toggler = QDoubleSpinBox()
             self.b_eccentricity_toggler.setDecimals(4)
+            self.b_eccentricity_toggler.setSingleStep(0.01)
             self.b_eccentricity_toggler.lineEdit().setMaximumWidth(50)
             self.b_eccentricity_toggler.setMaximumWidth(90)
             panel_layout.addWidget(self.b_eccentricity_toggler, 0, 1)
@@ -1195,7 +1195,6 @@ class MainWindowFrame(QMainWindow):
             self.s_posorbit_toggler.setSingleStep(1)
             self.s_posorbit_toggler.setWrapping(True)
             self.s_posorbit_toggler.valueChanged.connect(getattr(self.game_widget, 'orbital_position_editor'))
-            self.s_posorbit_toggler.setInvertedAppearance(True)
             panel_layout.addWidget(self.s_posorbit_toggler, 5, 1)
             self.b_posorbit_toggler = QDoubleSpinBox(parent=panel)
             self.b_posorbit_toggler.lineEdit().setMaximumWidth(50)
@@ -1229,8 +1228,10 @@ class MainWindowFrame(QMainWindow):
         self.b_eccentricity_toggler.setValue(self.s_eccentricity_toggler.value() / 100)
         self.b_semimajor_toggler.setValue(self.s_semimajor_toggler.value())
         self.b_posorbit_toggler.setValue(self.s_posorbit_toggler.value())
-        # self.b_posorbit_toggler.setValue(self.game_widget.uopt_editor())
-        # (i need to enable both way value editing without fucking up the orbits... but not rn twin it 1:43am)
+        self.b_posorbit_toggler.setValue(self.game_widget.uopt_editor())
+        self.s_posorbit_toggler.blockSignals(True)
+        self.s_posorbit_toggler.setValue(self.game_widget.uopt_editor())
+        self.s_posorbit_toggler.blockSignals(False)
         if self.orbitinfo_window and hasattr(self, 'scroller_widget_layout'):
             if len(self.game_widget.kepler()) is not len(self.get_orbitinfo_ondisplay):
                 for i in range(self.scroller_widget_layout.count()):
@@ -1265,6 +1266,8 @@ class MainWindowFrame(QMainWindow):
                      QPushButton::hover { background-color: #4d4d4d}""")
                     configure_orbit_button.setProperty('planet_name', j['planet']['nom'])
                     configure_orbit_button.clicked.connect(getattr(self.game_widget, 'orbit_editor'))
+                    configure_orbit_button.setProperty('planet_index', k)
+                    configure_orbit_button.clicked.connect(self.update_interactives)
                     panel_layout.addWidget(configure_orbit_button)
                     ondisplay_structure = {'Name': planet_label, 'epstein': epstein_label,
                                            'semimajor': semimajoraxis_label, 'velocity': velocity_label}
@@ -1277,6 +1280,13 @@ class MainWindowFrame(QMainWindow):
                 ondisplay['epstein'].setText(f'ε: {round(l['epsilon'], 5)}')
                 ondisplay['semimajor'].setText(f'Semi-majeur(a): {round(l['a'], 3)}')
                 ondisplay['velocity'].setText(f'Vitesse: {round(l['vel'].magnitude(), 1)}m/s')
+
+    def update_interactives(self):
+        sender = self.sender()
+        receiver = sender.property('planet_index')
+        self.s_eccentricity_toggler.blockSignals(True)
+        self.s_eccentricity_toggler.setValue(self.game_widget.kepler()[receiver]['epsilon'] * 100)
+        self.s_eccentricity_toggler.blockSignals(False)
 
     def when_showorbit_closed(self):
         self.orbit_timer.stop()
