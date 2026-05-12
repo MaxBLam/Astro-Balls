@@ -195,6 +195,11 @@ class MainWindowFrame(QMainWindow):
         of.triggered.connect(self.showorbitinfo)
         of.setShortcut('I')
         tool_menu.addAction(of)
+        op = QAction('&Orbit Starter', parent=self)
+        op.setCheckable(True)
+        op.triggered.connect(self.orbit_starter)
+        op.setShortcut('P')
+        tool_menu.addAction(op)
 
         help_menu = QMenu('&Aide')
         info_action = QAction('&Mímisbrunnr', parent=self)
@@ -216,6 +221,9 @@ class MainWindowFrame(QMainWindow):
         menu.addMenu(help_menu)
 
         QTimer.singleShot(0, self.guide)
+
+    def orbit_starter(self, checked):
+        self.game_widget.is_startingorbit = checked
 
     def reload_ww(self):
         self.reload = QDialog(self)

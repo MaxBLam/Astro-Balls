@@ -25,40 +25,43 @@ class PyGameWidget(QWidget):
         self.planet_receiver = None
         self.slingshot_oldpos = None
         self.scale_value = None
-        self.val = 20
-        self.slider_is_dragging = False
-        self.setMouseTracking(True)
         self.acceleration = None
         self.old_mouse = None
         self.souris_pos = None
         self.centrum = None
         self.p_index = None
-        self.statsdock = statsdock
         self.window_x = None
         self.window_y = None
         self.drag_and_drop_x = None
         self.drag_and_drop_y = None
         self.statsdock_x = None
         self.statsdock_y = None
-        self.setAcceptDrops(True)
+        self.playscreen = None
         self.active_planet = None
         self.active_planet_updater = None
+        self.setAcceptDrops(True)
+        self.setMouseTracking(True)
         self.vitesse_state = False
         self.active = False
-        self.playscreen = None
+        self.vitesse_state = False
+        self.measuringtape_state = False
         self.is_editingorbits = False
         self.is_showingorbits = False
         self.is_helpingorbits = False
-        self.vitesse_state = False
         self.is_showingorbitalvector = False
         self.is_showingforcevector = False
         self.is_showingvelocityvector = False
         self.is_showingtrace = False
-        self.measuringtape_state = False
+        self.is_startingorbit = False
+        self.slider_is_dragging = False
+
+        self.val = 20
+        self.statsdock = statsdock
 
         self.planetes = []
         self.planetes_pos = []
         self.point = []
+        self.corpslst = {}
 
         self.keys_pressed = set()
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -170,7 +173,6 @@ class PyGameWidget(QWidget):
         pos = event.pos()
         pos_x = (pos.x() + self.camera_pos.x * self.scale) / self.scale
         pos_y = (pos.y() + self.camera_pos.y * self.scale) / self.scale
-
         self.corps(nom, pos_x, pos_y)
 
         if self.simulation == 3:
@@ -341,11 +343,10 @@ class PyGameWidget(QWidget):
     def vitesse_gravitationnelle(self, obj1, obj2):
         d_vecteur = obj2["position"] - obj1["position"]
         distance = d_vecteur.magnitude()
-        d_vecteur.normalize()
-        tangente = euclid.Vector2(-d_vecteur.y, d_vecteur.x)
-        v_orbitale = math.sqrt(self.G * obj1["masse"] / distance)
-        v_orbitale = v_orbitale * tangente
-        return v_orbitale
+        centrum = max(obj1["masse"], obj2["masse"])
+        tan = euclid.Vector2(-d_vecteur.y, d_vecteur.x).normalize()
+        v_mag = math.sqrt(self.G * centrum / (distance + 1e-10))
+        return v_mag * tan
 
     @staticmethod
     def pythagoras(pos):
@@ -451,7 +452,7 @@ class PyGameWidget(QWidget):
         self.update()
 
     def corps(self, nom, x, y):
-        corps = {
+        self.corpslst = {
             "Mercure": {'nom': 'Mercure', 'type': 'Planète', 'composition_surface': 'Métallique (70%)',
                         'Température': '93 à 703 K', 'âge': '4,503 milliards d’années', "masse": 3.285e23, "rayon": 2439.7, "couleur": (245, 245, 220),
                         "image": "./images/Skins/mercure.png"},
@@ -561,7 +562,7 @@ class PyGameWidget(QWidget):
                       "image" : "./images/Skins/rigel.png"},
         }
 
-        data = corps.get(nom, corps["Mercure"])
+        data = self.corpslst.get(nom, self.corpslst["Mercure"])
 
         planete = {"nom": data["nom"], "position": euclid.Vector2(x, y), "vitesse": euclid.Vector2(0, 0),
                    "masse": data["masse"], "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'],
@@ -570,23 +571,30 @@ class PyGameWidget(QWidget):
         self.planetes.append(planete)
 
     def kepler(self):
-        color_dimmer = None
         path = []
-        for planete_1 in self.planetes:
+        temp_list = self.planetes.copy()
+        if hasattr(self, 'preview_planet') and self.preview_planet:
+            temp_list.append(self.preview_planet)
+        for i in temp_list:
             max_centrum = -1
-            for planete_2 in self.planetes:
-                if planete_2 == planete_1:
+            self.centrum = None
+            for j in self.planetes:
+                if j == i:
                     continue
-                gravitational_force = planete_2['masse'] / (planete_1['position'] - planete_2['position']).magnitude_squared() + (1 * 10 ** -10)
+                saver = (i['position'] - j['position']).magnitude_squared()
+                gravitational_force = j['masse']/saver+1e-10
                 if gravitational_force > max_centrum:
                     max_centrum = gravitational_force
-                    self.centrum = planete_2
+                    self.centrum = j
+                    if j['type'] == 'Satellite naturel' or 'Géante gazeuse' or 'Planète':
+                        self.centrum['isCentrum'] = True
+                        continue
                     self.centrum['isCentrum'] = True
             if self.centrum is None:
                 continue
             gravitational_parameter = self.G * self.centrum['masse']
-            current_velocity = planete_1['vitesse'] - self.centrum['vitesse']
-            current_position_vector = planete_1['position'] - self.centrum['position']
+            current_velocity = i['vitesse'] - self.centrum['vitesse']
+            current_position_vector = i['position'] - self.centrum['position']
             current_position = current_position_vector.magnitude()
             vectorial_epsilon = (1 / gravitational_parameter *
                                  ((current_velocity.magnitude_squared() -
@@ -595,26 +603,27 @@ class PyGameWidget(QWidget):
             epsilon = vectorial_epsilon.magnitude() + (1 * 10 ** -10)
             omega = math.atan2(vectorial_epsilon.y, vectorial_epsilon.x)
             paracond = (2 / current_position) - (current_velocity.magnitude_squared() / gravitational_parameter)
+            if self.is_helpingorbits is True:
+                orbital_momentum = math.sqrt(gravitational_parameter / current_position)
+                tcp = pygame.Vector2((current_position_vector.y * -1), current_position_vector.x).normalize()
+                i['vitesse'] = self.centrum['vitesse'] + (orbital_momentum * tcp)
             if paracond <= 0:
                 continue
-            semimajor_axis = 1 / paracond
+            semimajor_axis = 1/paracond
+            dx = self.centrum['position'].x
+            dy = self.centrum['position'].y
+            color_dimmer = pygame.Color(i['couleur']).lerp((0, 0, 0), 0.7)
             orb_dots = []
             for k in range(301):
-                theta = (2 * math.pi * k) / 300
+                theta = (2*math.pi*k) / 300
                 r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta))
-                x = (self.centrum['position'].x + r * math.cos(theta + omega))
-                y = (self.centrum['position'].y + r * math.sin(theta + omega))
+                x = dx + r * math.cos(theta+omega)
+                y = dy + r * math.sin(theta+omega)
                 orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
                 orb_dots.append((orbit_x, orbit_y))
-                color_dimmer = pygame.Color(planete_1['couleur']).lerp((0, 0, 0), 0.7)
-            orbital_momentum = math.sqrt((self.G * self.centrum['masse']) / current_position)
-            tan_current_position = pygame.Vector2(
-                (current_position_vector.y * -1), current_position_vector.x).normalize()
-            if self.is_helpingorbits is True:
-                planete_1['vitesse'] = self.centrum['vitesse'] + (orbital_momentum * tan_current_position)
-                self.is_helpingorbits = False
-            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis, 'planet': planete_1,
-                         'vel': planete_1['vitesse'], 'omega': omega})
+            path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis,
+                         'planet': i, 'vel': i['vitesse'], 'omega': omega})
+        self.is_helpingorbits = False
         return path
 
     def newton(self, planet):
@@ -636,7 +645,6 @@ class PyGameWidget(QWidget):
                 self.p_index = i
         return self.is_editingorbits
 
-        # TODO: may delete this later
     def uopt_editor(self):
         planet = self.p_index
         if planet is None:
@@ -649,7 +657,6 @@ class PyGameWidget(QWidget):
         print(angle)
         return angle
 
-    # TODO: needs improvement
     def orbital_position_editor(self, angle_degrees):
         orbital_data = None
         if self.is_editingorbits is not None:
@@ -788,6 +795,10 @@ class PyGameWidget(QWidget):
     def dragMoveEvent(self, event):
         pos_x, pos_y = event.pos().x(), event.pos().y()
         self.souris_pos = euclid.Vector2(pos_x, pos_y)
+        # TODO later the ghost planet opbd.
+
+    def dragLeaveEvent(self, event):
+        self.ghost_planet = None
 
     def mouseMoveEvent(self, event):
         pos_x, pos_y = event.pos().x(), event.pos().y()
@@ -845,6 +856,7 @@ class PyGameWidget(QWidget):
             for planete in self.planetes:
                 rx, ry = self.pos_objet_orbite(planete["position"])
                 rayon = planete["rayon"] * self.scale
+                zoom_capper = min(rayon, 2500)
                 if rayon < 1:
                     text = self.font.render(f"{planete['nom']}", True, (255, 255, 255))
                     self.playscreen.blit(text, (rx - 20, ry - 7))
@@ -854,7 +866,7 @@ class PyGameWidget(QWidget):
                         if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
                             pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon, int(0.05 * rayon))
                         else:
-                            pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
+                            pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), zoom_capper)
                     else:
                         surface = self.get_planet_surface(planete)
                         self.playscreen.blit(surface, (rx - rayon, ry - rayon))
@@ -973,11 +985,10 @@ class PyGameWidget(QWidget):
                         i['trace'].pop(0)
 
             for k in self.planetes:
-                if k['trace']:
+                if k.get('trace'):
                     trace_data = k['trace']
                     to_scale_lst = [self.pos_objet_orbite(p) for p in trace_data]
                     color_dimmer = pygame.Color(k['couleur']).lerp((0, 0, 0), 0.7)
-                    trace_size = int((k['rayon']*self.scale)/2)
                     if len(to_scale_lst) >= 2:
                         pygame.draw.aalines(self.playscreen, color_dimmer, False, to_scale_lst, 1)
 

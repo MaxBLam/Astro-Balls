@@ -66,7 +66,6 @@ class StatsDock(QDockWidget):
 
         widget = QWidget()
         layout = QVBoxLayout()
-#TODO LE SPACING DU TEXTE EST CHIANT
         upper_panel = QFrame()
         upper_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
         upper_panel_layout = QGridLayout()
@@ -155,7 +154,6 @@ class StatsDock(QDockWidget):
         h_layout3 = QHBoxLayout()
         self.ellipse_label = QLabel('Facteur Ellipse: ', parent=self)
         low_panel_layout.addWidget(self.ellipse_label)
-        #TODO DOUBLE SPIN BOX EST BUGGÉ
         self.ellipse_edit = QDoubleSpinBox()
         self.ellipse_edit.lineEdit().setMaximumWidth(50)
         self.ellipse_edit.setRange(0, 1)
