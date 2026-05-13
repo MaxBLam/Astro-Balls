@@ -25,6 +25,7 @@ class PyGameWidget(QWidget):
         self.planet_receiver = None
         self.slingshot_oldpos = None
         self.scale_value = None
+        self.slider_is_dragging = False
         self.acceleration = None
         self.old_mouse = None
         self.souris_pos = None
