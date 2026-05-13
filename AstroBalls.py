@@ -15,7 +15,6 @@ from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
 
 import json
-from datetime import datetime
 from functools import partial
 
 
@@ -29,6 +28,13 @@ class VectorEncoder(json.JSONEncoder):
 class MainWindowFrame(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.save_timer = None
+        self.swll = None
+        self.load_window_layout = QGridLayout(self.load_window)
+        self.save_button = QPushButton(f'Save')
+        self.save_name = QLineEdit()
+        self.mw = None
+        self.reload = QDialog(self)
         self.load_window = None
         self.save_simwindow_layout = None
         self.save_simwindow = None
@@ -233,7 +239,6 @@ class MainWindowFrame(QMainWindow):
         self.game_widget.is_startingorbit = checked
 
     def reload_ww(self):
-        self.reload = QDialog(self)
         self.reload.setWindowTitle('Reload')
         self.reload.setFixedSize(700, 400)
 
@@ -285,12 +290,10 @@ class MainWindowFrame(QMainWindow):
         s_label = QLabel("Entrez un nom: ")
         s_label.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_simwindow_layout.addWidget(s_label, 0, 0)
-        self.save_name = QLineEdit()
         self.save_name.setPlaceholderText('not a big fan of the government')
         self.save_name.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_name.textChanged.connect(self.save_sim_update_text)
         self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
-        self.save_button = QPushButton(f'Save')
         self.save_button.clicked.connect(self.saving)
         self.save_button.clicked.connect(self.save_simwindow.close)
         cancel_button = QPushButton('Cancel')
@@ -310,7 +313,7 @@ class MainWindowFrame(QMainWindow):
         saving_bar.setWindowTitle('Saving...')
         saving_bar.setMinimum(0)
         saving_bar.setMaximum(0)
-        saving_bar.setWindowModality(Qt.WindowModal)
+        saving_bar.setWindowModality(Qt.WindowModality.WindowModal)
         saving_bar.setValue(0)
         saving_bar.show()
 
@@ -331,7 +334,6 @@ class MainWindowFrame(QMainWindow):
         self.load_window = QDialog()
         self.load_window.setWindowTitle('Load Save')
         self.load_window.resize(350, 250)
-        self.load_window_layout = QGridLayout(self.load_window)
         self.load_window_layout.setSpacing(1)
 
         scroller = QScrollArea()

@@ -1,9 +1,7 @@
-from PyQt6.QtGui import QPixmap
-from PySide6.QtCore import QMimeData, Qt, QRegularExpression, QRect
+from PySide6.QtCore import QMimeData, Qt, QRegularExpression
 from PySide6.QtGui import QFont, QDrag, QRegularExpressionValidator, QIcon
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget, QHBoxLayout, QLabel, QGridLayout, QFrame,
-                               QComboBox, QDoubleSpinBox, QScrollArea, QToolBar, QTabWidget, QLineEdit, QPushButton,
-                               QSpinBox, QSizePolicy)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget, QHBoxLayout, QLabel, QFrame, QDoubleSpinBox,
+                               QScrollArea, QToolBar, QTabWidget, QLineEdit, QPushButton)
 
 
 class QtPlanetLabel(QLabel):

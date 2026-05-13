@@ -1,16 +1,12 @@
-import copy
-import os
 import random
 
 import pygame
 import pygame.gfxdraw
 from PySide6.QtCore import Qt, QTimer, Signal, QSize
-from PySide6.QtGui import QPainter, QImage, QPixmap, QColor
+from PySide6.QtGui import QPainter, QImage, QPixmap
 from PySide6.QtWidgets import QWidget
 import euclid
 import math
-
-from pygame.transform import scale
 
 
 class PyGameWidget(QWidget):
@@ -20,6 +16,7 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock, simulation):
         super().__init__()
 
+        self.ghost_planet = None
         self.slingshot_vector = euclid.Vector2(0,0)
         self.slingshot_planet = None
         self.planet_receiver = None
@@ -696,7 +693,6 @@ class PyGameWidget(QWidget):
     def orbital_eccentricity_editor(self, edited_ecc):
         if self.is_editingorbits is not None:
             print('works')
-            print
             new_ecc = edited_ecc / 100
             planet = self.p_index
             if planet:
