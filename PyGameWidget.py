@@ -25,7 +25,6 @@ class PyGameWidget(QWidget):
         self.slingshot_oldpos = None
         self.scale_value = None
         self.val = 20
-        self.slider_is_dragging = False
         self.setMouseTracking(True)
         self.acceleration = None
         self.old_mouse = None
