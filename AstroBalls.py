@@ -7,7 +7,8 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
-    QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, QFileDialog
+    QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
+    QFileDialog
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
@@ -124,30 +125,36 @@ class MainWindowFrame(QMainWindow):
         view_menu = QMenu('&Vue')
         self.statdock_action = QWidgetAction(view_menu)
         if not self.statdock_state:
-            self.statdock_view, self.statdock_state = self.customcheckbox(func_name='StatDock', method=self.display_statdock, is_checked=True)
+            self.statdock_view, self.statdock_state = self.customcheckbox(func_name='StatDock',
+                                                                          method=self.display_statdock, is_checked=True)
             self.statdock_action.setDefaultWidget(self.statdock_view)
         view_menu.addAction(self.statdock_action)
 
         self.dragndrop_action = QWidgetAction(view_menu)
         if not self.dragndrop_state:
-            self.dragndrop_view, self.dragndrop_state = self.customcheckbox(func_name='Drag&Drop', method=self.display_dragndrop, is_checked=True)
+            self.dragndrop_view, self.dragndrop_state = self.customcheckbox(func_name='Drag&Drop',
+                                                                            method=self.display_dragndrop,
+                                                                            is_checked=True)
             self.dragndrop_action.setDefaultWidget(self.dragndrop_view)
         view_menu.addAction(self.dragndrop_action)
 
         self.scale_action = QWidgetAction(view_menu)
         if not self.scale_state:
-            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider, is_checked=False)
+            self.scale_view, self.scale_state = self.customcheckbox(func_name='Échelle', method=self.scaleslider,
+                                                                    is_checked=True)
             self.scale_action.setDefaultWidget(self.scale_view)
         view_menu.addAction(self.scale_action)
         self.timer_action = QWidgetAction(view_menu)
         if not self.timer_state:
-            self.timer_view, self.timer_state = self.customcheckbox(func_name='Timer', method=self.timerscope, is_checked=False)
+            self.timer_view, self.timer_state = self.customcheckbox(func_name='Timer', method=self.timerscope,
+                                                                    is_checked=True)
             self.timer_action.setDefaultWidget(self.timer_view)
         view_menu.addAction(self.timer_action)
         view_menu.addSeparator()
         self.orbits_action = QWidgetAction(view_menu)
         if not self.game_widget.is_showingorbits:
-            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits, is_checked=True)
+            self.orbits_view, self.orbits_state = self.customcheckbox(func_name='Orbites', method=self.showorbits,
+                                                                      is_checked=True)
             self.orbits_action.setDefaultWidget(self.orbits_view)
         view_menu.addAction(self.orbits_action)
         self.trace_action = QWidgetAction(view_menu)
@@ -244,13 +251,13 @@ class MainWindowFrame(QMainWindow):
         ww_opensim2.clicked.connect(lambda: self.exec_reload(sim_id=2))
         ww_opensim3 = QPushButton('Système à n corps', parent=self.reload)
         ww_opensim3.setFixedSize(175, 400)
-        ww_opensim3.move(175*2, 0)
+        ww_opensim3.move(175 * 2, 0)
         ww_opensim3.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
                QPushButton:hover {background-color: #0E1F13;}""")
         ww_opensim3.clicked.connect(lambda: self.exec_reload(sim_id=3))
         ww_sandbox = QPushButton('Système Solaire', parent=self.reload)
         ww_sandbox.setFixedSize(175, 400)
-        ww_sandbox.move(175*3, 0)
+        ww_sandbox.move(175 * 3, 0)
         ww_sandbox.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
                QPushButton:hover {background-color: #072021;}""")
         ww_sandbox.clicked.connect(lambda: self.exec_reload(sim_id=4))
@@ -276,11 +283,11 @@ class MainWindowFrame(QMainWindow):
         self.save_simwindow.resize(300, 100)
         self.save_simwindow_layout = QGridLayout(self.save_simwindow)
         s_label = QLabel("Entrez un nom: ")
-        s_label.setFixedWidth(int(self.save_simwindow.width()/2))
+        s_label.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_simwindow_layout.addWidget(s_label, 0, 0)
         self.save_name = QLineEdit()
         self.save_name.setPlaceholderText('not a big fan of the government')
-        self.save_name.setFixedWidth(int(self.save_simwindow.width()/2))
+        self.save_name.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_name.textChanged.connect(self.save_sim_update_text)
         self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
         self.save_button = QPushButton(f'Save')
@@ -432,7 +439,8 @@ class MainWindowFrame(QMainWindow):
         preventer.setWindowTitle('new save?')
         preventer_layout = QGridLayout(preventer)
         preventer.setFixedWidth(240)
-        q_label = QLabel("Voulez-vous créer un nouveau fichier? Toutes les modifications non enregistrées seront perdues.")
+        q_label = QLabel(
+            "Voulez-vous créer un nouveau fichier? Toutes les modifications non enregistrées seront perdues.")
         q_label.setWordWrap(True)
         preventer_layout.addWidget(q_label, 0, 0, 1, 2)
         yes_button = QPushButton('Oui')
@@ -514,9 +522,9 @@ class MainWindowFrame(QMainWindow):
 
     def statdock_close(self, active):
         if hasattr(self, 'statdock_state'):
-            #self.statdock_state.blockSignals(True)
+            # self.statdock_state.blockSignals(True)
             self.statdock_state.setChecked(active)
-            #self.statdock_state.blockSignals(False)
+            # self.statdock_state.blockSignals(False)
 
     def display_dragndrop(self):
         if getattr(self, 'dragndrop_scope', None) is not None:
@@ -543,21 +551,45 @@ class MainWindowFrame(QMainWindow):
 
         self.time_slider = QSlider(Qt.Orientation.Horizontal, parent=timerscope_container)
         self.configure_slider(self.time_slider, 0, 100, 1)
-        timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 2)
+        timerscope_widget.addWidget(self.time_slider, 0, 0, 1, 3)
         self.time_slider.valueChanged.connect(self.update_timerscope)
         self.time_slider.valueChanged.connect(self.game_widget.speed_interactive)
         self.timescope_label = QLabel('', timerscope_container)
-
-        backward_button = QPushButton('Arrière')
+        button_stylesheet = """
+            QPushButton {
+                background-color: #333333;
+                color: #e0e0e0;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 8px 15px;
+                font-size: 18px;
+            }
+            QPushButton:hover {
+                background-color: #444444;
+                border: 1px solid #777777;
+            }
+            QPushButton:pressed {
+                background-color: #222222;
+                border: 1px solid #333333;
+            }
+        """
+        backward_button = QPushButton('◀')
         backward_button.clicked.connect(self.backward_timescope)
+        backward_button.setStyleSheet(button_stylesheet)
         timerscope_widget.addWidget(backward_button, 1, 0)
 
-        forward_button = QPushButton('Avant')
+        pause_button = QPushButton('||')
+        pause_button.clicked.connect(self.pause_timescope)
+        pause_button.setStyleSheet(button_stylesheet)
+        timerscope_widget.addWidget(pause_button, 1, 1)
+
+        forward_button = QPushButton('▶')
         forward_button.clicked.connect(self.forward_timescope)
-        timerscope_widget.addWidget(forward_button, 1, 1)
+        forward_button.setStyleSheet(button_stylesheet)
+        timerscope_widget.addWidget(forward_button, 1, 2)
 
         self.timer_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
-        self.timer_scope.setFixedHeight(120)
+        self.timer_scope.setFixedHeight(150)
         self.splitDockWidget(self.main_statsdock_link, self.timer_scope, Qt.Orientation.Vertical)
 
         self.timer_scope.visibilityChanged.connect(self.timerscope_close)
@@ -565,12 +597,13 @@ class MainWindowFrame(QMainWindow):
 
     def update_timerscope(self):
         self.timescope_label.setText(f'X{self.time_slider.value()}')
+        self.timescope_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: 2px;")
         self.timescope_label.adjustSize()
         ratio = (self.time_slider.value() - self.time_slider.minimum()) / (
-                    self.time_slider.maximum() - self.time_slider.minimum())
+                self.time_slider.maximum() - self.time_slider.minimum())
         x_pos = 16 / 2 + ratio * (self.time_slider.width() - 16)
         x_pos_parent = self.time_slider.x() + x_pos - (self.timescope_label.width() // 2)
-        y_pos = self.time_slider.y() - 15
+        y_pos = self.time_slider.y() - 18
         self.timescope_label.move(int(x_pos_parent), int(y_pos))
 
     @staticmethod
@@ -594,19 +627,22 @@ class MainWindowFrame(QMainWindow):
     def forward_timescope(self):
         self.time_slider.setValue(self.time_slider.value() + 1)
 
+    def pause_timescope(self):
+        self.time_slider.setValue(0)
+
     def scaleslider(self):
         if getattr(self, 'scale_slider', None) is not None:
             self.scale_scope.setVisible(self.scale_state.isChecked())
             return
         self.scale_scope = QDockWidget(parent=self)
         scale_scope_container = QWidget()
-        scale_scope_widget = QGridLayout(scale_scope_container)
         self.scale_scope.setWidget(scale_scope_container)
         self.scale_scope.setWindowTitle('Échelle de rendu')
 
         self.scale_slider = QSlider(Qt.Orientation.Horizontal, parent=scale_scope_container)
         self.configure_slider(self.scale_slider, 1, 100, 20)
-        scale_scope_widget.addWidget(self.scale_slider, 0, 0, 1, 2)
+        self.scale_slider.move(0, 20)
+        self.scale_slider.setFixedWidth(340)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
         self.scale_slider.sliderPressed.connect(self.game_widget.on_slider_pressed)
@@ -614,17 +650,38 @@ class MainWindowFrame(QMainWindow):
         self.game_widget.scale_updater.connect(self.view_update)
 
         self.scale_slider_label = QLabel('', scale_scope_container)
-
-        backward_button = QPushButton('Arrière')
+        button_stylesheet = """
+                    QPushButton {
+                        background-color: #333333;
+                        color: #e0e0e0;
+                        border: 1px solid #555555;
+                        border-radius: 4px;
+                        padding: 8px 15px;
+                        font-size: 18px;
+                    }
+                    QPushButton:hover {
+                        background-color: #444444;
+                        border: 1px solid #777777;
+                    }
+                    QPushButton:pressed {
+                        background-color: #222222;
+                        border: 1px solid #333333;
+                    }
+                """
+        backward_button = QPushButton('-', self.scale_scope)
         backward_button.clicked.connect(self.backward_scale_slider)
-        scale_scope_widget.addWidget(backward_button, 1, 0)
+        backward_button.setStyleSheet(button_stylesheet)
+        backward_button.setFixedWidth(50)
+        backward_button.move(30, 90)
 
-        forward_button = QPushButton('Avant')
+        forward_button = QPushButton('+', self.scale_scope)
         forward_button.clicked.connect(self.forward_scale_slider)
-        scale_scope_widget.addWidget(forward_button, 1, 1)
+        forward_button.setStyleSheet(button_stylesheet)
+        forward_button.setFixedWidth(50)
+        forward_button.move(270, 90)
 
         self.scale_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
-        self.scale_scope.setFixedHeight(120)
+        self.scale_scope.setFixedHeight(150)
         self.splitDockWidget(self.main_statsdock_link, self.scale_scope, Qt.Orientation.Vertical)
 
         self.scale_scope.visibilityChanged.connect(self.scale_scope_close)
@@ -638,10 +695,11 @@ class MainWindowFrame(QMainWindow):
 
     def update_scale_slider(self):
         self.scale_slider_label.setText(f'X{self.scale_slider.value()}')
+        self.scale_slider_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: 2px;")
         self.scale_slider_label.adjustSize()
         ratio = (self.scale_slider.value() - self.scale_slider.minimum()) / (
                 self.scale_slider.maximum() - self.scale_slider.minimum())
-        x_pos = 16 / 2 + ratio * (self.scale_slider.width())+85
+        x_pos = 16 / 2 + ratio * (self.scale_slider.width()) + 147
         x_pos_parent = self.scale_slider.x() + x_pos - (self.scale_slider.width() // 2)
         y_pos = self.scale_slider.y() - 15
         self.scale_slider_label.move(int(x_pos_parent), int(y_pos))
@@ -654,14 +712,14 @@ class MainWindowFrame(QMainWindow):
 
     def backward_scale_slider(self):
         self.scale_slider.setValue(self.scale_slider.value() - 1)
-        self.game_widget.val = self.scale_slider.value() -1
+        self.game_widget.val = self.scale_slider.value() - 1
 
     def forward_scale_slider(self):
         self.scale_slider.setValue(self.scale_slider.value() + 1)
         self.game_widget.val = self.scale_slider.value() + 1
 
     @staticmethod
-    def customcheckbox(func_name, method, is_checked:bool):
+    def customcheckbox(func_name, method, is_checked: bool):
         view_widget = QWidget()
         view_layout = QHBoxLayout(view_widget)
         checkbox = QCheckBox(func_name)
@@ -787,7 +845,7 @@ class MainWindowFrame(QMainWindow):
     def keybindstab(self):
         self.main_panel_layout.setCurrentIndex(3)
 
-#DEMO
+    # DEMO
     def mimir(self):
         info_window = QDialog(parent=self)
         info_window.setFixedSize(650, 500)
@@ -805,8 +863,8 @@ class MainWindowFrame(QMainWindow):
         b_n1_label.setFont(b_n1_label_font)
         b_n1_label.move(20, 20)
         pixmap_newton1 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
-                                                                            Qt.AspectRatioMode.KeepAspectRatio,
-                                                                            Qt.TransformationMode.SmoothTransformation)
+                                                                                                       Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                                       Qt.TransformationMode.SmoothTransformation)
         l_pixmap_newton1 = QLabel(parent=newton1tab)
         l_pixmap_newton1.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_newton1.setFixedSize(200, 280)
@@ -814,7 +872,7 @@ class MainWindowFrame(QMainWindow):
         l_pixmap_newton1.move(420, 95)
         with open('mimir_files/info_text/newton1.txt', 'r', encoding='utf-8') as newton1_txtfile:
             i_n1_label = QLabel(str(newton1_txtfile.read()), parent=newton1tab)
-        fixed_sizedw = info_window.width()*(3/5)
+        fixed_sizedw = info_window.width() * (3 / 5)
         i_n1_label.setFixedWidth(int(fixed_sizedw))
         i_n1_label.setWordWrap(True)
         i_n1_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
@@ -887,8 +945,8 @@ class MainWindowFrame(QMainWindow):
         i_k_label.adjustSize()
         i_k_label.move(20, 150)
         pixmap_kflopm = QPixmap('images/mimir_usedimages/Johannes_Kepler_1610-746x1024.jpg').scaled(200, 280,
-                                                                                Qt.AspectRatioMode.KeepAspectRatio,
-                                                                           Qt.TransformationMode.SmoothTransformation)
+                                                                                                    Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                                    Qt.TransformationMode.SmoothTransformation)
         l_pixmap_kflopm = QLabel(parent=kflopmtab)
         l_pixmap_kflopm.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_kflopm.setFixedSize(200, 280)
@@ -901,7 +959,7 @@ class MainWindowFrame(QMainWindow):
             <td style='vertical-align: middle; padding-right: 10px; font-style: italic;'>
               r(&theta;) <span style='font-style: normal;'>=</span>
             </td>
-        
+
             <td style='vertical-align: middle;'>
               <table style='border-collapse: collapse; display: inline-table;'>
                 <tr>
@@ -958,7 +1016,9 @@ class MainWindowFrame(QMainWindow):
         apropos_layout.setVerticalSpacing(10)
         apropos_window.setLayout(apropos_layout)
 
-        about_icon = QPixmap('images/app_icon/Astro Balls Icon.png').scaled(170, 170, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        about_icon = QPixmap('images/app_icon/Astro Balls Icon.png').scaled(170, 170,
+                                                                            Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
         icon_label = QLabel()
         icon_label.setPixmap(about_icon)
         apropos_layout.addWidget(icon_label, 0, 0, 2, 1, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
@@ -1006,55 +1066,55 @@ class MainWindowFrame(QMainWindow):
             {
                 "titre": "Bienvenue dans Astro Balls !",
                 "contenu": "Astro Balls est un simulateur de physique gravitationnelle qui vous permet de créer "
-                          "et d'observer des systèmes planétaires.\n\n"
-                          "Utilisez les boutons ci-dessous pour naviguer dans ce guide et découvrir toutes "
-                          "les fonctionnalités de l'application."
+                           "et d'observer des systèmes planétaires.\n\n"
+                           "Utilisez les boutons ci-dessous pour naviguer dans ce guide et découvrir toutes "
+                           "les fonctionnalités de l'application."
             },
             {
                 "titre": "Ajouter des corps célestes",
                 "contenu": "Pour ajouter un corps céleste :\n\n"
-                          "1. Faites glisser un objet depuis le panneau du bas\n"
-                          "2. Déposez-le sur la zone de simulation\n"
-                          "3. L'objet apparaîtra à l'endroit où vous l'avez déposé\n\n"
-                          "Vous pouvez ajouter des planètes, des étoiles, des lunes, et même des trous noirs !"
+                           "1. Faites glisser un objet depuis le panneau du bas\n"
+                           "2. Déposez-le sur la zone de simulation\n"
+                           "3. L'objet apparaîtra à l'endroit où vous l'avez déposé\n\n"
+                           "Vous pouvez ajouter des planètes, des étoiles, des lunes, et même des trous noirs !"
             },
             {
                 "titre": "Contrôles de la caméra",
                 "contenu": "Navigation dans la simulation :\n\n"
-                          "• Touche F : Changer le mode de caméra (libre / suivi / milieu)\n"
-                          "• Touches WASD : Déplacer la caméra en mode libre\n"
-                          "• Shift : Accélérer le déplacement de la caméra\n\n"
-                          "Cliquez sur une planète pour la suivre automatiquement."
+                           "• Touche F : Changer le mode de caméra (libre / suivi / milieu)\n"
+                           "• Touches WASD : Déplacer la caméra en mode libre\n"
+                           "• Shift : Accélérer le déplacement de la caméra\n\n"
+                           "Cliquez sur une planète pour la suivre automatiquement."
             },
             {
                 "titre": "Contrôles de zoom et vitesse",
                 "contenu": "Ajuster la vue et la simulation :\n\n"
-                          "• Échelle : Contrôle le niveau de zoom\n"
-                          "  - Valeurs basses : Vue d'ensemble\n"
-                          "  - Valeurs élevées : Zoom rapproché\n\n"
-                          "• Vitesse Sim. : Contrôle la vitesse de la simulation\n"
-                          "  - Ralentir ou accélérer le temps"
+                           "• Échelle : Contrôle le niveau de zoom\n"
+                           "  - Valeurs basses : Vue d'ensemble\n"
+                           "  - Valeurs élevées : Zoom rapproché\n\n"
+                           "• Vitesse Sim. : Contrôle la vitesse de la simulation\n"
+                           "  - Ralentir ou accélérer le temps"
             },
             {
                 "titre": "Outils de mesure et orbites",
                 "contenu": "Outils avancés :\n\n"
-                          "• Si un planète est sélectionné, la distance affiché dans le coin de l'écran "
+                           "• Si un planète est sélectionné, la distance affiché dans le coin de l'écran "
                            "est la distance entre la souris et l'objet sélectionné"
-                          "• Désactiver orbites : Désactive l'affichage des trajectoires orbitales\n"
-                          "• Éditeur d'orbites : Modifiez la position des objets sur leur orbite\n\n"
-                          "Ces outils vous aident à comprendre la physique du système."
+                           "• Désactiver orbites : Désactive l'affichage des trajectoires orbitales\n"
+                           "• Éditeur d'orbites : Modifiez la position des objets sur leur orbite\n\n"
+                           "Ces outils vous aident à comprendre la physique du système."
             },
             {
                 "titre": "Informations et Modifications",
                 "contenu": "Obtenir des informations :\n\n"
-                          "• Cliquez sur un corps céleste pour voir ses propriétés\n"
-                          "• Le premier panneau latéral affiche les informations de l'objet\n"
-                          "• Dans le deuxième panneau vous pourrez modifier la masse et le rayon des objets \n"
-                          "  - La masses est en notation scientifique\n"
-                          "  - Le rayon est en entier\n"
-                          "• Le dernier panneau permet de modifier le facteur elliptique des orbites\n"
-                          "  - Entre 0.3 et 1.0\n\n"
-                          "Explorez et apprenez !"
+                           "• Cliquez sur un corps céleste pour voir ses propriétés\n"
+                           "• Le premier panneau latéral affiche les informations de l'objet\n"
+                           "• Dans le deuxième panneau vous pourrez modifier la masse et le rayon des objets \n"
+                           "  - La masses est en notation scientifique\n"
+                           "  - Le rayon est en entier\n"
+                           "• Le dernier panneau permet de modifier le facteur elliptique des orbites\n"
+                           "  - Entre 0.3 et 1.0\n\n"
+                           "Explorez et apprenez !"
             }
         ]
 

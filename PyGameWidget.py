@@ -4,8 +4,8 @@ import random
 
 import pygame
 import pygame.gfxdraw
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QPainter, QImage
+from PySide6.QtCore import Qt, QTimer, Signal, QSize
+from PySide6.QtGui import QPainter, QImage, QPixmap, QColor
 from PySide6.QtWidgets import QWidget
 import euclid
 import math
@@ -90,7 +90,10 @@ class PyGameWidget(QWidget):
         self.statsdock.apply_button_mass.clicked.connect(self.edit_masse)
         self.statsdock.apply_button_rayon.clicked.connect(self.edit_rayon)
         self.statsdock.apply_button_ellipse.clicked.connect(self.edit_ellipse)
-        self.statsdock.ellipse_label.setText(f"Facteur Ellipse: {str(self.facteur_ellipse)}")
+        self.statsdock.apply_button_mom.clicked.connect(self.edit_vitesse)
+        self.statsdock.ellipse_edit.blockSignals(True)
+        self.statsdock.ellipse_edit.setValue(self.facteur_ellipse)
+        self.statsdock.ellipse_edit.blockSignals(True)
 
         self.timer.timeout.connect(self.game_loop)
         self.planet_surfaces_cache = {}
@@ -116,22 +119,26 @@ class PyGameWidget(QWidget):
         if self.active_planet_updater is not None:
             masse = self.statsdock.mass_edit.text()
             self.planetes[self.active_planet_updater]["masse"] = float(masse)
-            self.statsdock.mass_label.setText(f"Masse: {self.planetes[self.active_planet_updater]["masse"]:.3e} Kg")
-            self.statsdock.mass_label.repaint()
 
     def edit_rayon(self):
         if self.active_planet_updater is not None:
-            rayon = self.statsdock.rayon_edit.text()
+            rayon = self.statsdock.rad_edit.text()
             self.planetes[self.active_planet_updater]["rayon"] = float(rayon)
-            self.statsdock.rayon_label.setText(f"Rayon: {self.planetes[self.active_planet_updater]["rayon"]} Km")
-            self.statsdock.rayon_label.repaint()
 
     def edit_ellipse(self):
         valeur_ellipse = self.statsdock.ellipse_edit.value()
         self.facteur_ellipse = valeur_ellipse
-        self.vitesse_state = False
-        self.statsdock.ellipse_label.setText(f"Facteur Ellipse: {str(round(self.facteur_ellipse,1))}")
-        self.statsdock.ellipse_label.repaint()
+        self.is_editingorbits = True
+        self.p_index = self.planetes[self.active_planet_updater]
+        self.orbital_eccentricity_editor(valeur_ellipse*100)
+        self.is_editingorbits = False
+
+    def edit_vitesse(self):
+        valeur_vitesse = self.statsdock.mom_edit.value()
+        self.is_editingorbits = True
+        self.p_index = self.planetes[self.active_planet_updater]
+        self.orbital_velocity_editor(valeur_vitesse*100)
+        self.is_editingorbits = False
 
     def resizeEvent(self, event):
         self.playscreen = pygame.Surface((self.width(), self.height()))
@@ -455,67 +462,67 @@ class PyGameWidget(QWidget):
         self.corpslst = {
             "Mercure": {'nom': 'Mercure', 'type': 'Planète', 'composition_surface': 'Métallique (70%)',
                         'Température': '93 à 703 K', 'âge': '4,503 milliards d’années', "masse": 3.285e23, "rayon": 2439.7, "couleur": (245, 245, 220),
-                        "image": "./images/Skins/mercure.png"},
+                        "image": "./images/Skins/mercure.png", 'statdock_image': 'images/statdocks_images/mercury.png'},
 
             "Vénus": {'nom': 'Vénus', 'type': 'Planète', 'composition_surface': 'Basalte',
                       'Température': '738 K', 'âge': '4,503 milliards d’années', "masse": 4.867e24, "rayon": 6051.8, "couleur": (255, 215, 0),
-                        "image": "./images/Skins/vénus.jpg"},
+                        "image": "./images/Skins/vénus.jpg", 'statdock_image': 'images/statdocks_images/venus.png'},
 
             "Terre": {'nom': 'Terre', 'type': 'Planète', 'composition_surface': 'Granite', 'Température': '288 K',
                       'âge': '4,543 milliards d’années', "masse": 5.972e24, "rayon": 6371.0, "couleur": (0, 100, 255),
-                        "image": "./images/Skins/terre.png"},
+                        "image": "./images/Skins/terre.png", 'statdock_image': 'images/statdocks_images/earth.png'},
 
             "Mars": {'nom': 'Mars', 'type': 'Planète', 'composition_surface': 'Fer oxydé',
                      'Température': '210 K', 'âge': '4,603 milliards d’années', "masse": 6.416993e23, "rayon": 3389.5, "couleur": (255, 100, 100),
-                        "image": "./images/Skins/mars.jpg"},
+                        "image": "./images/Skins/mars.jpg", 'statdock_image': 'images/statdocks_images/mars.png'},
 
             "Jupiter": {'nom': 'Jupiter', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
                         'Température': '128 K', 'âge': '4,603 milliards d’années', "masse": 1.899e27, "rayon": 69911, "couleur": (200, 150, 50),
-                        "image": "./images/Skins/jupiter.jpg"},
+                        "image": "./images/Skins/jupiter.jpg", 'statdock_image': 'images/statdocks_images/jupiter.png'},
 
             "Saturne": {'nom': 'Saturne', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (94%)',
                        'Température': '95 K', 'âge': '4,503 milliards d’années', "masse": 5.683e26, "rayon": 58232, "couleur": (195, 146, 79),
-                        "image": "./images/Skins/saturne.jpg"},
+                        "image": "./images/Skins/saturne.jpg", 'statdock_image': 'images/statdocks_images/saturn.png'},
 
             "Uranus": {'nom': 'Uranus', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
                        'Température': '49 K', 'âge': '4,503 milliards d’années', "masse": 6.681e25, "rayon": 25362, "couleur": (172, 229, 238),
-                       "image": "./images/Skins/uranus.jpg"},
+                       "image": "./images/Skins/uranus.jpg", 'statdock_image': 'images/statdocks_images/uranus.png'},
 
             "Neptune": {'nom': 'Neptune', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
                         'Température': '59 K', 'âge': '4,503 milliards d’années', "masse": 1.024e26, "rayon": 24622, "couleur": (124, 183, 187),
-                        "image": "./images/Skins/neptune.jpg"},
+                        "image": "./images/Skins/neptune.jpg", 'statdock_image': 'images/statdocks_images/neptune.png'},
 
             "Soleil": {'nom': 'Soleil', 'type': 'Étoile', 'composition_surface': 'Hydrogène (74%)',
                        'Température': '5778 K', 'âge': '4,603 milliards d’années', "masse": 1.989e30, "rayon": 696340, "couleur": (255, 200, 0),
-                       "image": "./images/Skins/soleil.jpg"},
+                       "image": "./images/Skins/soleil.jpg", 'statdock_image': 'images/statdocks_images/sun.png'},
 
             "Lune": {'nom': 'Lune', 'type': 'Satellite naturel', 'composition_surface': 'Régolithe lunaire',
                      'Température': '100 à 400 K', 'âge': '4,46 milliards d’années', "masse": 7.347e22, "rayon": 1737.4, "couleur": (200, 200, 200),
-                     "image": "./images/Skins/lune.png"},
+                     "image": "./images/Skins/lune.png", 'statdock_image': 'images/statdocks_images/moon.png'},
 
             "Europe": {'nom': 'Europe', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
                        'Température': '110 K', 'âge': '4,5 milliards d’années', "masse": 4.799e22, "rayon": 1560.8, "couleur": (191, 207, 217),
-                       "image": "./images/Skins/europe.jpg"},
+                       "image": "./images/Skins/europe.jpg", 'statdock_image': 'images/statdocks_images/europa.png'},
 
             "Io": {'nom': 'Io', 'type': 'Satellite naturel', 'composition_surface': 'Dioxyde de soufre',
                    'Température': '143 K', 'âge': '4,57 milliards d’années', "masse": 8.931e22, "rayon": 1821.6, "couleur": (200, 180, 100),
-                   "image": "./images/Skins/io.jpg"},
+                   "image": "./images/Skins/io.jpg", 'statdock_image': 'images/statdocks_images/io.png'},
 
             "Callisto": {'nom': 'Callisto', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
                          'Température': '134 K', 'âge': '4,5 milliard d’années', 'masse': 1.076e23, 'rayon': 2410.3, 'couleur': (199, 199, 199),
-                         'image': 'images/Skins/callisto.png'},
+                         'image': 'images/Skins/callisto.png', 'statdock_image': 'images/Skins/callisto.png'},
 
             "Ganymede": {'nom': 'Ganymede', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
                          'Température': '111.5 K', 'âge': '4,5 milliard d’années', 'masse': 1.48e24, 'rayon': 2634.1,
-                         'couleur': (184, 180, 180), 'image': 'images/Skins/ganymede.png'},
+                         'couleur': (184, 180, 180), 'image': 'images/Skins/ganymede.png', 'statdock_image': 'images/Skins/ganymede.png'},
 
             "Titan": {'nom': 'Titan', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
                          'Température': '94 K', 'âge': '4,5 milliard d’années', 'masse': 1.3452e23, 'rayon': 2574.5,
-                         'couleur': (180, 143, 98), 'image': 'images/Skins/titan.png'},
+                         'couleur': (180, 143, 98), 'image': 'images/Skins/titan.png', 'statdock_image': 'images/Skins/titan.png'},
 
             "Triton": {'nom': 'Triton', 'type': 'Satellite naturel', 'composition_surface': 'Nitrogen & Glace',
                       'Température': '94 K', 'âge': '> 100 million d’années', 'masse': 2.14e22, 'rayon': 1353.4,
-                      'couleur': (172, 180, 184), 'image': 'images/Skins/triton.png'},
+                      'couleur': (172, 180, 184), 'image': 'images/Skins/triton.png', 'statdock_image': 'images/Skins/triton.png'},
 
             "TON 618": {'nom': 'TON 618', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
                         'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15),
@@ -533,40 +540,40 @@ class PyGameWidget(QWidget):
                          'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000, "couleur": (255, 105, 180),
                          "image": "./images/Skins/your_mom.jpg"},
 
-            "Comète 50km": {'nom': 'Comète (50 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
+            "Comète 50km": {'nom': 'Comète\n(50 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e15, "rayon": 50, "couleur": (200, 200, 255),
-                            "image": "./images/Skins/comete.png"},
+                            "image": "./images/Skins/comete.png", 'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
 
-            "Comète 10km": {'nom': 'Comète (10 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
+            "Comète 10km": {'nom': 'Comète\n(10 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e13, "rayon": 10, "couleur": (220, 220, 255),
-                            "image": "./images/Skins/comete.png"},
+                            "image": "./images/Skins/comete.png", 'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
 
-            "Comète 200km": {'nom': 'Comète (200 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
+            "Comète 200km": {'nom': 'Comète\n(200 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
                              'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e17, "rayon": 200, "couleur": (180, 180, 255),
-                             "image": "./images/Skins/comete.png"},
+                             "image": "./images/Skins/comete.png", 'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
 
             "Arcturus": {'nom': 'Arcturus', 'type': 'Étoile géante rouge', 'composition_surface': 'Hydrogène et hélium',
                          'Température': '4300 K', 'âge': '7 milliards d’années', "masse": 2.2 * 1.989e30, "rayon": 17700000, "couleur": (255, 140, 80),
-                         "image": "./images/Skins/arcturus.jpg"},
+                         "image": "./images/Skins/arcturus.jpg", 'statdock_image': 'images/statdocks_images/sun.png'},
 
             "Bételgeuse": {'nom': 'Bételgeuse', 'type': 'Supergéante rouge', 'composition_surface': 'Hydrogène et hélium',
                            'Température': '3500 K', 'âge': '10 millions d’années', "masse": 20 * 1.989e30, "rayon": 617000000, "couleur": (255, 80, 50),
-                           "image": "./images/Skins/betelgeuse.png"},
+                           "image": "./images/Skins/betelgeuse.png", 'statdock_image': 'images/statdocks_images/Red_Giant.webp'},
 
             "Sirius B": {'nom': 'Sirius B', 'type': 'Naine blanche', 'composition_surface': 'Carbone et oxygène',
                          'Température': '25000 K', 'âge': '120 millions d’années', "masse": 1.02 * 1.989e30, "rayon": 5800, "couleur": (200, 220, 255),
-                         "image" : "./images/Skins/sirius_b.png"},
+                         "image" : "./images/Skins/sirius_b.png", 'statdock_image': 'images/statdocks_images/White_Star_2.png'},
 
             "Rigel": {'nom': 'Rigel', 'type': 'Supergéante bleue', 'composition_surface': 'Hydrogène',
                       'Température': '12000 K', 'âge': '8 millions d’années', "masse": 21 * 1.989e30, "rayon": 78000000, "couleur": (180, 220, 255),
-                      "image" : "./images/Skins/rigel.png"},
+                      "image" : "./images/Skins/rigel.png", 'statdock_image': 'images/statdocks_images/Giant_Blue_Star_2.png'},
         }
 
         data = self.corpslst.get(nom, self.corpslst["Mercure"])
 
         planete = {"nom": data["nom"], "position": euclid.Vector2(x, y), "vitesse": euclid.Vector2(0, 0),
                    "masse": data["masse"], "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'],
-                   'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température': data["Température"], "image": data["image"]}
+                   'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température': data["Température"], "image": data["image"], 'statdock_image': data['statdock_image']}
 
         self.planetes.append(planete)
 
@@ -687,6 +694,8 @@ class PyGameWidget(QWidget):
 
     def orbital_eccentricity_editor(self, edited_ecc):
         if self.is_editingorbits is not None:
+            print('works')
+            print
             new_ecc = edited_ecc / 100
             planet = self.p_index
             if planet:
@@ -772,18 +781,33 @@ class PyGameWidget(QWidget):
                     # Mettre à jour les infos dans statsdock
                     self.statsdock.body_label.setText(f'{planete["nom"]}')
                     self.statsdock.body_label.repaint()
-                    self.statsdock.body_type.setText(f'Type: {planete["type"]}')
-                    self.statsdock.body_type.repaint()
-                    self.statsdock.surface_label.setText(f'Composition de la surface: {planete["composition_surface"]}')
-                    self.statsdock.surface_label.repaint()
-                    self.statsdock.age_label.setText(f'Âge: {planete["âge"]}')
-                    self.statsdock.age_label.repaint()
-                    self.statsdock.rotation_label.setText(f'Température: {planete["température"]}')
-                    self.statsdock.rotation_label.repaint()
-                    self.statsdock.mass_label.setText(f"Masse: {planete["masse"]:.3e} Kg")
+                    self.statsdock.body_type_dis.setText(f'{planete["type"]}')
+                    self.statsdock.body_type_dis.repaint()
+                    self.statsdock.surface_label_dis.setText(f'{planete["composition_surface"]}')
+                    self.statsdock.surface_label_dis.repaint()
+                    self.statsdock.age_label_dis.setText(f'{planete["âge"]}ans')
+                    self.statsdock.age_label_dis.repaint()
+                    self.statsdock.rotation_label_dis.setText(f'{planete["température"]}K')
+                    self.statsdock.rotation_label_dis.repaint()
+                    self.statsdock.mass_edit.setText(f"{planete["masse"]:.3e}")
                     self.statsdock.mass_label.repaint()
-                    self.statsdock.rayon_label.setText(f"Rayon: {planete["rayon"]} Km")
-                    self.statsdock.rayon_label.repaint()
+                    self.statsdock.rad_edit.setText(f"{planete["rayon"]}")
+                    self.statsdock.rad_label.repaint()
+                    image_path = planete["statdock_image"]
+                    if image_path:
+                        original_pixmap = QPixmap(image_path)
+                        if planete['nom'] in ['Saturne', 'Soleil', 'Arcturus', 'Bételgeuse', 'Sirius B', 'Rigel']:
+                            if planete['nom'] == 'Bételgeuse':
+                                self.statsdock.body_label_txt.setPointSize(17)
+                                self.statsdock.body_label.setFont(self.statsdock.body_label_txt)
+                            target_size = QSize(350, 350)
+                            self.statsdock.img_label.move(150, 0)
+                        else:
+                            target_size = QSize(200, 200)
+                            self.statsdock.img_label.move(200, 0)
+                        scaled_pixmap = original_pixmap.scaled(target_size, Qt.AspectRatioMode.KeepAspectRatio,
+                                                           Qt.TransformationMode.SmoothTransformation)
+                        self.statsdock.img_label.setPixmap(scaled_pixmap)
                     break
 
     def toggle_measuringtape(self, state: bool):
