@@ -739,7 +739,7 @@ class PyGameWidget(QWidget):
         if radius.magnitude() <= 0:
             return euclid.Vector2(0, 0)
         circular_momentum = momentum.magnitude_squared()/radius.magnitude()
-        return -radius.normalized()*circular_momentum
+        return radius.normalized()*circular_momentum
 
     def force_vector(self, planet):
         acc = self.newton(planet)
