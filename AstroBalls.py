@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushBu
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
     QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
     QFileDialog
-##
+
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock

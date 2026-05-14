@@ -190,7 +190,7 @@ class PyGameWidget(QWidget):
         masse_max_id = 0
         id_list = []
         masse_max = max(self.planetes[0]["masse"], self.planetes[1]["masse"], self.planetes[2]["masse"])
-        for planete_id in range (len(self.planetes)):
+        for planete_id in range(len(self.planetes)):
             id_list.append(planete_id)
             if masse_max == self.planetes[planete_id]["masse"]:
                 masse_max_id = planete_id
@@ -211,6 +211,9 @@ class PyGameWidget(QWidget):
 
         list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
+
+        if len(self.planetes) != len(list_objets):
+            self.planetes.pop(-1)
 
         if self.camera_mode == "milieu":
             pos_x = ((objet_central["position"].x + objet_orbite1["position"].x) / 2) - (self.width() / self.scale / 2)
@@ -524,11 +527,11 @@ class PyGameWidget(QWidget):
 
             "TON 618": {'nom': 'TON 618', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
                         'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15),
-                        "image": "./images/Skins/grey.jpg"},
+                        "image": "./images/Skins/grey.jpg", 'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolated-transparent-alpha-png.webp'},
 
             "Phoenix A": {'nom': 'Phoenix A', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
                           'Température': '1e-14 K', 'âge': '8 milliards d’années', "masse": 2.0e41, "rayon": 590000000000, "couleur": (15, 15, 15),
-                          "image": "images/Skins/titan.png"},
+                          "image": "images/Skins/titan.png", 'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolated-transparent-alpha-png.webp'},
 
             "Hubble": {'nom': 'Télescope Hubble', 'type': 'Satellite artificiel', 'composition_surface': 'Métal et instruments',
                        'Température': '150 à 390 K', 'âge': '36', "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180),
@@ -536,7 +539,7 @@ class PyGameWidget(QWidget):
 
             "Your Mom": {'nom': 'Your Mom', 'type': 'Trou noir supermassif', 'composition_surface': 'Peau',
                          'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000, "couleur": (255, 105, 180),
-                         "image": "./images/Skins/your_mom.jpg"},
+                         "image": "./images/Skins/your_mom.jpg", 'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolated-transparent-alpha-png.webp'},
 
             "Comète 50km": {'nom': 'Comète\n(50 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e15, "rayon": 50, "couleur": (200, 200, 255),
@@ -608,7 +611,7 @@ class PyGameWidget(QWidget):
             epsilon = vectorial_epsilon.magnitude() + (1 * 10 ** -10)
             omega = math.atan2(vectorial_epsilon.y, vectorial_epsilon.x)
             paracond = (2 / current_position) - (current_velocity.magnitude_squared() / gravitational_parameter)
-            if self.is_helpingorbits is True:
+            if self.is_helpingorbits:
                 orbital_momentum = math.sqrt(gravitational_parameter / current_position)
                 tcp = pygame.Vector2((current_position_vector.y * -1), current_position_vector.x).normalize()
                 i['vitesse'] = self.centrum['vitesse'] + (orbital_momentum * tcp)
@@ -971,25 +974,26 @@ class PyGameWidget(QWidget):
                 acc = self.acceleration_vector(i)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
                 if acc.magnitude() >= 0:
-                    norm_vector = acc.normalized() * 25
+                    norm_vector = acc.normalized() * 50
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.aaline(self.playscreen, (255, 255, 0), (screenx, screeny), end_pos, 1)
+                    pygame.draw.aaline(self.playscreen, (255, 255, 0), (screenx, screeny), end_pos, 2)
 
             if self.is_showingforcevector:
                 force = self.force_vector(i)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
                 if force.magnitude() >= 0:
-                    norm_vector = force.normalize() * 25
+                    print(force.magnitude())
+                    norm_vector = force.normalize() * 50
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.aaline(self.playscreen, (255, 0, 0), (screenx, screeny), end_pos, 1)
+                    pygame.draw.aaline(self.playscreen, (255, 0, 0), (screenx, screeny), end_pos, 2)
 
             if self.is_showingvelocityvector:
                 velocity = self.velocity_vector(i)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
                 if velocity.magnitude() >= 0:
-                    norm_vector = velocity.normalized() * 25
+                    norm_vector = velocity.normalized() * 50
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.aaline(self.playscreen, (0, 255, 0), (screenx, screeny), end_pos, 1)
+                    pygame.draw.aaline(self.playscreen, (0, 255, 0), (screenx, screeny), end_pos, 2)
 
         if self.is_showingtrace:
             ttt = getattr(self, 'dtime', 1)
