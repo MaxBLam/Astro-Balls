@@ -1,5 +1,6 @@
 import os.path
 import sys
+from enum import pickle_by_global_name
 
 import euclid
 import pygame
@@ -285,24 +286,37 @@ class MainWindowFrame(QMainWindow):
 
     def save_sim(self):
         self.save_simwindow = QDialog(parent=self)
-        self.save_simwindow.setWindowTitle('Saving...')
-        self.save_simwindow.resize(300, 100)
+        self.save_simwindow.setWindowTitle('Sauvegarder...')
+        self.save_simwindow.resize(400, 170)
         self.save_simwindow_layout = QGridLayout(self.save_simwindow)
-        s_label = QLabel("Entrez un nom: ")
+        #self.save_simwindow_layout.setContentsMargins(20, 20, 20, 20)
+        label1 = QLabel(self.save_simwindow)
+        label1.setText('Sauvegarder la simulation')
+        label1.setFixedWidth(250)
+        label1_font = QFont()
+        label1_font.setPointSize(15)
+        label1_font.setBold(True)
+        label1.setFont(label1_font)
+        label1.move(20, 10)
+
+        s_label = QLabel("Entrez un nom: ", self.save_simwindow)
         s_label.setFixedWidth(int(self.save_simwindow.width() / 2))
-        self.save_simwindow_layout.addWidget(s_label, 0, 0)
-        self.save_name = QLineEdit()
+        s_label.move(20, 65)
+        #self.save_simwindow_layout.addWidget(s_label, 0, 0)
+        self.save_name = QLineEdit(self.save_simwindow)
+        self.save_name.move(110, 65)
+        self.save_name.setStyleSheet("min-width: 265px; max-width: 265px;")
         self.save_name.setPlaceholderText('not a big fan of the government')
         self.save_name.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_name.textChanged.connect(self.save_sim_update_text)
-        self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
-        self.save_button = QPushButton(f'Save')
+        #self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
+        self.save_button = QPushButton(f'Save', self.save_simwindow)
         self.save_button.clicked.connect(self.saving)
+        self.save_button.move(280, 130)
         self.save_button.clicked.connect(self.save_simwindow.close)
-        cancel_button = QPushButton('Cancel')
+        cancel_button = QPushButton('Cancel', self.save_simwindow)
         cancel_button.clicked.connect(self.save_simwindow.close)
-        self.save_simwindow_layout.addWidget(cancel_button, 1, 0)
-        self.save_simwindow_layout.addWidget(self.save_button, 1, 1)
+        cancel_button.move(180, 130)
         self.save_simwindow.exec()
 
     def save_sim_update_text(self, text):
@@ -336,7 +350,8 @@ class MainWindowFrame(QMainWindow):
     def load_sim_window(self):
         self.load_window = QDialog()
         self.load_window.setWindowTitle('Load Save')
-        self.load_window.resize(350, 250)
+        self.load_window.setContentsMargins(10, 0, 10, 0)
+        self.load_window.setFixedSize(350, 250)
         self.load_window_layout = QGridLayout(self.load_window)
         self.load_window_layout.setSpacing(1)
 
@@ -386,6 +401,7 @@ class MainWindowFrame(QMainWindow):
                 panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
                 panel_layout = QGridLayout()
                 panel.setLayout(panel_layout)
+                panel.setFixedHeight(50)
                 panel_layout.setSpacing(1)
                 name_label = QLabel(k)
                 name_label_font = QFont()
@@ -1318,6 +1334,7 @@ class MainWindowFrame(QMainWindow):
                     panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
                     panel_layout = QVBoxLayout()
                     panel.setLayout(panel_layout)
+                    panel.setFixedHeight(110)
                     panel_layout.setSpacing(1)
 
                     planet_label = QLabel()
