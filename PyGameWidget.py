@@ -4,7 +4,7 @@ import pygame
 import pygame.gfxdraw
 from PySide6.QtCore import Qt, QTimer, Signal, QSize
 from PySide6.QtGui import QPainter, QImage, QPixmap
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QApplication
 import euclid
 import math
 
@@ -50,7 +50,7 @@ class PyGameWidget(QWidget):
         self.is_showingforcevector = False
         self.is_showingvelocityvector = False
         self.is_showingtrace = False
-        self.is_startingorbit = False
+        self.is_erasing = False
         self.slider_is_dragging = False
 
         self.val = 20
@@ -586,7 +586,7 @@ class PyGameWidget(QWidget):
         for i in temp_list:
             max_centrum = -1
             self.centrum = None
-            for j in self.planetes:
+            for j in temp_list:
                 if j == i:
                     continue
                 saver = (i['position'] - j['position']).magnitude_squared()
@@ -594,9 +594,6 @@ class PyGameWidget(QWidget):
                 if gravitational_force > max_centrum:
                     max_centrum = gravitational_force
                     self.centrum = j
-                    if j['type'] == 'Satellite naturel' or 'Géante gazeuse' or 'Planète':
-                        self.centrum['isCentrum'] = True
-                        continue
                     self.centrum['isCentrum'] = True
             if self.centrum is None:
                 continue
@@ -624,7 +621,10 @@ class PyGameWidget(QWidget):
             orb_dots = []
             for k in range(301):
                 theta = (2*math.pi*k) / 300
-                r = (semimajor_axis * (1 - epsilon ** 2)) / (1 + epsilon * math.cos(theta))
+                denom = 1+epsilon*math.cos(theta)
+                if abs(denom) <= 1e-5:
+                    denom = 1e-5
+                r = (semimajor_axis * (1 - epsilon ** 2)) / denom
                 x = dx + r * math.cos(theta+omega)
                 y = dy + r * math.sin(theta+omega)
                 orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
@@ -754,6 +754,14 @@ class PyGameWidget(QWidget):
     def mousePressEvent(self, event):
         self.souris_pos = euclid.Vector2(event.pos().x(), event.pos().y())
         self.old_mouse = event.position()
+
+        if self.is_erasing:
+            if event.button() == Qt.MouseButton.LeftButton:
+                for i, j in enumerate(self.planetes):
+                    x, y = self.pos_objet_orbite(j['position'])
+                    diff = self.souris_pos - euclid.Vector2(x+8, y-5)
+                    if abs(diff.magnitude()) <= max(j['rayon'] * self.scale, 15):
+                        self.planetes.pop(i)
 
         if event.button() == Qt.MouseButton.RightButton:
             if self.measuringtape_state:

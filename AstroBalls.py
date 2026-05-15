@@ -4,7 +4,7 @@ import sys
 import euclid
 import pygame
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QFont, QIcon, QPixmap
+from PySide6.QtGui import QAction, QFont, QIcon, QPixmap, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
     QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
@@ -202,10 +202,11 @@ class MainWindowFrame(QMainWindow):
         of.triggered.connect(self.showorbitinfo)
         of.setShortcut('I')
         tool_menu.addAction(of)
-        op = QAction('&Orbit Starter', parent=self)
+        op = QAction('&Éfface', parent=self)
+        op.setIcon(QIcon('cursors/eraser.png'))
         op.setCheckable(True)
-        op.triggered.connect(self.orbit_starter)
-        op.setShortcut('P')
+        op.triggered.connect(self.eraser)
+        op.setShortcut('E')
         tool_menu.addAction(op)
 
         help_menu = QMenu('&Aide')
@@ -229,8 +230,13 @@ class MainWindowFrame(QMainWindow):
 
         QTimer.singleShot(0, self.guide)
 
-    def orbit_starter(self, checked):
-        self.game_widget.is_startingorbit = checked
+    def eraser(self, checked):
+        self.game_widget.is_erasing = checked
+        eraser_cursor = QCursor(QPixmap('cursors/eraser.png').scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio), hotX=16, hotY=16)
+        if checked:
+            self.setCursor(eraser_cursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def reload_ww(self):
         self.reload = QDialog(self)
