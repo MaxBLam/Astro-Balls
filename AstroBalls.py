@@ -1047,7 +1047,7 @@ class MainWindowFrame(QMainWindow):
 
         info_label = QLabel(parent=apropos_window)
         info_label.setText(
-            "<b>Astro Balls</b><br>Version: v0.1.11<br><br>Astro Balls est une simulation de mouvements planétaires et "
+            "<b>Astro Balls</b><br>Version: v1.0.0<br><br>Astro Balls est une simulation de mouvements planétaires et "
             "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
             "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse "
             "et l'échelle de la simulation."
