@@ -1,7 +1,7 @@
 from PySide6.QtCore import QMimeData, Qt, QRegularExpression
 from PySide6.QtGui import QFont, QDrag, QRegularExpressionValidator, QIcon
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget, QHBoxLayout, QLabel, QFrame, QDoubleSpinBox,
-                               QScrollArea, QToolBar, QTabWidget, QLineEdit, QPushButton)
+                               QScrollArea, QToolBar, QTabWidget, QLineEdit, QPushButton, QSizePolicy)
 
 
 class QtPlanetLabel(QLabel):
@@ -55,12 +55,12 @@ class DragNDrop(QToolBar):
         tabs.addTab(autres_tabs, QIcon('images/dragndrop_image/satellite.png'), 'Autres')
 
         self.addWidget(tabs)
-        self.setFixedHeight(100)
+        self.setFixedHeight(110)
 
 
 class StatsDock(QDockWidget):
     def __init__(self):
-        super().__init__("Statistics")
+        super().__init__("StatDock")
         self.body_label = None
 
         widget = QWidget()
@@ -256,5 +256,7 @@ class StatsDock(QDockWidget):
         scroller.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroller.setWidgetResizable(True)
         scroller.setWidget(widget)
-        scroller.setFixedWidth(350)
+        scroller.setMaximumWidth(400)
+        scroller.setMinimumWidth(100)
+        scroller.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setWidget(scroller)

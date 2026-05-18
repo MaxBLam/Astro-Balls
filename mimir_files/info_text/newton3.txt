@@ -1,1 +1,3 @@
 À toute force exercée dans une direction, il s'oppose une force égale dans la direction opposée. En d'autres termes, lorsque vous poussez sur un objet, celui-ci vous repousse. Cela ne signifie pas que tous les objets sont immobiles, mais plutôt que la troisième loi de Newton garantit que, lorsque vous poussez sur un objet, vous ne tombez pas dessus.
+
+Ce phénomène est défini par la formule suivante :

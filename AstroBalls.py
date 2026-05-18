@@ -7,7 +7,8 @@ from PySide6.QtGui import QAction, QFont, QIcon, QPixmap, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
     QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
-    QFileDialog
+    QFileDialog, QSpinBox
+
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
@@ -208,7 +209,7 @@ class MainWindowFrame(QMainWindow):
         tool_menu.addAction(op)
 
         help_menu = QMenu('&Aide')
-        info_action = QAction('&Mímisbrunnr', parent=self)
+        info_action = QAction('&Encyclopédie ', parent=self)
         info_action.setIcon(QIcon('images/menubar symbol/book.png'))
         info_action.triggered.connect(self.mimir)
         info_action.setShortcut('Alt+M')
@@ -706,13 +707,13 @@ class MainWindowFrame(QMainWindow):
             return
         self.scale_scope = QDockWidget(parent=self)
         scale_scope_container = QWidget()
+        scale_scope_widget = QGridLayout(scale_scope_container)
         self.scale_scope.setWidget(scale_scope_container)
         self.scale_scope.setWindowTitle('Échelle de rendu')
 
         self.scale_slider = QSlider(Qt.Orientation.Horizontal, parent=scale_scope_container)
         self.configure_slider(self.scale_slider, 1, 100, 20)
-        self.scale_slider.move(0, 20)
-        self.scale_slider.setFixedWidth(340)
+        scale_scope_widget.addWidget(self.scale_slider, 0, 0, 3, 4)
         self.scale_slider.valueChanged.connect(self.update_scale_slider)
         self.scale_slider.valueChanged.connect(self.game_widget.scale_interactive)
         self.scale_slider.sliderPressed.connect(self.game_widget.on_slider_pressed)
@@ -738,17 +739,23 @@ class MainWindowFrame(QMainWindow):
                         border: 1px solid #333333;
                     }
                 """
+        widget = QWidget()
+        scale_scope_widget.addWidget(widget, 0, 1, 2, 2)
+
         backward_button = QPushButton('-', self.scale_scope)
         backward_button.clicked.connect(self.backward_scale_slider)
         backward_button.setStyleSheet(button_stylesheet)
         backward_button.setFixedWidth(50)
-        backward_button.move(30, 90)
+        scale_scope_widget.addWidget(backward_button, 3, 0)
+
+        widget1 = QWidget()
+        scale_scope_widget.addWidget(widget1, 1, 3, 1, 1)
 
         forward_button = QPushButton('+', self.scale_scope)
         forward_button.clicked.connect(self.forward_scale_slider)
         forward_button.setStyleSheet(button_stylesheet)
         forward_button.setFixedWidth(50)
-        forward_button.move(270, 90)
+        scale_scope_widget.addWidget(forward_button, 3, 3)
 
         self.scale_scope.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
         self.scale_scope.setFixedHeight(150)
@@ -802,124 +809,131 @@ class MainWindowFrame(QMainWindow):
 
     def settings(self):
         settings_window = QDialog(parent=self)
-        settings_window.resize(650, 500)
+        settings_window.setFixedSize(650, 500)
         settings_window.setWindowTitle('Settings')
-        settings_layout = QGridLayout()
+        settings_layout = QHBoxLayout()
+        setting_tabs = QTabWidget()
+        setting_tabs.setFixedSize(650, 470)
+
+        keybinds_tab = QWidget()
+        bk_label = QLabel(parent=keybinds_tab)
+        bk_label.setFixedSize(500, 40)
+        bk_label.setText('Keybinds')
+        bk_label_font = QFont()
+        bk_label_font.setPointSize(30)
+        bk_label_font.setBold(True)
+        bk_label.setFont(bk_label_font)
+        bk_label.move(20, 20)
+
+        lc_label = QLabel(parent=keybinds_tab)
+        lc_label.setText('Camera')
+        lc_label_font = QFont()
+        lc_label_font.setPointSize(15)
+        lc_label.setFont(lc_label_font)
+        lc_label.move(20, 80)
+
+        sep = QFrame(parent=keybinds_tab)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        sep.setFixedSize(100, 1)
+        sep.move(20, 105)
+
+        change_camera = QLabel('Camera Free, Follow, Mid: ', parent=keybinds_tab)
+        change_camera.move(20, 120)
+        cc_keybind = QLabel('F', parent=keybinds_tab)
+        cc_keybind_font = QFont()
+        cc_keybind_font.setBold(True)
+        cc_keybind.setFont(cc_keybind_font)
+        cc_keybind.setStyleSheet('color: green;')
+        cc_keybind.move(205, 120)
+
+        up_camera = QLabel('Déplacer la caméra vers le haut: ', parent=keybinds_tab)
+        up_camera.move(20, 140)
+        up_keybind = QLabel('W', parent=keybinds_tab)
+        up_keybind_font = QFont()
+        up_keybind_font.setBold(True)
+        up_keybind.setFont(up_keybind_font)
+        up_keybind.setStyleSheet('color: green;')
+        up_keybind.move(205, 140)
+
+        down_camera = QLabel('Déplacer la caméra vers le bas: ', parent=keybinds_tab)
+        down_camera.move(20, 160)
+        down_keybind = QLabel('S', parent=keybinds_tab)
+        down_keybind_font = QFont()
+        down_keybind_font.setBold(True)
+        down_keybind.setFont(down_keybind_font)
+        down_keybind.setStyleSheet('color: green;')
+        down_keybind.move(205, 160)
+
+        left_camera = QLabel('Déplacer la caméra vers la gauche: ', parent=keybinds_tab)
+        left_camera.move(20, 180)
+        left_keybind = QLabel('A', parent=keybinds_tab)
+        left_keybind_font = QFont()
+        left_keybind_font.setBold(True)
+        left_keybind.setFont(left_keybind_font)
+        left_keybind.setStyleSheet('color: green;')
+        left_keybind.move(205, 180)
+
+        right_camera = QLabel('Déplacer la caméra vers la droite: ', parent=keybinds_tab)
+        right_camera.move(20, 200)
+        right_keybind = QLabel('D', parent=keybinds_tab)
+        right_keybind_font = QFont()
+        right_keybind_font.setBold(True)
+        right_keybind.setFont(right_keybind_font)
+        right_keybind.setStyleSheet('color: green;')
+        right_keybind.move(205, 200)
+
+        lo_label = QLabel(parent=keybinds_tab)
+        lo_label.setText('Outils')
+        lo_label_font = QFont()
+        lo_label_font.setPointSize(15)
+        lo_label.setFont(lo_label_font)
+        lo_label.move(400, 80)
+
+        sep1 = QFrame(parent=keybinds_tab)
+        sep1.setFrameShape(QFrame.Shape.HLine)
+        sep1.setFrameShadow(QFrame.Shadow.Sunken)
+        sep1.setFixedSize(100, 1)
+        sep1.move(400, 105)
+
+        info_orbit = QLabel('Info Orbites: ', parent=keybinds_tab)
+        info_orbit.move(400, 120)
+        io_keybind = QLabel('I', parent=keybinds_tab)
+        io_keybind_font = QFont()
+        io_keybind_font.setBold(True)
+        io_keybind.setFont(io_keybind_font)
+        io_keybind.setStyleSheet('color: green;')
+        io_keybind.move(500, 120)
+
+        measuring_tool = QLabel('Measuring Tool: ', parent=keybinds_tab)
+        measuring_tool.move(400, 140)
+        mt_keybind = QLabel('M', parent=keybinds_tab)
+        mt_keybind_font = QFont()
+        mt_keybind_font.setBold(True)
+        mt_keybind.setFont(mt_keybind_font)
+        mt_keybind.setStyleSheet('color: green;')
+        mt_keybind.move(500, 140)
+
+        eraser = QLabel('Éfface: ', parent=keybinds_tab)
+        eraser.move(400, 160)
+        et_keybind = QLabel('E', parent=keybinds_tab)
+        et_keybind_font = QFont()
+        et_keybind_font.setBold(True)
+        et_keybind.setFont(et_keybind_font)
+        et_keybind.setStyleSheet('color: green;')
+        et_keybind.move(500, 160)
+
+        setting_tabs.addTab(keybinds_tab, 'Keybinds')
+
+        settings_layout.addWidget(setting_tabs)
         settings_window.setLayout(settings_layout)
-
-        side_panel = QFrame()
-        side_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        side_panel_layout = QVBoxLayout()
-        side_panel.setLayout(side_panel_layout)
-        side_panel_layout.setSpacing(10)
-        settings_layout.addWidget(side_panel, 0, 0, 1, 1)
-
-        graphics = QPushButton('Graphics')
-        graphics.setStyleSheet('text-align: left; padding-left: 2px')
-        graphics.clicked.connect(self.graphicstab)
-        side_panel_layout.addWidget(graphics)
-        audio = QPushButton('Audio')
-        audio.setStyleSheet('text-align: left; padding-left: 2px')
-        audio.clicked.connect(self.audiotab)
-        side_panel_layout.addWidget(audio)
-        aspectratio = QPushButton('Window Aspect Ratio')
-        aspectratio.setStyleSheet('text-align: left; padding-left: 2px')
-        aspectratio.clicked.connect(self.aspectratiotab)
-        side_panel_layout.addWidget(aspectratio)
-        keybinds = QPushButton('Keybinds')
-        keybinds.setStyleSheet('text-align: left; padding-left: 2px')
-        keybinds.clicked.connect(self.keybindstab)
-        side_panel_layout.addWidget(keybinds)
-
-        main_panel = QFrame()
-        main_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        self.main_panel_layout = QStackedLayout()
-        main_panel.setLayout(self.main_panel_layout)
-        settings_layout.addWidget(main_panel, 0, 1, 4, 4)
-
-        graphics_settings_panel = QFrame()
-        graphics_settings_panel_layout = QGridLayout()
-        graphics_settings_panel.setLayout(graphics_settings_panel_layout)
-        self.main_panel_layout.addWidget(graphics_settings_panel)
-        graphics_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        graphics_settings_panel_label = QLabel()
-        graphics_settings_panel_label.setText("GRAPHICS")
-        graphics_settings_panel_label_font = QFont()
-        graphics_settings_panel_label_font.setPointSize(20)
-        graphics_settings_panel_label_font.setBold(True)
-        graphics_settings_panel_label_font.setItalic(True)
-        graphics_settings_panel_label.setFont(graphics_settings_panel_label_font)
-        graphics_settings_panel_layout.addWidget(graphics_settings_panel_label, 0, 0)
-
-        audio_settings_panel = QFrame()
-        audio_settings_panel_layout = QGridLayout()
-        audio_settings_panel.setLayout(audio_settings_panel_layout)
-        self.main_panel_layout.addWidget(audio_settings_panel)
-        audio_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        audio_settings_panel_label = QLabel()
-        audio_settings_panel_label.setText("AUDIO")
-        audio_settings_panel_label_font = QFont()
-        audio_settings_panel_label_font.setPointSize(20)
-        audio_settings_panel_label_font.setBold(True)
-        audio_settings_panel_label_font.setItalic(True)
-        audio_settings_panel_label.setFont(audio_settings_panel_label_font)
-        audio_settings_panel_layout.addWidget(audio_settings_panel_label, 0, 0)
-
-        aspectratio_settings_panel = QFrame()
-        aspectratio_settings_panel_layout = QGridLayout()
-        aspectratio_settings_panel.setLayout(aspectratio_settings_panel_layout)
-        self.main_panel_layout.addWidget(aspectratio_settings_panel)
-        aspectratio_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        aspectratio_settings_panel_label = QLabel()
-        aspectratio_settings_panel_label.setText("ASPECT RATIO")
-        aspectratio_settings_panel_label_font = QFont()
-        aspectratio_settings_panel_label_font.setPointSize(20)
-        aspectratio_settings_panel_label_font.setBold(True)
-        aspectratio_settings_panel_label_font.setItalic(True)
-        aspectratio_settings_panel_label.setFont(aspectratio_settings_panel_label_font)
-        aspectratio_settings_panel_layout.addWidget(aspectratio_settings_panel_label, 0, 0)
-
-        keybinds_settings_panel = QFrame()
-        keybinds_settings_panel_layout = QGridLayout()
-        keybinds_settings_panel.setLayout(keybinds_settings_panel_layout)
-        self.main_panel_layout.addWidget(keybinds_settings_panel)
-        keybinds_settings_panel.setStyleSheet('background-color: #2c2c2c; border-radius: 5px; overflow: hidden')
-        keybinds_settings_panel_label = QLabel()
-        keybinds_settings_panel_label.setText("KEYBINDS")
-        keybinds_settings_panel_label_font = QFont()
-        keybinds_settings_panel_label_font.setPointSize(20)
-        keybinds_settings_panel_label_font.setBold(True)
-        keybinds_settings_panel_label_font.setItalic(True)
-        keybinds_settings_panel_label.setFont(keybinds_settings_panel_label_font)
-        keybinds_settings_panel_layout.addWidget(keybinds_settings_panel_label, 0, 0)
-
-        apply_button = QPushButton('Apply')
-        apply_button.clicked.connect(self.applysetting)
-        settings_layout.addWidget(apply_button, 4, 3)
-
-        close_button_settings = QPushButton('Close')
-        close_button_settings.clicked.connect(settings_window.close)
-        settings_layout.addWidget(close_button_settings, 4, 4)
 
         settings_window.exec()
 
-    def graphicstab(self):
-        self.main_panel_layout.setCurrentIndex(0)
-
-    def audiotab(self):
-        self.main_panel_layout.setCurrentIndex(1)
-
-    def aspectratiotab(self):
-        self.main_panel_layout.setCurrentIndex(2)
-
-    def keybindstab(self):
-        self.main_panel_layout.setCurrentIndex(3)
-
-    # DEMO
     def mimir(self):
         info_window = QDialog(parent=self)
         info_window.setFixedSize(650, 550)
-        info_window.setWindowTitle('Infd')
+        info_window.setWindowTitle('Encyclopédie ')
         info_layout = QHBoxLayout()
         info_tabs = QTabWidget()
         info_tabs.setFixedSize(650, 470)
@@ -928,7 +942,7 @@ class MainWindowFrame(QMainWindow):
         newton1tab_layout = QGridLayout()
         b_n1_label = QLabel(parent=newton1tab)
         b_n1_label.setFixedSize(500, 40)
-        b_n1_label.setText("NEWTON'S FIRST LAW")
+        b_n1_label.setText("PREMIÈRE LOI DE NEWTON")
         b_n1_label_font = QFont()
         b_n1_label_font.setPointSize(30)
         b_n1_label.setFont(b_n1_label_font)
@@ -949,20 +963,39 @@ class MainWindowFrame(QMainWindow):
         i_n1_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         i_n1_label.adjustSize()
         i_n1_label.move(20, 100)
-        im_n1_label = QLabel("Sir Isaac Newton\nBy Godfrey Kneller\n1689", parent=newton1tab)
-        im_n1_label.setFixedSize(100, 100)
-        im_n1_label.move(470, 350)
+        im_n1_label = QLabel("Sir Isaac Newton", parent=newton1tab)
+        im_n1_label.setFixedSize(100, 70)
+        im_n1_label.move(480, 350)
         newton1tab.setLayout(newton1tab_layout)
-        info_tabs.addTab(newton1tab, "Newton's First Law")
+        info_tabs.addTab(newton1tab, "Première loi de Newton")
 
         newton2tab = QWidget()
         b_n2_label = QLabel(parent=newton2tab)
         b_n2_label.setFixedSize(500, 40)
-        b_n2_label.setText("NEWTON'S SECOND LAW")
+        b_n2_label.setText("DEUXIÈME LOI DE NEWTON")
         b_n2_label_font = QFont()
         b_n2_label_font.setPointSize(30)
         b_n2_label.setFont(b_n2_label_font)
         b_n2_label.move(20, 20)
+        upixmap_newton2 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
+                                                                                                       Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                                       Qt.TransformationMode.SmoothTransformation)
+        u_pixmap_newton2 = QLabel(parent=newton2tab)
+        u_pixmap_newton2.setFrameStyle(QFrame.Shape.Panel)
+        u_pixmap_newton2.setFixedSize(200, 280)
+        u_pixmap_newton2.setPixmap(upixmap_newton2)
+        u_pixmap_newton2.move(420, 95)
+        im_n2_label = QLabel("Sir Isaac Newton", parent=newton2tab)
+        im_n2_label.setFixedSize(100, 70)
+        im_n2_label.move(480, 350)
+        lpixmap_newton2 = QPixmap('images/mimir_usedimages/newton2.png').scaled(399, 142,
+                                                                               Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
+        l_pixmap_newton2 = QLabel(parent=newton2tab)
+        l_pixmap_newton2.setFrameStyle(QFrame.Shape.Panel)
+        l_pixmap_newton2.setFixedSize(280, 143)
+        l_pixmap_newton2.setPixmap(lpixmap_newton2)
+        l_pixmap_newton2.move(65, 280)
         with open('mimir_files/info_text/newton2.txt', 'r', encoding='utf-8') as newton2_txtfile:
             i_n2_label = QLabel(str(newton2_txtfile.read()), parent=newton2tab)
         i_n2_label.setFixedWidth(int(fixed_sizedw))
@@ -972,37 +1005,50 @@ class MainWindowFrame(QMainWindow):
         i_n2_label.move(20, 100)
         e_n2_label = QLabel("<span style='font-family: Cambria Math; font-style: italic; font-size: 20px;'>"
                             "F = m \u00b7 a</span>", parent=newton2tab)
-        e_n2_label.move(100, 250)
+        e_n2_label.move(100, 210)
+        ei_n2_label = QLabel("Ou:\nF = La force (N)"
+                            "\nm = La masse (kg)"
+                            "\na = L'accélération (m/s2)", parent=newton2tab)
+        ei_n2_label.setFixedSize(150, 60)
+        ei_n2_label.move(200, 200)
         newton2tab_layout = QGridLayout()
         newton2tab.setLayout(newton2tab_layout)
-        info_tabs.addTab(newton2tab, "Newton's Second Law")
+        info_tabs.addTab(newton2tab, "Deuxième loi de Newton")
 
         newton3tab = QWidget()
         b_n3_label = QLabel(parent=newton3tab)
         b_n3_label.setFixedSize(500, 40)
-        b_n3_label.setText("NEWTON'S THIRD LAW")
+        b_n3_label.setText("TROISIÈME LOI DE NEWTON")
         b_n3_label_font = QFont()
         b_n3_label_font.setPointSize(30)
         b_n3_label.setFont(b_n3_label_font)
         b_n3_label.move(20, 20)
+        upixmap_newton3 = QPixmap('images/mimir_usedimages/newt3.png').scaled(300, 380,
+                                                                                                        Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                                        Qt.TransformationMode.SmoothTransformation)
+        u_pixmap_newton3 = QLabel(parent=newton3tab)
+        u_pixmap_newton3.setFrameStyle(QFrame.Shape.Panel)
+        u_pixmap_newton3.setFixedSize(280, 300)
+        u_pixmap_newton3.setPixmap(upixmap_newton3)
+        u_pixmap_newton3.move(340, 95)
         with open('mimir_files/info_text/newton3.txt', 'r', encoding='utf-8') as newton3_txtfile:
             i_n3_label = QLabel(str(newton3_txtfile.read()), parent=newton3tab)
-        i_n3_label.setFixedWidth(int(fixed_sizedw))
+        i_n3_label.setFixedWidth(int(fixed_sizedw*0.8))
         i_n3_label.setWordWrap(True)
         i_n3_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         i_n3_label.adjustSize()
         i_n3_label.move(20, 100)
         e_n3_label = QLabel("<span style='font-family: Cambria Math; font-style: italic; font-size: 20px;'>"
                             "F<sub>AB</sub> = -F<sub>BA</sub>", parent=newton3tab)
-        e_n3_label.move(100, 250)
+        e_n3_label.move(100, 260)
         newton3tab_layout = QGridLayout()
         newton3tab.setLayout(newton3tab_layout)
-        info_tabs.addTab(newton3tab, "Newton's Third Law")
+        info_tabs.addTab(newton3tab, "La troisième loi de Newton")
 
         kflopmtab = QWidget()
         b_k_label = QLabel(parent=kflopmtab)
         b_k_label.setFixedSize(500, 100)
-        b_k_label.setText("KEPLER'S FIRST LAW OF \nPLANETARY MOTION")
+        b_k_label.setText("PREMIÈRE LOI DE KEPLER SUR LA \nMOTION PLANÉTAIRE")
         b_k_label.setFixedWidth(info_window.width())
         b_k_label_font = QFont()
         b_k_label_font.setPointSize(30)
@@ -1023,6 +1069,19 @@ class MainWindowFrame(QMainWindow):
         l_pixmap_kflopm.setFixedSize(200, 280)
         l_pixmap_kflopm.setPixmap(pixmap_kflopm)
         l_pixmap_kflopm.move(420, 95)
+        im_k_label = QLabel("Johannes Kepler", parent=kflopmtab)
+        im_k_label.setFixedSize(100, 70)
+        im_k_label.move(480, 350)
+        pixmap2_kflopm = QPixmap('images/mimir_usedimages/Mean_Anomaly.svg.png').scaled(190, 190,
+                                                                                Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                Qt.TransformationMode.SmoothTransformation)
+        l_pixmap2_kflopm = QLabel(parent=kflopmtab)
+        l_pixmap2_kflopm.setFixedSize(190, 190)
+        l_pixmap2_kflopm.setPixmap(pixmap2_kflopm)
+        l_pixmap2_kflopm.move(5, 270)
+        eii_k_label = QLabel("<- Voici comment les éllipses\n      orbitales se calcule avec Kepler", parent=kflopmtab)
+        eii_k_label.setFixedSize(200, 50)
+        eii_k_label.move(200, 340)
         e_k_label = QLabel(parent=kflopmtab)
         e_k_txt = """
         <table style='color: white; font-family: "Cambria Math", serif; font-size: 15px; border-collapse: collapse;'>
@@ -1060,7 +1119,7 @@ class MainWindowFrame(QMainWindow):
         ei_k_label.move(284, 235)
         kflopmtab_layout = QGridLayout()
         kflopmtab.setLayout(kflopmtab_layout)
-        info_tabs.addTab(kflopmtab, "Kepler's First Law of Planetary Motion")
+        info_tabs.addTab(kflopmtab, "Loi de Kepler")
 
         metrictab = QWidget()
         metrictab_layout = QGridLayout()
@@ -1087,7 +1146,10 @@ class MainWindowFrame(QMainWindow):
         l_metric.setFixedSize(200, 265)
         l_metric.setPixmap(pixmap_metric)
         l_metric.move(420, 95)
-        info_tabs.addTab(metrictab, "Metric System")
+        im_m_label = QLabel("Antoine Lavoisier", parent=metrictab)
+        im_m_label.setFixedSize(100, 70)
+        im_m_label.move(472, 335)
+        info_tabs.addTab(metrictab, "Système métrique")
 
         info_layout.addWidget(info_tabs)
         info_window.setLayout(info_layout)
@@ -1117,7 +1179,7 @@ class MainWindowFrame(QMainWindow):
 
         info_label = QLabel(parent=apropos_window)
         info_label.setText(
-            "<b>Astro Balls</b><br>Version: v1.0.1a<br><br>Astro Balls est une simulation de mouvements planétaires et "
+            "<b>Astro Balls</b><br>Version: v1.0.1b<br><br>Astro Balls est une simulation de mouvements planétaires et "
             "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
             "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse "
             "et l'échelle de la simulation."
