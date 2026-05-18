@@ -1,4 +1,5 @@
 import random
+from asyncio import current_task
 
 import pygame
 import pygame.gfxdraw
@@ -576,6 +577,14 @@ class PyGameWidget(QWidget):
                    "masse": data["masse"], "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'],
                    'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température': data["Température"], "image": data["image"], 'statdock_image': data['statdock_image']}
 
+        name_lst = [i['nom'] for i in self.planetes]
+        current_name = planete['nom']
+        if planete['nom'] in name_lst:
+            ind = 1
+            while f"{current_name} ({ind})" in name_lst:
+                ind += 1
+            planete['nom'] = current_name + f' ({ind})'
+
         self.planetes.append(planete)
 
     def kepler(self):
@@ -681,8 +690,8 @@ class PyGameWidget(QWidget):
                     omega = orbital_data['omega']
                     r = (semimajor * (1 - ecc ** 2)) / (1 + ecc * math.cos(theta))
                     centrum = self.centrum
-                    planet['position'].x = centrum['position'].x + r * math.cos(theta + omega)  # type: ignore
-                    planet['position'].y = centrum['position'].y + r * math.sin(theta + omega)  # type: ignore
+                    planet['position'].x = centrum['position'].x + r * math.cos(theta + omega)
+                    planet['position'].y = centrum['position'].y + r * math.sin(theta + omega)
 
                     inner_sqrt = math.sqrt(
                         (self.G * centrum['masse']) / ((semimajor * (1 - ecc ** 2)) + 1 * 10 ** -10))
@@ -690,12 +699,11 @@ class PyGameWidget(QWidget):
                     urvy = inner_sqrt * (ecc + math.cos(theta))
                     rvx = urvx * math.cos(omega) - urvy * math.sin(omega)
                     rvy = urvx * math.sin(omega) + urvy * math.cos(omega)
-                    planet['vitesse'].x = rvx + centrum['vitesse'].x  # type: ignore
-                    planet['vitesse'].y = rvy + centrum['vitesse'].y  # type: ignore
+                    planet['vitesse'].x = rvx + centrum['vitesse'].x
+                    planet['vitesse'].y = rvy + centrum['vitesse'].y
 
     def orbital_eccentricity_editor(self, edited_ecc):
         if self.is_editingorbits is not None:
-            print('works')
             new_ecc = edited_ecc / 100
             planet = self.p_index
             if planet:

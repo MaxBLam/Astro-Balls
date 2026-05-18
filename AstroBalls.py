@@ -1,7 +1,5 @@
 import os.path
 import sys
-from enum import pickle_by_global_name
-
 import euclid
 import pygame
 from PySide6.QtCore import Qt, QTimer
@@ -10,11 +8,9 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushBu
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
     QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
     QFileDialog
-
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
 from WidgetInteractive import DragNDrop, StatsDock
-
 import json
 from datetime import datetime
 from functools import partial
@@ -87,19 +83,20 @@ class MainWindowFrame(QMainWindow):
         layout.addWidget(self.game_widget)
         self.resize(1200, 600)
 
+
         menu = self.menuBar()
         app_menu = QMenu('&Application')
-        savenew_action = QAction('&New Save', parent=self)
-        savenew_action.setIcon(QIcon('images/menubar symbol/plus.png'))
-        savenew_action.triggered.connect(self.new_save)
-        savenew_action.setShortcut('Ctrl+N')
-        app_menu.addAction(savenew_action)
-        save_action = QAction('&Save', parent=self)
+        new_sim_action = QAction('&New', parent=self)
+        new_sim_action.setIcon(QIcon('images/menubar symbol/plus.png'))
+        new_sim_action.triggered.connect(self.reload_ww)
+        new_sim_action.setShortcut('Ctrl+N')
+        app_menu.addAction(new_sim_action)
+        save_action = QAction('&Sauvegarder', parent=self)
         save_action.setIcon(QIcon('images/menubar symbol/diskette.png'))
         save_action.triggered.connect(self.save_sim)
         save_action.setShortcut('Ctrl+S')
         app_menu.addAction(save_action)
-        open_action = QAction('&Open', parent=self)
+        open_action = QAction('&Ouvrir', parent=self)
         open_action.setIcon(QIcon('images/menubar symbol/open-folder.png'))
         open_action.triggered.connect(self.load_sim_window)
         open_action.setShortcut('Ctrl+O')
@@ -111,14 +108,14 @@ class MainWindowFrame(QMainWindow):
         settings_action.setShortcut('Alt+S')
         app_menu.addAction(settings_action)
         app_menu.addSeparator()
-        new_sim_action = QAction('&Reload', parent=self)
-        new_sim_action.setIcon(QIcon('images/menubar symbol/loading-arrow.png'))
-        new_sim_action.triggered.connect(self.reload_ww)
-        new_sim_action.setShortcut('Ctrl+R')
-        app_menu.addAction(new_sim_action)
+        savenew_action = QAction('&Réinitialiser', parent=self)
+        savenew_action.setIcon(QIcon('images/menubar symbol/loading-arrow.png'))
+        savenew_action.triggered.connect(self.new_save)
+        savenew_action.setShortcut('Ctrl+R')
+        app_menu.addAction(savenew_action)
         quit_action = QAction('&Quitter', parent=self)
         quit_action.setIcon(QIcon('images/menubar symbol/cross.png'))
-        quit_action.triggered.connect(self.closeapp)
+        quit_action.triggered.connect(self.quit_preventer)
         quit_action.setShortcut('Alt+F4')
         app_menu.addAction(quit_action)
         menu.addMenu(app_menu)
@@ -302,14 +299,12 @@ class MainWindowFrame(QMainWindow):
         s_label = QLabel("Entrez un nom: ", self.save_simwindow)
         s_label.setFixedWidth(int(self.save_simwindow.width() / 2))
         s_label.move(20, 65)
-        #self.save_simwindow_layout.addWidget(s_label, 0, 0)
         self.save_name = QLineEdit(self.save_simwindow)
         self.save_name.move(110, 65)
         self.save_name.setStyleSheet("min-width: 265px; max-width: 265px;")
         self.save_name.setPlaceholderText('not a big fan of the government')
         self.save_name.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_name.textChanged.connect(self.save_sim_update_text)
-        #self.save_simwindow_layout.addWidget(self.save_name, 0, 1)
         self.save_button = QPushButton(f'Save', self.save_simwindow)
         self.save_button.clicked.connect(self.saving)
         self.save_button.move(280, 130)
@@ -417,6 +412,7 @@ class MainWindowFrame(QMainWindow):
                                         {border: 1px solid #8a8a8a; padding: 2px; background-color: #444444} 
                                         QPushButton::hover { background-color: #4d4d4d}""")
                 load_button.pressed.connect(partial(self.loader, path_dict[j]))
+                load_button.pressed.connect(self.load_window.close)
                 panel_layout.addWidget(load_button, 0, 1)
                 delete_file_button = QPushButton('Delete')
                 delete_file_button.setStyleSheet("""QPushButton 
@@ -458,20 +454,72 @@ class MainWindowFrame(QMainWindow):
 
     def new_save(self):
         preventer = QDialog(parent=self)
-        preventer.setWindowTitle('new save?')
-        preventer_layout = QGridLayout(preventer)
-        preventer.setFixedWidth(240)
-        q_label = QLabel(
-            "Voulez-vous créer un nouveau fichier? Toutes les modifications non enregistrées seront perdues.")
+        preventer.setWindowTitle('Reload?')
+        preventer.setFixedSize(340, 190)
+        label = QLabel(preventer)
+        label.setText('Réinitialiser la Simulation?')
+        label.setFixedWidth(300)
+        label_font = QFont()
+        label_font.setPointSize(15)
+        label_font.setBold(True)
+        label.setFont(label_font)
+        label.setWordWrap(True)
+        label.move(35, 10)
+        rw_image = QPixmap('images/reloadwindow/reload.png').scaled(22, 22, Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                         Qt.TransformationMode.SmoothTransformation)
+        rw_label = QLabel(preventer)
+        rw_label.setPixmap(rw_image)
+        rw_label.move(10, 13)
+        q_label = QLabel(preventer)
+        q_label.setText('Souhaitez-vous réinitialiser définitivement votre simulation actuelle?')
+        q_label.setFixedSize(300, 50)
+        q_label_font = QFont()
+        q_label_font.setPointSize(11)
+        q_label.setFont(q_label_font)
         q_label.setWordWrap(True)
-        preventer_layout.addWidget(q_label, 0, 0, 1, 2)
-        yes_button = QPushButton('Oui')
+        q_label.move(10, 50)
+
+        warning_box = QFrame(preventer)
+        warning_box.setObjectName("WarningBox")
+
+        warning = QLabel(preventer)
+        warning.setText("⚠️")
+        warning_font = QFont()
+        warning_font.setPointSize(11)
+        warning.setFont(warning_font)
+
+        warner = QLabel(preventer)
+        warner.setText('Attention: Tous fichiers non enregistrés seront perdus.')
+        warner.setFixedWidth(300)
+        warner_font = QFont()
+        warner_font.setPointSize(8)
+        warner.setFont(warner_font)
+
+        warning_box.setStyleSheet("""
+            QFrame#WarningBox {
+                background-color: rgba(224, 169, 109, 0.08); 
+
+                border: 1px solid rgba(224, 169, 109, 0.25); 
+                border-radius: 6px;
+            }
+            QLabel {
+                color: #e0a96d; 
+                border: none;
+                background: transparent;
+            }
+        """)
+        warning_box.setFixedWidth(320)
+        warning_box.move(10, 110)
+        warning.move(12, 113)
+        warner.move(35, 116)
+
+        yes_button = QPushButton('Oui', preventer)
         yes_button.clicked.connect(self.load_newsave)
         yes_button.clicked.connect(preventer.close)
-        preventer_layout.addWidget(yes_button, 1, 0)
-        no_button = QPushButton('Non')
+        yes_button.move(240, 150)
+        no_button = QPushButton('Non', preventer)
         no_button.clicked.connect(preventer.close)
-        preventer_layout.addWidget(no_button, 1, 1)
+        no_button.move(160, 150)
         preventer.exec()
 
     def load_newsave(self):
@@ -870,10 +918,11 @@ class MainWindowFrame(QMainWindow):
     # DEMO
     def mimir(self):
         info_window = QDialog(parent=self)
-        info_window.setFixedSize(650, 500)
+        info_window.setFixedSize(650, 550)
         info_window.setWindowTitle('Infd')
         info_layout = QHBoxLayout()
         info_tabs = QTabWidget()
+        info_tabs.setFixedSize(650, 470)
 
         newton1tab = QWidget()
         newton1tab_layout = QGridLayout()
@@ -1016,15 +1065,36 @@ class MainWindowFrame(QMainWindow):
         metrictab = QWidget()
         metrictab_layout = QGridLayout()
         metrictab.setLayout(metrictab_layout)
+        b_m_label = QLabel(parent=metrictab)
+        b_m_label.setFixedSize(500, 40)
+        b_m_label.setText('LE SYSTÈME MÉTRIQUE')
+        b_m_label_font = QFont()
+        b_m_label_font.setPointSize(30)
+        b_m_label.setFont(b_m_label_font)
+        b_m_label.move(20, 20)
+        with open('mimir_files/info_text/metric.txt', 'r', encoding='utf-8') as metric_txtfile:
+            i_m_label = QLabel(str(metric_txtfile.read()), parent=metrictab)
+        i_m_label.setFixedWidth(int(fixed_sizedw))
+        i_m_label.setWordWrap(True)
+        i_m_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        i_m_label.adjustSize()
+        i_m_label.move(20, 100)
+        pixmap_metric = QPixmap('images/mimir_usedimages/David_-_Portrait_of_Monsieur_Lavoisier_(cropped)2.jpg').scaled(200, 260,
+                                                                                                    Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                                    Qt.TransformationMode.SmoothTransformation)
+        l_metric = QLabel(parent=metrictab)
+        l_metric.setFrameStyle(QFrame.Shape.Panel)
+        l_metric.setFixedSize(200, 265)
+        l_metric.setPixmap(pixmap_metric)
+        l_metric.move(420, 95)
         info_tabs.addTab(metrictab, "Metric System")
-
-        imperialtab = QWidget()
-        imperialtab_layout = QGridLayout()
-        imperialtab.setLayout(imperialtab_layout)
-        info_tabs.addTab(imperialtab, "Imperial System")
 
         info_layout.addWidget(info_tabs)
         info_window.setLayout(info_layout)
+
+        close_button = QPushButton('Fermer', info_window)
+        close_button.clicked.connect(info_window.close)
+        close_button.move(540, 515)
 
         info_window.exec()
 
@@ -1047,7 +1117,7 @@ class MainWindowFrame(QMainWindow):
 
         info_label = QLabel(parent=apropos_window)
         info_label.setText(
-            "<b>Astro Balls</b><br>Version: v1.0.0<br><br>Astro Balls est une simulation de mouvements planétaires et "
+            "<b>Astro Balls</b><br>Version: v1.0.1a<br><br>Astro Balls est une simulation de mouvements planétaires et "
             "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
             "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse "
             "et l'échelle de la simulation."
@@ -1197,6 +1267,76 @@ class MainWindowFrame(QMainWindow):
 
         guide_window.exec()
 
+    def quit_preventer(self):
+        preventer = QDialog(parent=self)
+        preventer.setWindowTitle('Quitter?')
+        preventer.setFixedSize(340, 160)
+        label = QLabel(preventer)
+        label.setText('Quitter?')
+        label.setFixedWidth(300)
+        label_font = QFont()
+        label_font.setPointSize(15)
+        label_font.setBold(True)
+        label.setFont(label_font)
+        label.setWordWrap(True)
+        label.move(35, 10)
+        rw_image = QPixmap('images/menubar symbol/cross.png').scaled(22, 22, Qt.AspectRatioMode.KeepAspectRatio,
+                                                                    Qt.TransformationMode.SmoothTransformation)
+        rw_label = QLabel(preventer)
+        rw_label.setPixmap(rw_image)
+        rw_label.move(10, 13)
+        q_label = QLabel(preventer)
+        q_label.setText('Souhaitez-vous quitter Astro Balls?')
+        q_label.setFixedSize(300, 55)
+        q_label_font = QFont()
+        q_label_font.setPointSize(11)
+        q_label.setFont(q_label_font)
+        q_label.setWordWrap(True)
+        q_label.move(10, 30)
+
+        warning_box = QFrame(preventer)
+        warning_box.setObjectName("WarningBox")
+
+        warning = QLabel(preventer)
+        warning.setText("⚠️")
+        warning_font = QFont()
+        warning_font.setPointSize(11)
+        warning.setFont(warning_font)
+
+        warner = QLabel(preventer)
+        warner.setText('Attention: Tous fichiers non enregistrés seront perdus.')
+        warner.setFixedWidth(300)
+        warner_font = QFont()
+        warner_font.setPointSize(8)
+        warner.setFont(warner_font)
+
+        warning_box.setStyleSheet("""
+                   QFrame#WarningBox {
+                       background-color: rgba(224, 169, 109, 0.08); 
+
+                       border: 1px solid rgba(224, 169, 109, 0.25); 
+                       border-radius: 6px;
+                   }
+                   QLabel {
+                       color: #e0a96d; 
+                       border: none;
+                       background: transparent;
+                   }
+               """)
+        warning_box.setFixedWidth(320)
+        warning_box.move(10, 78)
+        warning.move(12, 80)
+        warner.move(35, 84)
+
+        yes_button = QPushButton('Oui', preventer)
+        yes_button.clicked.connect(self.closeapp)
+        #yes_button.clicked.connect(preventer.close)
+        yes_button.move(240, 120)
+        no_button = QPushButton('Non', preventer)
+        no_button.clicked.connect(preventer.close)
+        no_button.move(160, 120)
+        preventer.exec()
+
     def closeapp(self):
         pygame.quit()
         self.close()
@@ -1311,8 +1451,6 @@ class MainWindowFrame(QMainWindow):
 
             self.orbitinfo_window.finished.connect(lambda: setattr(self, 'orbitinfo_window', None))
             self.orbitinfo_window.show()
-
-        # TODO: try update QDial along planet orbit (for later)
 
     def update_showorbitinfo(self):
         self.b_eccentricity_toggler.setValue(self.s_eccentricity_toggler.value() / 100)
