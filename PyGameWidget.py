@@ -97,22 +97,12 @@ class PyGameWidget(QWidget):
         self.timer.timeout.connect(self.game_loop)
         self.planet_surfaces_cache = {}
         self._original_images_cache = {}
-        self.nb_stars = int(200*self.scale)
-
-        self.stars_lst = []
-        for i in range(200):
-            star = (random.uniform(0, self.width()/self.scale),
-                    random.uniform(0, self.height()/self.scale),
-                    random.randint(1, 2),
-                    random.random())
-            self.stars_lst.append(star)
-        x = 1.496e8
-        self.fsysb = {'Soleil': (0, 0), 'Mercure': (4.6e7, 0), 'Vénus': (6.7e7, 0),
-                 'Terre': (x, 0), 'Lune': (x+3e5, 0), 'Mars': (1.52*x, 0),
-                 'Jupiter': (5.2*x, 0), 'Europe': (5.2*x+6.71e5, 0),
-                 'Io': (5.2*x+4.22e5, 0), 'Saturne': (x*9.58, 0), 'Uranus': (19.2*x, 0),
-                 'Neptune': (x*30.1, 0)}
-        self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 5.49, 9.34, 4.89, 0.9, 0.41, 5.65, 4.6, 0.86]
+        x = 1.496e11
+        self.fsysb = {'Soleil': (0, 0), 'Mercure': (5.79e10, 0), 'Vénus': (1.08e11, 0),
+                 'Terre': (x, 0), 'Mars': (2.279e11, 0),
+                 'Jupiter': (7.785e11, 0), 'Saturne': (1.433e12, 0), 'Uranus': (1.433e12, 0),
+                 'Neptune': (4.495e12, 0)}
+        self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 9.34, 4.89, 5.65, 4.6, 0.86]
 
     def edit_masse(self):
         if self.active_planet_updater is not None:
@@ -294,19 +284,18 @@ class PyGameWidget(QWidget):
         self._solarsys_initialized = True
 
     def vitesse_full_solarsys(self):
-        for i in range(len(self.planetes)):
+        sun = [i for i in self.planetes if i['nom'] == 'Soleil']
+        for i in range(1, len(self.planetes)):
+            centrum = None
+            planet = self.planetes[i]
+            centrum = sun[0]
+            if planet['vitesse'].magnitude() == 0:
+                planet['vitesse'] = self.vitesse_gravitationnelle(centrum, planet)
             if self.fsysb_ecc[i] is not None:
                 self.is_editingorbits = True
                 self.p_index = self.planetes[i]
                 self.orbital_eccentricity_editor(self.fsysb_ecc[i])
                 self.is_editingorbits = False
-            if self.planetes[i]['vitesse'].magnitude() == 0:
-                if i == len(self.planetes) - 1:
-                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0],
-                                                                                self.planetes[i]) * 0.2
-                else:
-                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1],
-                                                                                self.planetes[i]) * 0.2
         self.vitesse_state = True
 
     def full_solarsys_planet(self, planetes_liste: list):
@@ -589,17 +578,14 @@ class PyGameWidget(QWidget):
 
     def kepler(self):
         path = []
-        temp_list = self.planetes.copy()
-        if hasattr(self, 'preview_planet') and self.preview_planet:
-            temp_list.append(self.preview_planet)
-        for i in temp_list:
+        for i in self.planetes:
             max_centrum = -1
             self.centrum = None
-            for j in temp_list:
+            for j in self.planetes:
                 if j == i:
                     continue
                 saver = (i['position'] - j['position']).magnitude_squared()
-                gravitational_force = j['masse']/saver+1e-10
+                gravitational_force = j['masse']/(saver+1e-10)
                 if gravitational_force > max_centrum:
                     max_centrum = gravitational_force
                     self.centrum = j
@@ -609,14 +595,16 @@ class PyGameWidget(QWidget):
             gravitational_parameter = self.G * self.centrum['masse']
             current_velocity = i['vitesse'] - self.centrum['vitesse']
             current_position_vector = i['position'] - self.centrum['position']
-            current_position = current_position_vector.magnitude()
+            current_position = current_position_vector.magnitude()+1e-100
             vectorial_epsilon = (1 / gravitational_parameter *
                                  ((current_velocity.magnitude_squared() -
                                    (gravitational_parameter / current_position)) * current_position_vector -
                                   (current_position_vector.dot(current_velocity)) * current_velocity))
             epsilon = vectorial_epsilon.magnitude() + (1 * 10 ** -10)
             omega = math.atan2(vectorial_epsilon.y, vectorial_epsilon.x)
-            paracond = (2 / current_position) - (current_velocity.magnitude_squared() / gravitational_parameter)
+            px, py = current_velocity.x, current_velocity.y
+            psqt = px**2 + py**2
+            paracond = (2.0 / float(current_position)) - (psqt/float(gravitational_parameter))
             if self.is_helpingorbits:
                 orbital_momentum = math.sqrt(gravitational_parameter / current_position)
                 tcp = pygame.Vector2((current_position_vector.y * -1), current_position_vector.x).normalize()
@@ -630,10 +618,10 @@ class PyGameWidget(QWidget):
             orb_dots = []
             for k in range(301):
                 theta = (2*math.pi*k) / 300
-                denom = 1+epsilon*math.cos(theta)
+                denom = 1+abs(epsilon)*math.cos(theta)
                 if abs(denom) <= 1e-5:
                     denom = 1e-5
-                r = (semimajor_axis * (1 - epsilon ** 2)) / denom
+                r = (semimajor_axis * (1 - abs(epsilon) ** 2)) / denom
                 x = dx + r * math.cos(theta+omega)
                 y = dy + r * math.sin(theta+omega)
                 orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
@@ -671,7 +659,6 @@ class PyGameWidget(QWidget):
         rpy = planet['position'].y - centrum['position'].y
         angle = math.degrees(math.atan2(rpy, rpx))
         angle = (angle + 360.0) % 360.0
-        print(angle)
         return angle
 
     def orbital_position_editor(self, angle_degrees):
@@ -998,7 +985,6 @@ class PyGameWidget(QWidget):
                 force = self.force_vector(i)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
                 if force.magnitude() >= 0:
-                    print(force.magnitude())
                     norm_vector = force.normalize() * 50
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
                     pygame.draw.aaline(self.playscreen, (255, 0, 0), (screenx, screeny), end_pos, 2)
