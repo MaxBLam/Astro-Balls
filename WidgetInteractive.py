@@ -256,7 +256,7 @@ class StatsDock(QDockWidget):
         scroller.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroller.setWidgetResizable(True)
         scroller.setWidget(widget)
-        scroller.setMaximumWidth(400)
+        scroller.setMaximumWidth(350)
         scroller.setMinimumWidth(100)
         scroller.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setWidget(scroller)
