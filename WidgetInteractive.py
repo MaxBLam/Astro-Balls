@@ -35,7 +35,8 @@ class DragNDrop(QToolBar):
 
         ns_tabs = QWidget()
         ns_layout = QHBoxLayout()
-        for j in ['Lune', 'Europe', 'Io', 'Callisto', 'Ganymede', 'Titan', 'Triton', 'Comète 10km', 'Comète 50km', 'Comète 200km']:
+        for j in ['Lune', 'Europe', 'Io', 'Callisto', 'Ganymede', 'Titan', 'Triton', 'Comète 10km', 'Comète 50km',
+                  'Comète 200km']:
             ns_layout.addWidget(QtPlanetLabel(j))
         ns_tabs.setLayout(ns_layout)
         tabs.addTab(ns_tabs, QIcon('images/dragndrop_image/moon.png'), 'Satellites Naturels')
@@ -97,6 +98,7 @@ class StatsDock(QDockWidget):
 
         self.body_type = QLabel(upper_panel)
         self.body_type.setText(f"Type: ")
+        self.body_type.setFixedWidth(200)
         type_label_txt = QFont()
         type_label_txt.setPointSize(12)
         self.body_type.setFont(type_label_txt)
@@ -134,7 +136,7 @@ class StatsDock(QDockWidget):
 
         self.age_label_dis = QLabel(upper_panel)
         self.age_label_dis.setText(f"None")
-        self.surface_label_dis.setFixedWidth(200)
+        self.age_label_dis.setFixedWidth(200)
         age_label_txt_dis = QFont()
         age_label_txt_dis.setPointSize(12)
         self.age_label_dis.setFont(age_label_txt_dis)
@@ -149,7 +151,7 @@ class StatsDock(QDockWidget):
 
         self.rotation_label_dis = QLabel(upper_panel)
         self.rotation_label_dis.setText(f"None")
-        self.surface_label_dis.setFixedWidth(200)
+        self.rotation_label_dis.setFixedWidth(200)
         rotation_label_txt_dis = QFont()
         rotation_label_txt_dis.setPointSize(12)
         self.rotation_label_dis.setFont(rotation_label_txt_dis)

@@ -19,8 +19,9 @@ class WelcomeWindow(QMainWindow):
         ww_widget.setStyleSheet('background-color: #010101;')
         ww_layout.setContentsMargins(0, 0, 0, 0)
         ww_layout.setSpacing(0)
-        ww_pixmap = QPixmap('images/ww_images/The_Earth_seen_from_Apollo_17.jpg').scaled(250, 500, Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                         Qt.TransformationMode.SmoothTransformation)
+        ww_pixmap = QPixmap('images/ww_images/The_Earth_seen_from_Apollo_17.jpg').scaled(250, 500,
+                                                                                    Qt.AspectRatioMode.KeepAspectRatio,
+                                                                             Qt.TransformationMode.SmoothTransformation)
         ww_pixmap_label = QLabel()
         ww_pixmap_label.setPixmap(ww_pixmap)
         ww_layout.addWidget(ww_pixmap_label, 0, 1, Qt.AlignmentFlag.AlignRight)

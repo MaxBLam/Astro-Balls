@@ -196,11 +196,15 @@ class PyGameWidget(QWidget):
     def simulation_objet_central_3corps(self, objet_central, objet_orbite1, objet_orbite2):
         dampener = (max(objet_orbite1["rayon"], objet_orbite2["rayon"], objet_orbite2["rayon"])
                     + min(objet_orbite1["rayon"], objet_orbite2["rayon"], objet_orbite2["rayon"])) / 2
-        acc_objet_central = self.force_gravitationnelle(objet_central, objet_orbite1, dampener) + self.force_gravitationnelle(objet_central, objet_orbite2, dampener)
-        acc_objet_orbite1 = self.force_gravitationnelle(objet_orbite1, objet_central, dampener) + self.force_gravitationnelle(objet_orbite1, objet_orbite2, dampener)
-        acc_objet_orbite2 = self.force_gravitationnelle(objet_orbite2, objet_orbite1, dampener) + self.force_gravitationnelle(objet_orbite2, objet_central, dampener)
+        acc_objet_central = (self.force_gravitationnelle(objet_central, objet_orbite1, dampener) +
+                             self.force_gravitationnelle(objet_central, objet_orbite2, dampener))
+        acc_objet_orbite1 = (self.force_gravitationnelle(objet_orbite1, objet_central, dampener) +
+                             self.force_gravitationnelle(objet_orbite1, objet_orbite2, dampener))
+        acc_objet_orbite2 = (self.force_gravitationnelle(objet_orbite2, objet_orbite1, dampener) +
+                             self.force_gravitationnelle(objet_orbite2, objet_central, dampener))
 
-        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2, acc_objet_orbite2)]
+        list_objets = [(objet_central, acc_objet_central), (objet_orbite1, acc_objet_orbite1), (objet_orbite2,
+                                                                                                acc_objet_orbite2)]
         list_objets_update = self.mouvement(list_objets)
 
         if len(self.planetes) != len(list_objets):
@@ -214,8 +218,10 @@ class PyGameWidget(QWidget):
         self.display(list_objets_update)
 
     def vitesse_simulation2(self):
-        self.planetes[0]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[1], self.planetes[0]) * self.facteur_ellipse / 2
-        self.planetes[1]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) * self.facteur_ellipse / 2
+        self.planetes[0]["vitesse"] = (self.vitesse_gravitationnelle(self.planetes[1], self.planetes[0]) *
+                                       self.facteur_ellipse / 2)
+        self.planetes[1]["vitesse"] = (self.vitesse_gravitationnelle(self.planetes[0], self.planetes[1]) *
+                                       self.facteur_ellipse / 2)
         self.vitesse_state = True
 
     def simulation_2corps(self, objet_orbite1, objet_orbite2):
@@ -238,9 +244,11 @@ class PyGameWidget(QWidget):
         for i in range(len(self.planetes)):
             if self.planetes[i]['vitesse'].magnitude() == 0:
                 if i == len(self.planetes) - 1:
-                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0], self.planetes[i]) * 0.2
+                    self.planetes[i]['vitesse'] = self.vitesse_gravitationnelle(self.planetes[0],
+                                                                                self.planetes[i]) * 0.2
                 else:
-                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1], self.planetes[i]) * 0.2
+                    self.planetes[i]["vitesse"] = self.vitesse_gravitationnelle(self.planetes[i + 1],
+                                                                                self.planetes[i]) * 0.2
         self.vitesse_state = True
 
     def simulation_n_corps(self, planetes_liste: list):
@@ -433,7 +441,8 @@ class PyGameWidget(QWidget):
             else:
                 if rayon >= 696340:
                     if all(c < 50 for c in planete["couleur"]) and rayon < 696340:
-                        pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon, int(0.05 * rayon))
+                        pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon,
+                                           int(0.05 * rayon))
                     else:
                         pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), rayon)
                 else:
@@ -446,125 +455,155 @@ class PyGameWidget(QWidget):
         for j in self.point:
             pygame.draw.circle(self.playscreen, (255, 255, 255), j, 3)
         if len(self.point) == 2:
-            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1], width=3)
+            pygame.draw.line(self.playscreen, (255, 255, 255), start_pos=self.point[0], end_pos=self.point[1],
+                             width=3)
         self.update()
 
     def corps(self, nom, x, y):
         self.corpslst = {
             "Mercure": {'nom': 'Mercure', 'type': 'Planète', 'composition_surface': 'Métallique (70%)',
-                        'Température': '93 à 703 K', 'âge': '4,503 milliards d’années', "masse": 3.285e23, "rayon": 2439.7, "couleur": (245, 245, 220),
-                        "image": "./images/Skins/mercure.png", 'statdock_image': 'images/statdocks_images/mercury.png'},
+                        'Température': '93 à 703 K', 'âge': '4,503 milliards d’années', "masse": 3.285e23,
+                        "rayon": 2439.7, "couleur": (245, 245, 220), "image": "./images/Skins/mercure.png",
+                        'statdock_image': 'images/statdocks_images/mercury.png'},
 
             "Vénus": {'nom': 'Vénus', 'type': 'Planète', 'composition_surface': 'Basalte',
-                      'Température': '738 K', 'âge': '4,503 milliards d’années', "masse": 4.867e24, "rayon": 6051.8, "couleur": (255, 215, 0),
-                        "image": "./images/Skins/vénus.jpg", 'statdock_image': 'images/statdocks_images/venus.png'},
+                      'Température': '738 K', 'âge': '4,503 milliards d’années', "masse": 4.867e24, "rayon": 6051.8,
+                      "couleur": (255, 215, 0), "image": "./images/Skins/vénus.jpg",
+                      'statdock_image': 'images/statdocks_images/venus.png'},
 
             "Terre": {'nom': 'Terre', 'type': 'Planète', 'composition_surface': 'Granite', 'Température': '288 K',
                       'âge': '4,543 milliards d’années', "masse": 5.972e24, "rayon": 6371.0, "couleur": (0, 100, 255),
                         "image": "./images/Skins/terre.png", 'statdock_image': 'images/statdocks_images/earth.png'},
 
             "Mars": {'nom': 'Mars', 'type': 'Planète', 'composition_surface': 'Fer oxydé',
-                     'Température': '210 K', 'âge': '4,603 milliards d’années', "masse": 6.416993e23, "rayon": 3389.5, "couleur": (255, 100, 100),
-                        "image": "./images/Skins/mars.jpg", 'statdock_image': 'images/statdocks_images/mars.png'},
+                     'Température': '210 K', 'âge': '4,603 milliards d’années', "masse": 6.416993e23, "rayon": 3389.5,
+                     "couleur": (255, 100, 100), "image": "./images/Skins/mars.jpg",
+                     'statdock_image': 'images/statdocks_images/mars.png'},
 
             "Jupiter": {'nom': 'Jupiter', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
-                        'Température': '128 K', 'âge': '4,603 milliards d’années', "masse": 1.899e27, "rayon": 69911, "couleur": (200, 150, 50),
-                        "image": "./images/Skins/jupiter.jpg", 'statdock_image': 'images/statdocks_images/jupiter.png'},
+                        'Température': '128 K', 'âge': '4,603 milliards d’années', "masse": 1.899e27, "rayon": 69911,
+                        "couleur": (200, 150, 50), "image": "./images/Skins/jupiter.jpg",
+                        'statdock_image': 'images/statdocks_images/jupiter.png'},
 
             "Saturne": {'nom': 'Saturne', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (94%)',
-                       'Température': '95 K', 'âge': '4,503 milliards d’années', "masse": 5.683e26, "rayon": 58232, "couleur": (195, 146, 79),
-                        "image": "./images/Skins/saturne.jpg", 'statdock_image': 'images/statdocks_images/saturn.png'},
+                       'Température': '95 K', 'âge': '4,503 milliards d’années', "masse": 5.683e26, "rayon": 58232,
+                        "couleur": (195, 146, 79), "image": "./images/Skins/saturne.jpg",
+                        'statdock_image': 'images/statdocks_images/saturn.png'},
 
             "Uranus": {'nom': 'Uranus', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
-                       'Température': '49 K', 'âge': '4,503 milliards d’années', "masse": 6.681e25, "rayon": 25362, "couleur": (172, 229, 238),
-                       "image": "./images/Skins/uranus.jpg", 'statdock_image': 'images/statdocks_images/uranus.png'},
+                       'Température': '49 K', 'âge': '4,503 milliards d’années', "masse": 6.681e25, "rayon": 25362,
+                       "couleur": (172, 229, 238), "image": "./images/Skins/uranus.jpg",
+                       'statdock_image': 'images/statdocks_images/uranus.png'},
 
             "Neptune": {'nom': 'Neptune', 'type': 'Géante gazeuse', 'composition_surface': 'Hydrogène (90%)',
-                        'Température': '59 K', 'âge': '4,503 milliards d’années', "masse": 1.024e26, "rayon": 24622, "couleur": (124, 183, 187),
-                        "image": "./images/Skins/neptune.jpg", 'statdock_image': 'images/statdocks_images/neptune.png'},
+                        'Température': '59 K', 'âge': '4,503 milliards d’années', "masse": 1.024e26, "rayon": 24622,
+                        "couleur": (124, 183, 187), "image": "./images/Skins/neptune.jpg",
+                        'statdock_image': 'images/statdocks_images/neptune.png'},
 
             "Soleil": {'nom': 'Soleil', 'type': 'Étoile', 'composition_surface': 'Hydrogène (74%)',
-                       'Température': '5778 K', 'âge': '4,603 milliards d’années', "masse": 1.989e30, "rayon": 696340, "couleur": (255, 200, 0),
-                       "image": "./images/Skins/soleil.jpg", 'statdock_image': 'images/statdocks_images/sun.png'},
+                       'Température': '5778 K', 'âge': '4,603 milliards d’années', "masse": 1.989e30, "rayon": 696340,
+                       "couleur": (255, 200, 0), "image": "./images/Skins/soleil.jpg",
+                       'statdock_image': 'images/statdocks_images/sun.png'},
 
             "Lune": {'nom': 'Lune', 'type': 'Satellite naturel', 'composition_surface': 'Régolithe lunaire',
-                     'Température': '100 à 400 K', 'âge': '4,46 milliards d’années', "masse": 7.347e22, "rayon": 1737.4, "couleur": (200, 200, 200),
-                     "image": "./images/Skins/lune.png", 'statdock_image': 'images/statdocks_images/moon.png'},
+                     'Température': '100 à 400 K', 'âge': '4,46 milliards d’années', "masse": 7.347e22, "rayon": 1737.4,
+                     "couleur": (200, 200, 200), "image": "./images/Skins/lune.png",
+                     'statdock_image': 'images/statdocks_images/moon.png'},
 
             "Europe": {'nom': 'Europe', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
-                       'Température': '110 K', 'âge': '4,5 milliards d’années', "masse": 4.799e22, "rayon": 1560.8, "couleur": (191, 207, 217),
-                       "image": "./images/Skins/europe.jpg", 'statdock_image': 'images/statdocks_images/europa.png'},
+                       'Température': '110 K', 'âge': '4,5 milliards d’années', "masse": 4.799e22, "rayon": 1560.8,
+                       "couleur": (191, 207, 217), "image": "./images/Skins/europe.jpg",
+                       'statdock_image': 'images/statdocks_images/europa.png'},
 
             "Io": {'nom': 'Io', 'type': 'Satellite naturel', 'composition_surface': 'Dioxyde de soufre',
-                   'Température': '143 K', 'âge': '4,57 milliards d’années', "masse": 8.931e22, "rayon": 1821.6, "couleur": (200, 180, 100),
-                   "image": "./images/Skins/io.jpg", 'statdock_image': 'images/statdocks_images/io.png'},
+                   'Température': '143 K', 'âge': '4,57 milliards d’années', "masse": 8.931e22, "rayon": 1821.6,
+                   "couleur": (200, 180, 100), "image": "./images/Skins/io.jpg",
+                   'statdock_image': 'images/statdocks_images/io.png'},
 
             "Callisto": {'nom': 'Callisto', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
-                         'Température': '134 K', 'âge': '4,5 milliard d’années', 'masse': 1.076e23, 'rayon': 2410.3, 'couleur': (199, 199, 199),
-                         'image': 'images/Skins/callisto.png', 'statdock_image': 'images/Skins/callisto.png'},
+                         'Température': '134 K', 'âge': '4,5 milliard d’années', 'masse': 1.076e23, 'rayon': 2410.3,
+                         'couleur': (199, 199, 199), 'image': 'images/Skins/callisto.png',
+                         'statdock_image': 'images/Skins/callisto.png'},
 
             "Ganymede": {'nom': 'Ganymede', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
                          'Température': '111.5 K', 'âge': '4,5 milliard d’années', 'masse': 1.48e24, 'rayon': 2634.1,
-                         'couleur': (184, 180, 180), 'image': 'images/Skins/ganymede.png', 'statdock_image': 'images/Skins/ganymede.png'},
+                         'couleur': (184, 180, 180), 'image': 'images/Skins/ganymede.png',
+                         'statdock_image': 'images/Skins/ganymede.png'},
 
             "Titan": {'nom': 'Titan', 'type': 'Satellite naturel', 'composition_surface': 'Glace',
                          'Température': '94 K', 'âge': '4,5 milliard d’années', 'masse': 1.3452e23, 'rayon': 2574.5,
-                         'couleur': (180, 143, 98), 'image': 'images/Skins/titan.png', 'statdock_image': 'images/Skins/titan.png'},
+                         'couleur': (180, 143, 98), 'image': 'images/Skins/titan.png',
+                      'statdock_image': 'images/Skins/titan.png'},
 
             "Triton": {'nom': 'Triton', 'type': 'Satellite naturel', 'composition_surface': 'Nitrogen & Glace',
                       'Température': '94 K', 'âge': '> 100 million d’années', 'masse': 2.14e22, 'rayon': 1353.4,
-                      'couleur': (172, 180, 184), 'image': 'images/Skins/triton.png', 'statdock_image': 'images/Skins/triton.png'},
+                      'couleur': (172, 180, 184), 'image': 'images/Skins/triton.png',
+                       'statdock_image': 'images/Skins/triton.png'},
 
             "TON 618": {'nom': 'TON 618', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
-                        'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41, "rayon": 390000000000, "couleur": (15, 15, 15),
-                        "image": "./images/Skins/grey.jpg", 'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolated-transparent-alpha-png.webp'},
+                        'Température': '1e-14 K', 'âge': '10 milliards d’années', "masse": 1.3e41,
+                        "rayon": 390000000000, "couleur": (15, 15, 15), "image": "./images/Skins/grey.jpg",
+                        'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolat'
+                                          'ed-transparent-alpha-png.webp'},
 
             "Phoenix A": {'nom': 'Phoenix A', 'type': 'Trou noir supermassif', 'composition_surface': 'Inconnu',
-                          'Température': '1e-14 K', 'âge': '8 milliards d’années', "masse": 2.0e41, "rayon": 590000000000, "couleur": (15, 15, 15),
-                          "image": "images/Skins/titan.png", 'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolated-transparent-alpha-png.webp'},
+                          'Température': '1e-14 K', 'âge': '8 milliards d’années', "masse": 2.0e41,
+                          "rayon": 590000000000, "couleur": (15, 15, 15), "image": "images/Skins/titan.png",
+                          'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isola'
+                                            'ted-transparent-alpha-png.webp'},
 
-            "Hubble": {'nom': 'Télescope Hubble', 'type': 'Satellite artificiel', 'composition_surface': 'Métal et instruments',
-                       'Température': '150 à 390 K', 'âge': '36', "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180),
-                       "image": "./images/Skins/hubble.jpeg"},
+            "Hubble": {'nom': 'Télescope Hubble', 'type': 'Satellite artificiel',
+                       'composition_surface': 'Métal et instruments', 'Température': '150 à 390 K', 'âge': '36',
+                       "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180), "image": "./images/Skins/hubble.jpeg"},
 
             "Your Mom": {'nom': 'Your Mom', 'type': 'Trou noir supermassif', 'composition_surface': 'Peau',
-                         'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000, "couleur": (255, 105, 180),
-                         "image": "./images/Skins/your_mom.jpg", 'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolated-transparent-alpha-png.webp'},
+                         'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000,
+                         "couleur": (255, 105, 180), "image": "./images/Skins/your_mom.jpg",
+                         'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isolat'
+                                           'ed-transparent-alpha-png.webp'},
 
             "Comète 50km": {'nom': 'Comète\n(50 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
-                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e15, "rayon": 50, "couleur": (200, 200, 255),
-                            "image": "./images/Skins/comete.png", 'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
+                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e15, "rayon": 50,
+                            "couleur": (200, 200, 255), "image": "./images/Skins/comete.png",
+                            'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
 
             "Comète 10km": {'nom': 'Comète\n(10 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
-                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e13, "rayon": 10, "couleur": (220, 220, 255),
-                            "image": "./images/Skins/comete.png", 'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
+                            'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e13, "rayon": 10,
+                            "couleur": (220, 220, 255), "image": "./images/Skins/comete.png", 'statdock_image':
+                                'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
 
             "Comète 200km": {'nom': 'Comète\n(200 km)', 'type': 'Comète', 'composition_surface': 'Glace et poussière',
-                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e17, "rayon": 200, "couleur": (180, 180, 255),
-                             "image": "./images/Skins/comete.png", 'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
+                             'Température': '50 K', 'âge': '4,6 milliards d’années', "masse": 1e17, "rayon": 200,
+                             "couleur": (180, 180, 255),"image": "./images/Skins/comete.png",
+                             'statdock_image': 'images/statdocks_images/Space-Asteroid-PNG-Image.png'},
 
             "Arcturus": {'nom': 'Arcturus', 'type': 'Étoile géante rouge', 'composition_surface': 'Hydrogène et hélium',
-                         'Température': '4300 K', 'âge': '7 milliards d’années', "masse": 2.2 * 1.989e30, "rayon": 17700000, "couleur": (255, 140, 80),
-                         "image": "./images/Skins/arcturus.jpg", 'statdock_image': 'images/statdocks_images/sun.png'},
+                         'Température': '4300 K', 'âge': '7 milliards d’années', "masse": 2.2 * 1.989e30,
+                         "rayon": 17700000, "couleur": (255, 140, 80), "image": "./images/Skins/arcturus.jpg",
+                         'statdock_image': 'images/statdocks_images/sun.png'},
 
             "Bételgeuse": {'nom': 'Bételgeuse', 'type': 'Supergéante rouge', 'composition_surface': 'Hydrogène et hélium',
-                           'Température': '3500 K', 'âge': '10 millions d’années', "masse": 20 * 1.989e30, "rayon": 617000000, "couleur": (255, 80, 50),
-                           "image": "./images/Skins/betelgeuse.png", 'statdock_image': 'images/statdocks_images/Red_Giant.webp'},
+                           'Température': '3500 K', 'âge': '10 millions d’années', "masse": 20 * 1.989e30,
+                           "rayon": 617000000, "couleur": (255, 80, 50), "image": "./images/Skins/betelgeuse.png",
+                           'statdock_image': 'images/statdocks_images/Red_Giant.webp'},
 
             "Sirius B": {'nom': 'Sirius B', 'type': 'Naine blanche', 'composition_surface': 'Carbone et oxygène',
-                         'Température': '25000 K', 'âge': '120 millions d’années', "masse": 1.02 * 1.989e30, "rayon": 5800, "couleur": (200, 220, 255),
-                         "image" : "./images/Skins/sirius_b.png", 'statdock_image': 'images/statdocks_images/White_Star_2.png'},
+                         'Température': '25000 K', 'âge': '120 millions d’années', "masse": 1.02 * 1.989e30,
+                         "rayon": 5800, "couleur": (200, 220, 255), "image" : "./images/Skins/sirius_b.png",
+                         'statdock_image': 'images/statdocks_images/White_Star_2.png'},
 
             "Rigel": {'nom': 'Rigel', 'type': 'Supergéante bleue', 'composition_surface': 'Hydrogène',
-                      'Température': '12000 K', 'âge': '8 millions d’années', "masse": 21 * 1.989e30, "rayon": 78000000, "couleur": (180, 220, 255),
-                      "image" : "./images/Skins/rigel.png", 'statdock_image': 'images/statdocks_images/Giant_Blue_Star_2.png'},
+                      'Température': '12000 K', 'âge': '8 millions d’années', "masse": 21 * 1.989e30, "rayon": 78000000,
+                      "couleur": (180, 220, 255), "image" : "./images/Skins/rigel.png",
+                      'statdock_image': 'images/statdocks_images/Giant_Blue_Star_2.png'},
         }
 
         data = self.corpslst.get(nom, self.corpslst["Mercure"])
 
         planete = {"nom": data["nom"], "position": euclid.Vector2(x, y), "vitesse": euclid.Vector2(0, 0),
                    "masse": data["masse"], "rayon": data["rayon"], "couleur": data["couleur"], 'type': data['type'],
-                   'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température': data["Température"], "image": data["image"], 'statdock_image': data['statdock_image']}
+                   'composition_surface': data['composition_surface'], 'âge': data['âge'], 'température':
+                       data["Température"], "image": data["image"], 'statdock_image': data['statdock_image']}
 
         name_lst = [i['nom'] for i in self.planetes]
         current_name = planete['nom']
@@ -581,11 +620,16 @@ class PyGameWidget(QWidget):
         for i in self.planetes:
             max_centrum = -1
             self.centrum = None
+
+            # Trouver l'objet qui exerce la plus grande force gravitationnelle sur la planète actuelle.
             for j in self.planetes:
                 if j == i:
-                    continue
+                    continue  # Ignorer la planète elle-même
+                # Distance au carré entre les deux objets
                 saver = (i['position'] - j['position']).magnitude_squared()
-                gravitational_force = j['masse']/(saver+1e-10)
+                # Calcul simplifié de l'influence gravitationnelle (F proportionnel à m/r^2)
+                gravitational_force = j['masse'] / (saver + 1e-10)
+                # Si cette force est la plus grande trouvée jusqu'à présent, cet objet devient le centre
                 if gravitational_force > max_centrum:
                     max_centrum = gravitational_force
                     self.centrum = j
@@ -593,46 +637,68 @@ class PyGameWidget(QWidget):
             if self.centrum is None:
                 continue
             gravitational_parameter = self.G * self.centrum['masse']
+            # Vitesse et position relatives de la planète par rapport à son corps central
             current_velocity = i['vitesse'] - self.centrum['vitesse']
             current_position_vector = i['position'] - self.centrum['position']
-            current_position = current_position_vector.magnitude()+1e-100
+            current_position = current_position_vector.magnitude() + 1e-100
+            # Calcul du vecteur excentricité (détermine la forme d'étirement et la direction de l'orbite)
             vectorial_epsilon = (1 / gravitational_parameter *
                                  ((current_velocity.magnitude_squared() -
                                    (gravitational_parameter / current_position)) * current_position_vector -
                                   (current_position_vector.dot(current_velocity)) * current_velocity))
+            # Magnitude de l'excentricité (e)
             epsilon = vectorial_epsilon.magnitude() + (1 * 10 ** -10)
+            # Argument du périastre (omega, l'orientation ou l'inclinaison de l'ellipse dans l'espace 2D)
             omega = math.atan2(vectorial_epsilon.y, vectorial_epsilon.x)
             px, py = current_velocity.x, current_velocity.y
-            psqt = px**2 + py**2
-            paracond = (2.0 / float(current_position)) - (psqt/float(gravitational_parameter))
+            psqt = px ** 2 + py ** 2
+            # Utilisation de l'équation de la force vive (vis-viva) pour déterminer le demi-grand axe.
+            # paracond équivaut à : a
+            paracond = (2.0 / float(current_position)) - (psqt / float(gravitational_parameter))
+            # Si activé, recalcule la vitesse pour forcer l'objet sur une orbite parfaitement circulaire
             if self.is_helpingorbits:
-                orbital_momentum = math.sqrt(gravitational_parameter / current_position)
+                orbital_momentum = math.sqrt(gravitational_parameter / current_position)  # Vitesse scalaire nécessaire
+                # Vecteur directionnel tangentiel (perpendiculaire au rayon)
                 tcp = pygame.Vector2((current_position_vector.y * -1), current_position_vector.x).normalize()
+                # Applique la nouvelle vitesse (vitesse du centre + vitesse orbitale relative)
                 i['vitesse'] = self.centrum['vitesse'] + (orbital_momentum * tcp)
+            # Si paracond <= 0, l'orbite est parabolique ou hyperbolique (trajectoire non fermée) : on ne dessine pas
             if paracond <= 0:
                 continue
-            semimajor_axis = 1/paracond
+            semimajor_axis = 1 / paracond
+            # Position du foyer de l'orbite (le corps central)
             dx = self.centrum['position'].x
             dy = self.centrum['position'].y
+            # Assombrit légèrement la couleur de la planète pour dessiner la ligne d'orbite
             color_dimmer = pygame.Color(i['couleur']).lerp((0, 0, 0), 0.7)
             orb_dots = []
+            # Boucle pour calculer 300 points le long de l'ellipse de l'orbite
             for k in range(301):
-                theta = (2*math.pi*k) / 300
-                denom = 1+abs(epsilon)*math.cos(theta)
+                theta = (2 * math.pi * k) / 300  # Angle actuel (de 0 à 2*pi)
+                # Dénominateur de l'équation polaire de l'ellipse
+                denom = 1 + abs(epsilon) * math.cos(theta)
                 if abs(denom) <= 1e-5:
                     denom = 1e-5
+                # Équation polaire : Distance (r) du point sur l'ellipse par rapport au foyer
                 r = (semimajor_axis * (1 - abs(epsilon) ** 2)) / denom
-                x = dx + r * math.cos(theta+omega)
-                y = dy + r * math.sin(theta+omega)
+                # Conversion des coordonnées polaires en coordonnées cartésiennes (x, y)
+                # en ajoutant l'argument du périastre (omega) pour pivoter l'ellipse correctement
+                x = dx + r * math.cos(theta + omega)
+                y = dy + r * math.sin(theta + omega)
+                # Conversion des coordonnées spatiales vers les coordonnées de l'écran/caméra
                 orbit_x, orbit_y = self.pos_objet_orbite(pygame.Vector2(x, y))
                 orb_dots.append((orbit_x, orbit_y))
+            # Enregistre le chemin complet et ses propriétés pour le rendu final
             path.append({'dots': orb_dots, 'color': color_dimmer, 'epsilon': epsilon, 'a': semimajor_axis,
                          'planet': i, 'vel': i['vitesse'], 'omega': omega})
+        # Désactive l'aide orbitale après le premier passage
         self.is_helpingorbits = False
         return path
 
     def newton(self, planet):
+        # On calcule le vecteur qui pointe du centre (Soleil ou planète parente) vers la planète actuelle
         direction = self.centrum['position'] - planet['position']
+        # Si la planète et son centre sont exactement au même endroit, la force est nulle pour éviter un crash
         if direction.magnitude() == 0:
             return euclid.Vector2(0, 0)
         acceleration = direction.normalize()/self.acceleration.magnitude()
@@ -643,30 +709,42 @@ class PyGameWidget(QWidget):
 
     def orbit_editor(self):
         self.is_editingorbits = True
+        # On identifie quel bouton de l'interface a envoyé le signal (le "sender")
         receiver_config_button = self.sender()
+        # On extrait le nom de la planète associé à ce bouton via sa propriété 'planet_name'
         planet_receiver = receiver_config_button.property('planet_name')
+        # On parcourt la liste des planètes du système pour trouver celle qui correspond au nom
         for i in self.planetes:
             if i['nom'] == planet_receiver:
+                # On stocke l'objet planète trouvé dans une variable globale (p_index)
                 self.p_index = i
         return self.is_editingorbits
 
     def uopt_editor(self):
+        # On récupère la planète qui est actuellement sélectionnée pour l'édition
         planet = self.p_index
         if planet is None:
             return 0.0
+        # On identifie le corps central (le foyer de l'orbite) pour calculer l'angle par rapport à lui
         centrum = self.centrum
+        # On calcule la distance sur les axes X et Y entre la planète et son centre
         rpx = planet['position'].x - centrum['position'].x
         rpy = planet['position'].y - centrum['position'].y
+        # math.atan2 calcule l'angle en radians à partir des coordonnées (y, x)
+        # math.degrees convertit ensuite ce résultat de radians en degrés
         angle = math.degrees(math.atan2(rpy, rpx))
+        # On ajoute 360 et on utilise le modulo (%) pour s'assurer que l'angle final est toujours entre 0 et 360
         angle = (angle + 360.0) % 360.0
         return angle
 
     def orbital_position_editor(self, angle_degrees):
         orbital_data = None
         if self.is_editingorbits is not None:
+            # Conversion de l'angle du QDial (degrés) en radians pour les calculs mathématiques
             theta = math.radians(angle_degrees)
             planet = self.p_index
             if planet:
+                # On cherche les paramètres de l'orbite actuelle de cette planète via la fonction kepler()
                 for i in self.kepler():
                     if i['planet'] == planet:
                         orbital_data = i
@@ -675,11 +753,14 @@ class PyGameWidget(QWidget):
                     semimajor = orbital_data['a']
                     ecc = orbital_data['epsilon']
                     omega = orbital_data['omega']
+                    # Calcule du nouveau r selon la nouvelle position de la planète.
                     r = (semimajor * (1 - ecc ** 2)) / (1 + ecc * math.cos(theta))
                     centrum = self.centrum
+                    # Conversion des coordonnées polaires (r, theta) en coordonnées cartésiennes (x, y)
+                    # On ajoute 'omega' pour respecter l'inclinaison de l'ellipse et la position du centre
                     planet['position'].x = centrum['position'].x + r * math.cos(theta + omega)
                     planet['position'].y = centrum['position'].y + r * math.sin(theta + omega)
-
+                    # Calcule de la nouvelle vitesse
                     inner_sqrt = math.sqrt(
                         (self.G * centrum['masse']) / ((semimajor * (1 - ecc ** 2)) + 1 * 10 ** -10))
                     urvx = -inner_sqrt * math.sin(theta)
@@ -691,6 +772,7 @@ class PyGameWidget(QWidget):
 
     def orbital_eccentricity_editor(self, edited_ecc):
         if self.is_editingorbits is not None:
+            # On convertit la valeur du QSlider (0 à 100) en une excentricité utilisable (0.0 à 1.0)
             new_ecc = edited_ecc / 100
             planet = self.p_index
             if planet:
@@ -699,18 +781,24 @@ class PyGameWidget(QWidget):
                         semimajor = i['a']
                         omega = i['omega']
                         i['epsilon'] = new_ecc
+                        # Calcul de la position relative et de l'angle actuel (theta) par rapport au centre
                         relative_pos = planet['position'] - self.centrum['position']
                         theta = math.atan2(relative_pos.y, relative_pos.x) - omega
+                        # Recalcul de la distance 'r' nécessaire pour la nouvelle excentricité
                         new_r = (semimajor * (1 - new_ecc ** 2)) / (1 + new_ecc * math.cos(theta))
                         gravitational_parameter = self.G * self.centrum['masse']
+                        # Calcul du moment cinétique orbital pour la nouvelle forme d'orbite
                         orbit_size = math.sqrt(gravitational_parameter * semimajor * (1 - new_ecc ** 2))
+                        # Calcule de la nouvelle vitesse
                         velocity = ((gravitational_parameter / orbit_size) * new_ecc * math.sin(theta))*(1 * 10 ** -10)
                         velocity_tangent = orbit_size / new_r
-
+                        # Calcul des vecteurs de vitesse finale dans le plan X, Y
                         urvx = velocity * math.cos(theta + omega) - velocity_tangent * math.sin(theta + omega)
                         urvy = velocity * math.sin(theta + omega) + velocity_tangent * math.cos(theta + omega)
+                        # Mise à jour de la position réelle de la planète
                         planet['position'].x = self.centrum['position'].x + new_r * math.cos(theta + omega)
                         planet['position'].y = self.centrum['position'].y + new_r * math.sin(theta + omega)
+                        # Mise à jour du vecteur vitesse (vitesse relative + vitesse du corps central)
                         planet['vitesse'].x = urvx + self.centrum['vitesse'].x
                         planet['vitesse'].y = urvy + self.centrum['vitesse'].y
 
@@ -721,6 +809,9 @@ class PyGameWidget(QWidget):
                 for i in self.kepler():
                     if i['planet'] == planet:
                         new_velocity_addition = edited_value
+                        # On ajoute la nouvelle valeur à la vitesse actuelle de la planète.
+                        # On additionne également la vitesse du corps central (centrum) pour que
+                        # le mouvement reste relatif à son centrum (ex: la Terre par rapport au Soleil).
                         planet['vitesse'].x += new_velocity_addition + self.centrum['vitesse'].x
                         planet['vitesse'].y += new_velocity_addition + self.centrum['vitesse'].y
 
@@ -729,11 +820,16 @@ class PyGameWidget(QWidget):
             self.p_index['couleur'] = edited_value
 
     def acceleration_vector(self, planet):
+        # On récupère le vecteur vitesse actuel de la planète
         momentum = planet['vitesse']
+        # On calcule le vecteur rayon (la distance et direction) allant de la planète vers le centre
         radius = self.centrum['position']-planet['position']
         if radius.magnitude() <= 0:
             return euclid.Vector2(0, 0)
+        # Calcule accélération centripète
         circular_momentum = momentum.magnitude_squared()/radius.magnitude()
+        # On multiplie la direction normalisée (le vecteur pointant vers le centre)
+        # par l'intensité de l'accélération calculée.
         return radius.normalized()*circular_momentum
 
     def force_vector(self, planet):
@@ -752,21 +848,33 @@ class PyGameWidget(QWidget):
 
         if self.is_erasing:
             if event.button() == Qt.MouseButton.LeftButton:
-                for i, j in enumerate(self.planetes):
+                for i, j in enumerate(reversed(self.planetes)):
+                    # Conversion de la position physique de la planète en coordonnées écran
                     x, y = self.pos_objet_orbite(j['position'])
+                    # Calcul de la distance entre la souris et le centre de la planète (ajusté avec l'offset +8, -5)
                     diff = self.souris_pos - euclid.Vector2(x+8, y-5)
                     if abs(diff.magnitude()) <= max(j['rayon'] * self.scale, 15):
-                        self.planetes.pop(i)
+                        # Avant de supprimer, on vérifie si l'objet est un centre de gravité (Centrum)
+                        # On réinitialise la propriété 'isCentrum' pour les autres objets
+                        # afin que la fonction kepler() puisse recalculer un nouveau Centrum au prochain cycle.
+                        index = len(self.planetes)-1-i
+                        self.planetes.pop(index)
+                        self.centrum = None
 
         if event.button() == Qt.MouseButton.RightButton:
             if self.measuringtape_state:
+                # On ajoute la position actuelle de la souris à la liste des points de mesure
                 self.point.append((self.souris_pos.x, self.souris_pos.y))
+                # Max 2 points
                 self.point = self.point[-2:]
+                # On émet un signal pour mettre à jour l'affichage de la distance dans l'interface (UI)
                 self.measuring_updater_signal.emit()
             if not self.measuringtape_state:
+                # Pour le SlingShot
                 if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                     for i, j in enumerate(self.planetes):
                         x, y = self.pos_objet_orbite(j['position'])
+                        # Position réel de la sourie
                         diff = self.souris_pos - euclid.Vector2(x+8, y-5)
                         if abs(diff.magnitude()) <= max(j['rayon']*self.scale, 15):
                             self.slingshot_planet = j
@@ -891,7 +999,8 @@ class PyGameWidget(QWidget):
                 else:
                     if rayon > 800:
                         if all(c < 50 for c in planete["couleur"]) and rayon < 3000:
-                            pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon, int(0.05 * rayon))
+                            pygame.draw.circle(self.playscreen, (255, 255, 255), (rx, ry), rayon,
+                                               int(0.05 * rayon))
                         else:
                             pygame.draw.circle(self.playscreen, planete["couleur"], (rx, ry), zoom_capper)
                     else:
@@ -959,9 +1068,11 @@ class PyGameWidget(QWidget):
             distance_y = 2 * (self.souris_pos.y + self.scale * (self.camera_pos.y - self.target.y))
             distance = math.sqrt(distance_x ** 2 + distance_y ** 2) / self.scale
             if distance < 1000000000:
-                text_distance = self.font.render(f"{int(distance):,} km | {round(distance / 1.496e8, 3)} UA", True,(255, 255, 255))
+                text_distance = self.font.render(f"{int(distance):,} km | {round(distance / 1.496e8, 3)} UA",
+                                                 True,(255, 255, 255))
             else:
-                text_distance = self.font.render(f"{distance:.2e} km | {int(distance / 1.496e8)} UA", True,(255, 255, 255))
+                text_distance = self.font.render(f"{distance:.2e} km | {int(distance / 1.496e8)} UA", True,
+                                                 (255, 255, 255))
             self.playscreen.blit(text_distance, (10, 10))
 
         texte_camera = self.font.render(f"Mode caméra: {self.camera_mode}", True, (255, 255, 255))
@@ -977,9 +1088,12 @@ class PyGameWidget(QWidget):
                 acc = self.acceleration_vector(i)
                 screenx, screeny = self.pos_objet_orbite(i['position'])
                 if acc.magnitude() >= 0:
+                    # On normalise le vecteur et on lui donne une longueur fixe de 50 pixels pour la visibilité
                     norm_vector = acc.normalized() * 50
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
-                    pygame.draw.aaline(self.playscreen, (255, 255, 0), (screenx, screeny), end_pos, 2)
+                    # Dessine une ligne anti-aliasée jaune représentant l'accélération
+                    pygame.draw.aaline(self.playscreen, (255, 255, 0), (screenx, screeny), end_pos,
+                                       2)
 
             if self.is_showingforcevector:
                 force = self.force_vector(i)
@@ -1000,6 +1114,7 @@ class PyGameWidget(QWidget):
         if self.is_showingtrace:
             ttt = getattr(self, 'dtime', 1)
             self.remover += 1
+            # On enregistre une position toutes les 10 itérations pour optimiser les performances
             if self.remover % 10 == 0:
                 for i in self.planetes:
                     pos = (i['position'])
@@ -1007,14 +1122,18 @@ class PyGameWidget(QWidget):
                     if 'trace' not in i:
                         i['trace'] = []
                     i['trace'].append(data)
+                    # Ajuste la longueur de la trace en fonction de la vitesse du temps (dtime)
                     dynamic_ttt = max(10, int(500/ttt))
                     if len(i['trace']) > dynamic_ttt:
+                        # Supprime le point le plus ancien pour garder une traînée constante
                         i['trace'].pop(0)
-
+            # Dessin des lignes de la trace pour chaque planète
             for k in self.planetes:
                 if k.get('trace'):
                     trace_data = k['trace']
+                    # Convertit tous les points enregistrés en coordonnées écran
                     to_scale_lst = [self.pos_objet_orbite(p) for p in trace_data]
+                    # Utilise une version assombrie de la couleur de la planète pour la trace
                     color_dimmer = pygame.Color(k['couleur']).lerp((0, 0, 0), 0.7)
                     if len(to_scale_lst) >= 2:
                         pygame.draw.aalines(self.playscreen, color_dimmer, False, to_scale_lst, 1)
@@ -1025,5 +1144,6 @@ class PyGameWidget(QWidget):
         painter = QPainter(self)
         # Transforme la surface Pygame en QImage
         raw_data = pygame.image.tostring(self.playscreen, "RGB")
-        image = QImage(raw_data, self.playscreen.get_width(), self.playscreen.get_height(), 3 * self.playscreen.get_width(), QImage.Format.Format_RGB888)
+        image = QImage(raw_data, self.playscreen.get_width(), self.playscreen.get_height(), 3 *
+                       self.playscreen.get_width(), QImage.Format.Format_RGB888)
         painter.drawImage(self.rect(), image)

@@ -103,7 +103,7 @@ class MainWindowFrame(QMainWindow):
         open_action.setShortcut('Ctrl+O')
         app_menu.addAction(open_action)
         app_menu.addSeparator()
-        settings_action = QAction('&Settings', parent=self)
+        settings_action = QAction('&Paramètres', parent=self)
         settings_action.setIcon(QIcon('images/menubar symbol/cog.png'))
         settings_action.triggered.connect(self.settings)
         settings_action.setShortcut('Alt+S')
@@ -231,7 +231,8 @@ class MainWindowFrame(QMainWindow):
 
     def eraser(self, checked):
         self.game_widget.is_erasing = checked
-        eraser_cursor = QCursor(QPixmap('cursors/eraser.png').scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio), hotX=16, hotY=16)
+        eraser_cursor = QCursor(QPixmap('cursors/eraser.png').scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio),
+                                hotX=16, hotY=16)
         if checked:
             self.setCursor(eraser_cursor)
         else:
@@ -467,7 +468,7 @@ class MainWindowFrame(QMainWindow):
         label.setWordWrap(True)
         label.move(35, 10)
         rw_image = QPixmap('images/reloadwindow/reload.png').scaled(22, 22, Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                         Qt.TransformationMode.SmoothTransformation)
+                                                                            Qt.TransformationMode.SmoothTransformation)
         rw_label = QLabel(preventer)
         rw_label.setPixmap(rw_image)
         rw_label.move(10, 13)
@@ -668,7 +669,8 @@ class MainWindowFrame(QMainWindow):
 
     def update_timerscope(self):
         self.timescope_label.setText(f'X{self.time_slider.value()}')
-        self.timescope_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: 2px;")
+        self.timescope_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: "
+                                           "2px;")
         self.timescope_label.adjustSize()
         ratio = (self.time_slider.value() - self.time_slider.minimum()) / (
                 self.time_slider.maximum() - self.time_slider.minimum())
@@ -772,7 +774,8 @@ class MainWindowFrame(QMainWindow):
 
     def update_scale_slider(self):
         self.scale_slider_label.setText(f'X{self.scale_slider.value()}')
-        self.scale_slider_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: 2px;")
+        self.scale_slider_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: "
+                                              "2px;")
         self.scale_slider_label.adjustSize()
         ratio = (self.scale_slider.value() - self.scale_slider.minimum()) / (
                 self.scale_slider.maximum() - self.scale_slider.minimum())
@@ -948,8 +951,8 @@ class MainWindowFrame(QMainWindow):
         b_n1_label.setFont(b_n1_label_font)
         b_n1_label.move(20, 20)
         pixmap_newton1 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
-                                                                                                       Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                                       Qt.TransformationMode.SmoothTransformation)
+                                                                            Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
         l_pixmap_newton1 = QLabel(parent=newton1tab)
         l_pixmap_newton1.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_newton1.setFixedSize(200, 280)
@@ -978,8 +981,8 @@ class MainWindowFrame(QMainWindow):
         b_n2_label.setFont(b_n2_label_font)
         b_n2_label.move(20, 20)
         upixmap_newton2 = QPixmap('images/mimir_usedimages/GodfreyKneller-IsaacNewton-1689.jpg').scaled(200, 280,
-                                                                                                       Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                                       Qt.TransformationMode.SmoothTransformation)
+                                                                            Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
         u_pixmap_newton2 = QLabel(parent=newton2tab)
         u_pixmap_newton2.setFrameStyle(QFrame.Shape.Panel)
         u_pixmap_newton2.setFixedSize(200, 280)
@@ -1024,8 +1027,8 @@ class MainWindowFrame(QMainWindow):
         b_n3_label.setFont(b_n3_label_font)
         b_n3_label.move(20, 20)
         upixmap_newton3 = QPixmap('images/mimir_usedimages/newt3.png').scaled(300, 380,
-                                                                                                        Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                                        Qt.TransformationMode.SmoothTransformation)
+                                                                              Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
         u_pixmap_newton3 = QLabel(parent=newton3tab)
         u_pixmap_newton3.setFrameStyle(QFrame.Shape.Panel)
         u_pixmap_newton3.setFixedSize(280, 300)
@@ -1062,8 +1065,8 @@ class MainWindowFrame(QMainWindow):
         i_k_label.adjustSize()
         i_k_label.move(20, 150)
         pixmap_kflopm = QPixmap('images/mimir_usedimages/Johannes_Kepler_1610-746x1024.jpg').scaled(200, 280,
-                                                                                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                                    Qt.TransformationMode.SmoothTransformation)
+                                                                                    Qt.AspectRatioMode.KeepAspectRatio,
+                                                                            Qt.TransformationMode.SmoothTransformation)
         l_pixmap_kflopm = QLabel(parent=kflopmtab)
         l_pixmap_kflopm.setFrameStyle(QFrame.Shape.Panel)
         l_pixmap_kflopm.setFixedSize(200, 280)
@@ -1074,7 +1077,7 @@ class MainWindowFrame(QMainWindow):
         im_k_label.move(480, 350)
         pixmap2_kflopm = QPixmap('images/mimir_usedimages/Mean_Anomaly.svg.png').scaled(190, 190,
                                                                                 Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                Qt.TransformationMode.SmoothTransformation)
+                                                                            Qt.TransformationMode.SmoothTransformation)
         l_pixmap2_kflopm = QLabel(parent=kflopmtab)
         l_pixmap2_kflopm.setFixedSize(190, 190)
         l_pixmap2_kflopm.setPixmap(pixmap2_kflopm)
@@ -1138,9 +1141,9 @@ class MainWindowFrame(QMainWindow):
         i_m_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         i_m_label.adjustSize()
         i_m_label.move(20, 100)
-        pixmap_metric = QPixmap('images/mimir_usedimages/David_-_Portrait_of_Monsieur_Lavoisier_(cropped)2.jpg').scaled(200, 260,
-                                                                                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                                    Qt.TransformationMode.SmoothTransformation)
+        pixmap_metric = (QPixmap('images/mimir_usedimages/David_-_Portrait_of_Monsieur_Lavoisier_(cropped)2.jpg').
+                         scaled(200, 260, Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation))
         l_metric = QLabel(parent=metrictab)
         l_metric.setFrameStyle(QFrame.Shape.Panel)
         l_metric.setFixedSize(200, 265)
@@ -1181,7 +1184,7 @@ class MainWindowFrame(QMainWindow):
         info_label.setText(
             "<b>Astro Balls</b><br>Version: v1.0.1d<br><br>Astro Balls est une simulation de mouvements planétaires et "
             "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
-            "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse "
+            "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse"
             "et l'échelle de la simulation."
         )
         info_label.setWordWrap(True)
