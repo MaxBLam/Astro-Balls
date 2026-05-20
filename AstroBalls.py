@@ -6,8 +6,8 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QIcon, QPixmap, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMenu, QPushButton, QVBoxLayout, QDockWidget, \
     QHBoxLayout, QWidgetAction, QCheckBox, QLabel, QDialog, QGridLayout, QFrame, QDoubleSpinBox, \
-    QScrollArea, QStackedLayout, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
-    QFileDialog, QSpinBox
+    QScrollArea, QSizePolicy, QSlider, QTabWidget, QDial, QColorDialog, QProgressDialog, QLineEdit, \
+    QFileDialog
 
 from PyGameWidget import PyGameWidget
 from WelcomeWindow import WelcomeWindow
@@ -229,6 +229,7 @@ class MainWindowFrame(QMainWindow):
 
         QTimer.singleShot(0, self.guide)
 
+    # Change le curseur pour l'efface.
     def eraser(self, checked):
         self.game_widget.is_erasing = checked
         eraser_cursor = QCursor(QPixmap('cursors/eraser.png').scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio),
@@ -238,6 +239,7 @@ class MainWindowFrame(QMainWindow):
         else:
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
+    # Fenêtre reload pour choisir une nouvelle simulation sans avoir besoin de répartir l'application.
     def reload_ww(self):
         self.reload = QDialog(self)
         self.reload.setWindowTitle('Reload')
@@ -276,19 +278,19 @@ class MainWindowFrame(QMainWindow):
         ww.wwsc_simulation = sim_id
         self.mw = MainWindowFrame()
         self.mw.show()
-
+    # Vu que les Json ne prennent pas les vecteurs euclid, il faut les extraire d'une manière spéciale.
     @staticmethod
     def vector_decoder(dct):
         if '__Vector2__' in dct:
             return euclid.Vector2(dct['x'], dct['y'])
         return dct
 
+    # Fenêtre de sauvgarde.
     def save_sim(self):
         self.save_simwindow = QDialog(parent=self)
         self.save_simwindow.setWindowTitle('Sauvegarder...')
         self.save_simwindow.resize(400, 170)
         self.save_simwindow_layout = QGridLayout(self.save_simwindow)
-        #self.save_simwindow_layout.setContentsMargins(20, 20, 20, 20)
         label1 = QLabel(self.save_simwindow)
         label1.setText('Sauvegarder la simulation')
         label1.setFixedWidth(250)
@@ -322,6 +324,7 @@ class MainWindowFrame(QMainWindow):
         else:
             self.save_button.setText(f'Save {text}')
 
+    # la methode qui sauvegarde le Json dans le fichier.
     def saving(self):
         saving_bar = QProgressDialog()
         saving_bar.setWindowTitle('Saving...')
@@ -344,9 +347,10 @@ class MainWindowFrame(QMainWindow):
         if file:
             self.loader(file)
 
+    # La fenêtre du load sim pour le chargement des sauvegardes
     def load_sim_window(self):
         self.load_window = QDialog()
-        self.load_window.setWindowTitle('Load Save')
+        self.load_window.setWindowTitle('Chargé Sauvegarde')
         self.load_window.setContentsMargins(10, 0, 10, 0)
         self.load_window.setFixedSize(350, 250)
         self.load_window_layout = QGridLayout(self.load_window)
@@ -379,6 +383,7 @@ class MainWindowFrame(QMainWindow):
 
         self.load_window.exec()
 
+    # La méthode qui update le UI.
     def update_loadwindow(self):
         if self.load_window and hasattr(self, 'swll'):
             while self.swll.count():
@@ -569,6 +574,7 @@ class MainWindowFrame(QMainWindow):
             self.measuring_window.finished.connect(lambda: self.game_widget.toggle_measuringtape(False))
             self.measuring_window.show()
 
+    # La méthode qui update le UI.
     def update_measuringtape(self):
         if self.measuring_window is None:
             return
@@ -667,6 +673,7 @@ class MainWindowFrame(QMainWindow):
         self.timer_scope.visibilityChanged.connect(self.timerscope_close)
         self.timer_scope.show()
 
+    # La méthode qui update le UI.
     def update_timerscope(self):
         self.timescope_label.setText(f'X{self.time_slider.value()}')
         self.timescope_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: "
@@ -772,6 +779,7 @@ class MainWindowFrame(QMainWindow):
             self.scale_state.setChecked(active)
             self.scale_state.blockSignals(False)
 
+    # La méthode qui update le UI.
     def update_scale_slider(self):
         self.scale_slider_label.setText(f'X{self.scale_slider.value()}')
         self.scale_slider_label.setStyleSheet("color: #aaaaaa; background-color: #333333; border-radius: 10px; padding: "
@@ -1182,7 +1190,7 @@ class MainWindowFrame(QMainWindow):
 
         info_label = QLabel(parent=apropos_window)
         info_label.setText(
-            "<b>Astro Balls</b><br>Version: v1.0.1d<br><br>Astro Balls est une simulation de mouvements planétaires et "
+            "<b>Astro Balls</b><br>Version: v1.0.1c<br><br>Astro Balls est une simulation de mouvements planétaires et "
             "de corps célestes. Amusez vous à ajouter toutes sortes de choses en orbite et à les faire interagir entre "
             "elles. Vous pouvez également visualiser les orbites, mesurer des distances et expérimenter avec la vitesse"
             "et l'échelle de la simulation."
@@ -1517,6 +1525,7 @@ class MainWindowFrame(QMainWindow):
             self.orbitinfo_window.finished.connect(lambda: setattr(self, 'orbitinfo_window', None))
             self.orbitinfo_window.show()
 
+    # La méthode qui update le UI.
     def update_showorbitinfo(self):
         self.b_eccentricity_toggler.setValue(self.s_eccentricity_toggler.value() / 100)
         self.b_semimajor_toggler.setValue(self.s_semimajor_toggler.value())
@@ -1575,6 +1584,7 @@ class MainWindowFrame(QMainWindow):
                 ondisplay['semimajor'].setText(f'Semi-majeur(a): {round(l['a'], 3)}')
                 ondisplay['velocity'].setText(f'Vitesse: {round(l['vel'].magnitude(), 1)}m/s')
 
+    # La méthode qui update le UI.
     def update_interactives(self):
         sender = self.sender()
         receiver = sender.property('planet_index')
@@ -1582,6 +1592,7 @@ class MainWindowFrame(QMainWindow):
         self.s_eccentricity_toggler.setValue(self.game_widget.kepler()[receiver]['epsilon'] * 100)
         self.s_eccentricity_toggler.blockSignals(False)
 
+    # Méthode pour fermer l'info orbites.
     def when_showorbit_closed(self):
         self.orbit_timer.stop()
         self.orbitinfo_window = None
@@ -1606,12 +1617,10 @@ class MainWindowFrame(QMainWindow):
     def showtrace(self, checked):
         self.game_widget.is_showingtrace = checked
 
-    def keybinds(self):
-        self.settings()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon('images/app_icon/Astro Balls Icon.png'))
     ww = WelcomeWindow()
     ww.show()
     app.exec()

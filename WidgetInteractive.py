@@ -4,12 +4,14 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QDockWidget, QHBoxLayout, Q
                                QScrollArea, QToolBar, QTabWidget, QLineEdit, QPushButton, QSizePolicy)
 
 
+# Le lien entre le PySide et la physique du PyGame pour le drag and drop est fait ici.
 class QtPlanetLabel(QLabel):
     def __init__(self, name):
         super().__init__(name)
         self.planet_name = name
         self.setStyleSheet('padding: 6px; background-color: gray;')
 
+    # Mime les donnée du l'objet dragged.
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             dragging = QDrag(self)
@@ -110,7 +112,7 @@ class StatsDock(QDockWidget):
         type_label_txt_dis = QFont()
         type_label_txt_dis.setPointSize(12)
         self.body_type_dis.setFont(type_label_txt)
-        self.body_type_dis.move(70, 200)
+        self.body_type_dis.move(63, 200)
 
         self.surface_label = QLabel(upper_panel)
         self.surface_label.setText(f"Composition Surface: ")

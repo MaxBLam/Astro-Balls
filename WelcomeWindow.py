@@ -38,6 +38,7 @@ class WelcomeWindow(QMainWindow):
         ww_opensim1.move(50, 150)
         ww_opensim1.setStyleSheet("""QPushButton {background-color: #000000; border: 1px solid #1A1A1A;} 
         QPushButton:hover {background-color: #090C29;}""")
+        # Envoie un index à la méthode wwsc qui envoie un signal au PyGameWidget.
         ww_opensim1.clicked.connect(lambda: self.wwsc(1))
         ww_opensim2 = QPushButton('Système à 2 corps', self)
         ww_opensim2.setFixedSize(175, 100)

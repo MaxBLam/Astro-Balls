@@ -1,9 +1,8 @@
-import random
 import pygame
 import pygame.gfxdraw
 from PySide6.QtCore import Qt, QTimer, Signal, QSize
 from PySide6.QtGui import QPainter, QImage, QPixmap
-from PySide6.QtWidgets import QWidget, QApplication
+from PySide6.QtWidgets import QWidget
 import euclid
 import math
 
@@ -15,6 +14,7 @@ class PyGameWidget(QWidget):
     def __init__(self, statsdock, simulation):
         super().__init__()
 
+        self._solarsys_initialized = None
         self.ghost_planet = None
         self.slingshot_vector = euclid.Vector2(0,0)
         self.slingshot_planet = None
@@ -101,6 +101,7 @@ class PyGameWidget(QWidget):
                       'Neptune': (4.495e9, 0)}
         self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 9.34, 4.89, 5.65, 4.6, 0.86]
 
+    # Les fonctions pour edit depuis le statdock.
     def edit_masse(self):
         if self.active_planet_updater is not None:
             masse = self.statsdock.mass_edit.text()
@@ -125,6 +126,7 @@ class PyGameWidget(QWidget):
         self.orbital_velocity_editor(valeur_vitesse*100)
         self.is_editingorbits = False
 
+    # methodes pour modifier le pygame en fonction de la type de l'écran.
     def resizeEvent(self, event):
         self.playscreen = pygame.Surface((self.width(), self.height()))
 
@@ -155,6 +157,7 @@ class PyGameWidget(QWidget):
         self.slider_is_dragging = False
         self.planet_surfaces_cache.clear()
 
+    # Le drag and drop dans la scène.
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
             event.acceptProposedAction()
@@ -334,6 +337,7 @@ class PyGameWidget(QWidget):
             self.camera_pos = euclid.Vector2(pos_x, pos_y)
         self.display(list_objets_update)
 
+    # methodes de force et de vitesse.
     def force_gravitationnelle(self, obj1, obj2, dampener):
         d_vecteur = obj2["position"] - obj1["position"]
         distance = d_vecteur.magnitude()
@@ -350,6 +354,7 @@ class PyGameWidget(QWidget):
         v_mag = math.sqrt(self.G * centrum / (distance + 1e-10))
         return v_mag * tan
 
+    # Méthode pour mesurer l'hypoténuse et de son angle.
     @staticmethod
     def pythagoras(pos):
         max_height, min_height = max([pos[0][1], pos[1][1]]), min([pos[0][1], pos[1][1]])
@@ -360,6 +365,7 @@ class PyGameWidget(QWidget):
         theta = math.degrees(math.atan2(height, length))
         return round(hypotenus, 2), round(theta, 2)
 
+    # Méthode pour calculer le déplacement.
     def mouvement(self, objets):  # objet[0] = objet, objet[1] = acc_objet
         list_objets_update = []
         for objet in objets:
@@ -414,7 +420,33 @@ class PyGameWidget(QWidget):
         self.playscreen.fill((0,0,0))
         text_list = []
         shift = 0
-
+        # On dessine le tracé avant tout pour qu'il soit derrière.
+        if self.is_showingtrace:
+            ttt = getattr(self, 'dtime', 1)
+            self.remover += 1
+            # On enregistre une position toutes les 10 itérations pour optimiser les performances
+            if self.remover % 10 == 0:
+                for i in self.planetes:
+                    pos = (i['position'])
+                    data = euclid.Vector2(pos.x, pos.y)
+                    if 'trace' not in i:
+                        i['trace'] = []
+                    i['trace'].append(data)
+                    # Ajuste la longueur de la trace en fonction de la vitesse du temps (dtime)
+                    dynamic_ttt = max(10, int(500 / (ttt + 1e-100)))
+                    if len(i['trace']) > dynamic_ttt:
+                        # Supprime le point le plus ancien pour garder une traînée constante
+                        i['trace'].pop(0)
+            # Dessin des lignes de la trace pour chaque planète
+            for k in self.planetes:
+                if k.get('trace'):
+                    trace_data = k['trace']
+                    # Convertit tous les points enregistrés en coordonnées écran
+                    to_scale_lst = [self.pos_objet_orbite(p) for p in trace_data]
+                    # Utilise une version assombrie de la couleur de la planète pour la trace
+                    color_dimmer = pygame.Color(k['couleur']).lerp((0, 0, 0), 0.7)
+                    if len(to_scale_lst) >= 2:
+                        pygame.draw.aalines(self.playscreen, color_dimmer, False, to_scale_lst, 1)
         if self.slingshot_oldpos is not None:
             x, y = self.pos_objet_orbite(self.slingshot_planet['position'])
             true_pos = euclid.Vector2(x, y)
@@ -892,9 +924,9 @@ class PyGameWidget(QWidget):
                     self.statsdock.body_type_dis.repaint()
                     self.statsdock.surface_label_dis.setText(f'{planete["composition_surface"]}')
                     self.statsdock.surface_label_dis.repaint()
-                    self.statsdock.age_label_dis.setText(f'{planete["âge"]}ans')
+                    self.statsdock.age_label_dis.setText(f'{planete["âge"]}')
                     self.statsdock.age_label_dis.repaint()
-                    self.statsdock.rotation_label_dis.setText(f'{planete["température"]}K')
+                    self.statsdock.rotation_label_dis.setText(f'{planete["température"]}')
                     self.statsdock.rotation_label_dis.repaint()
                     self.statsdock.mass_edit.setText(f"{planete["masse"]:.3e}")
                     self.statsdock.mass_label.repaint()
@@ -926,7 +958,6 @@ class PyGameWidget(QWidget):
     def dragMoveEvent(self, event):
         pos_x, pos_y = event.pos().x(), event.pos().y()
         self.souris_pos = euclid.Vector2(pos_x, pos_y)
-        # TODO later the ghost planet opbd.
 
     def dragLeaveEvent(self, event):
         self.ghost_planet = None
@@ -1106,33 +1137,6 @@ class PyGameWidget(QWidget):
                     norm_vector = velocity.normalized() * 50
                     end_pos = (int(screenx+norm_vector.x), int(screeny+norm_vector.y))
                     pygame.draw.aaline(self.playscreen, (0, 255, 0), (screenx, screeny), end_pos, 2)
-
-        if self.is_showingtrace:
-            ttt = getattr(self, 'dtime', 1)
-            self.remover += 1
-            # On enregistre une position toutes les 10 itérations pour optimiser les performances
-            if self.remover % 10 == 0:
-                for i in self.planetes:
-                    pos = (i['position'])
-                    data = euclid.Vector2(pos.x, pos.y)
-                    if 'trace' not in i:
-                        i['trace'] = []
-                    i['trace'].append(data)
-                    # Ajuste la longueur de la trace en fonction de la vitesse du temps (dtime)
-                    dynamic_ttt = max(10, int(500/(ttt+1e-100)))
-                    if len(i['trace']) > dynamic_ttt:
-                        # Supprime le point le plus ancien pour garder une traînée constante
-                        i['trace'].pop(0)
-            # Dessin des lignes de la trace pour chaque planète
-            for k in self.planetes:
-                if k.get('trace'):
-                    trace_data = k['trace']
-                    # Convertit tous les points enregistrés en coordonnées écran
-                    to_scale_lst = [self.pos_objet_orbite(p) for p in trace_data]
-                    # Utilise une version assombrie de la couleur de la planète pour la trace
-                    color_dimmer = pygame.Color(k['couleur']).lerp((0, 0, 0), 0.7)
-                    if len(to_scale_lst) >= 2:
-                        pygame.draw.aalines(self.playscreen, color_dimmer, False, to_scale_lst, 1)
 
         self.update()
 
