@@ -1,6 +1,4 @@
 import random
-from asyncio import current_task
-
 import pygame
 import pygame.gfxdraw
 from PySide6.QtCore import Qt, QTimer, Signal, QSize
@@ -97,11 +95,10 @@ class PyGameWidget(QWidget):
         self.timer.timeout.connect(self.game_loop)
         self.planet_surfaces_cache = {}
         self._original_images_cache = {}
-        x = 1.496e11
-        self.fsysb = {'Soleil': (0, 0), 'Mercure': (5.79e10, 0), 'Vénus': (1.08e11, 0),
-                 'Terre': (x, 0), 'Mars': (2.279e11, 0),
-                 'Jupiter': (7.785e11, 0), 'Saturne': (1.433e12, 0), 'Uranus': (1.433e12, 0),
-                 'Neptune': (4.495e12, 0)}
+
+        self.fsysb = {'Soleil': (0, 0),'Mercure': (5.79e7, 0), 'Vénus': (1.082e8, 0),  'Terre': (1.496e8, 0),
+                      'Mars': (2.279e8, 0),'Jupiter': (7.785e8, 0),'Saturne': (1.434e9, 0),'Uranus': (2.871e9, 0),
+                      'Neptune': (4.495e9, 0)}
         self.fsysb_ecc = [None, 20.6, 0.67, 1.67, 9.34, 4.89, 5.65, 4.6, 0.86]
 
     def edit_masse(self):
@@ -117,10 +114,9 @@ class PyGameWidget(QWidget):
     def edit_ellipse(self):
         valeur_ellipse = self.statsdock.ellipse_edit.value()
         self.facteur_ellipse = valeur_ellipse
-        self.is_editingorbits = True
-        self.p_index = self.planetes[self.active_planet_updater]
-        self.orbital_eccentricity_editor(valeur_ellipse*100)
-        self.is_editingorbits = False
+        self.vitesse_state = False
+        self.statsdock.elp_label.setText(f"Facteur Ellipse: {str(round(self.facteur_ellipse, 1))}")
+        self.statsdock.elp_label.repaint()
 
     def edit_vitesse(self):
         valeur_vitesse = self.statsdock.mom_edit.value()
@@ -1064,8 +1060,8 @@ class PyGameWidget(QWidget):
                 self.camera_pos.y += speed / self.scale
 
         if self.target is not None:
-            distance_x = 2 * (self.souris_pos.x + self.scale * (self.camera_pos.x - self.target.x))
-            distance_y = 2 * (self.souris_pos.y + self.scale * (self.camera_pos.y - self.target.y))
+            distance_x = (self.souris_pos.x + self.scale * (self.camera_pos.x - self.target.x))
+            distance_y = (self.souris_pos.y + self.scale * (self.camera_pos.y - self.target.y))
             distance = math.sqrt(distance_x ** 2 + distance_y ** 2) / self.scale
             if distance < 1000000000:
                 text_distance = self.font.render(f"{int(distance):,} km | {round(distance / 1.496e8, 3)} UA",
@@ -1123,7 +1119,7 @@ class PyGameWidget(QWidget):
                         i['trace'] = []
                     i['trace'].append(data)
                     # Ajuste la longueur de la trace en fonction de la vitesse du temps (dtime)
-                    dynamic_ttt = max(10, int(500/ttt))
+                    dynamic_ttt = max(10, int(500/(ttt+1e-100)))
                     if len(i['trace']) > dynamic_ttt:
                         # Supprime le point le plus ancien pour garder une traînée constante
                         i['trace'].pop(0)
