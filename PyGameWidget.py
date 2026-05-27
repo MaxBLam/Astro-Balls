@@ -580,9 +580,10 @@ class PyGameWidget(QWidget):
                           'statdock_image': 'images/statdocks_images/black-hole-loop-animation-on-black-background-isola'
                                             'ted-transparent-alpha-png.webp'},
 
-            "Hubble": {'nom': 'Télescope Hubble', 'type': 'Satellite artificiel',
+            "Hubble": {'nom': 'Télescope\nHubble', 'type': 'Satellite artificiel',
                        'composition_surface': 'Métal et instruments', 'Température': '150 à 390 K', 'âge': '36',
-                       "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180), "image": "./images/Skins/hubble.jpeg"},
+                       "masse": 11110, "rayon": 0.007, "couleur": (180, 180, 180), "image": "./images/Skins/hubble.jpeg",
+                       'statdock_image': 'images/statdocks_images/Hubble_Space_Telescope_spacecraft_model.png'},
 
             "Your Mom": {'nom': 'Your Mom', 'type': 'Trou noir supermassif', 'composition_surface': 'Peau',
                          'Température': '308,15 K', 'âge': '51', "masse": 1000 * 1.989e30, "rayon": 500000000000,
