@@ -306,7 +306,7 @@ class MainWindowFrame(QMainWindow):
         self.save_name = QLineEdit(self.save_simwindow)
         self.save_name.move(110, 65)
         self.save_name.setStyleSheet("min-width: 265px; max-width: 265px;")
-        self.save_name.setPlaceholderText('not a big fan of the government')
+        self.save_name.setPlaceholderText('Ajouter un nom pour le fichier')
         self.save_name.setFixedWidth(int(self.save_simwindow.width() / 2))
         self.save_name.textChanged.connect(self.save_sim_update_text)
         self.save_button = QPushButton(f'Save', self.save_simwindow)
